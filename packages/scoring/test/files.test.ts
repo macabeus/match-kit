@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, expect, test } from 'vitest';
 
-import { releaseTarget, scoreFiles } from '../src/node.js';
+import { releaseTarget, scoreFiles } from '../src/files.js';
 
 const EDGE = join(import.meta.dirname, 'fixtures', 'edge');
 const TARGET = join(EDGE, 'target.o');

@@ -2,7 +2,7 @@
 # The published package, checked as a consumer gets it. The tests and the typecheck resolve
 # `#engine` to src/, so only this checks dist/ and the `exports` and `imports` maps. It packs
 # @matchkit/scoring, installs the tarball into a throwaway project, and:
-#   - imports `.`, `./node` and `./display` and scores a pair on Node (and on Bun, when present);
+#   - imports `.`, `./files` and `./display` and scores a pair on Node (and on Bun, when present);
 #   - typechecks a consumer under `node16` and `bundler` resolution, with no custom conditions;
 #   - bundles it for the browser with Vite and checks the bundle reaches no Node built-in.
 #
@@ -30,7 +30,7 @@ cat > smoke.mjs <<'EOF'
 import { readFileSync } from 'node:fs';
 import { OBJDIFF_VERSION, createScorer, loadEngine } from '@matchkit/scoring';
 import { sideBySide } from '@matchkit/scoring/display';
-import { releaseTarget, scoreFiles } from '@matchkit/scoring/node';
+import { releaseTarget, scoreFiles } from '@matchkit/scoring/files';
 
 const fromFiles = scoreFiles('target.o', 'candidate-diff.o', 'add_one');
 const scorer = createScorer(await loadEngine());
@@ -54,7 +54,7 @@ fi
 cat > src/consumer.ts <<'EOF'
 import { type MatchScore, createScorer, loadEngine } from '@matchkit/scoring';
 import { differences } from '@matchkit/scoring/display';
-import { scoreFiles } from '@matchkit/scoring/node';
+import { scoreFiles } from '@matchkit/scoring/files';
 
 const scorer = createScorer(await loadEngine());
 const score: MatchScore = scoreFiles('target.o', 'candidate-diff.o', 'add_one');

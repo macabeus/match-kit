@@ -1,5 +1,5 @@
 // Every engine call and every long-lived engine handle goes through here.
-import type { Engine } from './engine.js';
+import type { Engine } from '../types.js';
 import { EngineFailedError, SymbolNotFoundError, UndiffableError } from './errors.js';
 import { PROBE_OBJECT_BASE64 } from './probe-object.js';
 

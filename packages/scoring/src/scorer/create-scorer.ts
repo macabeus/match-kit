@@ -2,12 +2,20 @@
 // byte-exact match.
 import type * as ObjdiffWasm from 'objdiff-wasm';
 
-import { call, disposeAll, hold, release } from './engine-calls.js';
-import type { Engine } from './engine.js';
+import { OBJDIFF_VERSION } from '../engine/version.js';
+import type {
+  DiffBreakdown,
+  Engine,
+  InspectedRow,
+  MatchScore,
+  RowKind,
+  Scorer,
+  ScorerOptions,
+  Target,
+} from '../types.js';
+import { call, disposeAll, hold, release } from './engine-guard.js';
 import { SymbolNotFoundError, UndiffableError } from './errors.js';
 import { rowText } from './row-text.js';
-import type { DiffBreakdown, InspectedRow, MatchScore, RowKind, Scorer, ScorerOptions, Target } from './types.js';
-import { OBJDIFF_VERSION } from './version.js';
 
 /** A row that did not decode as an instruction: objdiff shows it as `<illegal>` and diffs it as `none`. */
 const isUndecoded = (row: ObjdiffWasm.display.InstructionDiffRow | null): boolean =>

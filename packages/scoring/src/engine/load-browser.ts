@@ -1,5 +1,5 @@
 // The engine for browsers and web workers.
-import type { Engine } from './engine.js';
+import type { Engine } from '../types.js';
 
 let loading: Promise<Engine> | undefined;
 

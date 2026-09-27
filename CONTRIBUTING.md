@@ -4,7 +4,9 @@
 
 ```
 packages/<name>/
-  src/            the package's source; `dist/` is built from it and is the only thing published
+  src/            the package's source; `dist/` is built from it and is the only thing published.
+                  The top of `src/` holds the entry points (see `exports` in `package.json`) and
+                  `types.ts`; the folders hold the internals
   test/           vitest suites; `*.browser.test.ts` run in Chromium, everything else on Node and Bun
   tsconfig.build.json
 ```

@@ -1,10 +1,10 @@
-// @matchkit/scoring/node — score object files synchronously, with objdiff's default config. The
+// @matchkit/scoring/files — score object files synchronously, with objdiff's default config. The
 // engine loads in this module's top-level await.
 import { loadEngine } from '#engine';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
-import { createScorer } from './scorer.js';
+import { createScorer } from './scorer/create-scorer.js';
 import type { MatchScore, Target } from './types.js';
 
 const scorer = createScorer(await loadEngine());

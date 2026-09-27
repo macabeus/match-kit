@@ -1,7 +1,7 @@
 import type * as ObjdiffWasm from 'objdiff-wasm';
 import { expect, test } from 'vitest';
 
-import { rowText } from '../src/row-text.js';
+import { rowText } from '../src/scorer/row-text.js';
 
 type Text = ObjdiffWasm.display.DiffText;
 // objdiff-wasm's generated types give the opcode and symbol payloads the same names as their

@@ -4,7 +4,7 @@
 import type * as ObjdiffWasm from 'objdiff-wasm';
 
 import type { Engine } from '../src/index.js';
-import { PROBE_OBJECT_BASE64 } from '../src/probe-object.js';
+import { PROBE_OBJECT_BASE64 } from '../src/scorer/probe-object.js';
 
 type Kind = ObjdiffWasm.display.InstructionDiffKind;
 

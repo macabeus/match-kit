@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import type { Engine } from './engine.js';
+import type { Engine } from '../types.js';
 
 let loading: Promise<Engine> | undefined;
 

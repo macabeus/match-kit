@@ -43,7 +43,7 @@ export default [
     // browser that loads the module. `pnpm check-deps` covers imports; this covers globals. The
     // ignored files are NODE_ONLY in .dependency-cruiser.cjs.
     files: ['packages/*/src/**/*.ts'],
-    ignores: ['packages/scoring/src/node.ts', 'packages/scoring/src/engine-node.ts'],
+    ignores: ['packages/scoring/src/files.ts', 'packages/scoring/src/engine/load-node-bun.ts'],
     rules: {
       'no-restricted-globals': [
         'error',

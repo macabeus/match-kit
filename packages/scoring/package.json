@@ -25,25 +25,25 @@
       "types": "./dist/display.d.ts",
       "default": "./dist/display.js"
     },
-    "./node": {
-      "types": "./dist/node.d.ts",
-      "default": "./dist/node.js"
+    "./files": {
+      "types": "./dist/files.d.ts",
+      "default": "./dist/files.js"
     },
     "./package.json": "./package.json"
   },
   "imports": {
     "#engine": {
       "matchkit-source": {
-        "browser": "./src/engine-browser.ts",
-        "default": "./src/engine-node.ts"
+        "browser": "./src/engine/load-browser.ts",
+        "default": "./src/engine/load-node-bun.ts"
       },
-      "types": "./dist/engine-node.d.ts",
-      "browser": "./dist/engine-browser.js",
-      "default": "./dist/engine-node.js"
+      "types": "./dist/engine/load-node-bun.d.ts",
+      "browser": "./dist/engine/load-browser.js",
+      "default": "./dist/engine/load-node-bun.js"
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch",
     "prepack": "pnpm build"
   },

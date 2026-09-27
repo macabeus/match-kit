@@ -32,7 +32,7 @@ scorer.dispose();
 ## Score files on Node
 
 ```ts
-import { releaseTarget, scoreFiles } from '@matchkit/scoring/node';
+import { releaseTarget, scoreFiles } from '@matchkit/scoring/files';
 
 scoreFiles('build/target.o', 'tmp/candidate.o', 'MyFunction');
 ```

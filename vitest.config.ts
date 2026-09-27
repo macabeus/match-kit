@@ -12,7 +12,7 @@ export default defineConfig({
   test: {
     projects: [
       {
-        resolve: { alias: { '#engine': src('engine-node.ts') } },
+        resolve: { alias: { '#engine': src('engine/load-node-bun.ts') } },
         test: {
           name: 'node',
           environment: 'node',
@@ -21,7 +21,7 @@ export default defineConfig({
         },
       },
       {
-        resolve: { alias: { '#engine': src('engine-browser.ts') } },
+        resolve: { alias: { '#engine': src('engine/load-browser.ts') } },
         optimizeDeps: { exclude: ['objdiff-wasm'] },
         test: {
           name: 'browser',

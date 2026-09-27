@@ -1,7 +1,7 @@
 // What `pnpm check-deps` enforces: a browser-safe module never reaches a Node built-in, or a
 // browser bundle breaks at import time, which no Node test notices. Every module is browser-safe
 // unless listed in NODE_ONLY.
-const NODE_ONLY = ['^packages/scoring/src/node\\.ts$', '^packages/scoring/src/engine-node\\.ts$'];
+const NODE_ONLY = ['^packages/scoring/src/files\\.ts$', '^packages/scoring/src/engine/load-node-bun\\.ts$'];
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
