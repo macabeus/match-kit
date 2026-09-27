@@ -121,6 +121,34 @@ export interface Scorer {
 /** Engines that failed: shared by every scorer made from them, since they share the wasm instance. */
 const failedEngines = new WeakSet<Engine>();
 
+/**
+ * The handles that outlive one call (each scorer's config, each parsed target), per engine, held
+ * weakly. A handle nobody disposes is dropped by the engine's own FinalizationRegistry whenever the
+ * garbage collector reaches it, and on a failed engine that drop traps outside any caller, as an
+ * uncaught exception. So when an engine fails, every handle still held here is released at once.
+ */
+const heldHandles = new WeakMap<Engine, Set<WeakRef<object>>>();
+
+function hold(engine: Engine, handle: object): WeakRef<object> {
+  const ref = new WeakRef(handle);
+  let held = heldHandles.get(engine);
+  if (!held) {
+    held = new Set();
+    heldHandles.set(engine, held);
+  }
+  held.add(ref);
+  return ref;
+}
+
+function fail(engine: Engine): void {
+  failedEngines.add(engine);
+  const held = heldHandles.get(engine);
+  heldHandles.delete(engine);
+  for (const ref of held ?? []) {
+    disposeAll(ref.deref());
+  }
+}
+
 // WebAssembly is a global in every runtime this package supports, but no type library in this repo
 // declares it without the DOM, so it is reached through globalThis.
 const RuntimeError = (globalThis as { WebAssembly?: { RuntimeError?: abstract new () => Error } }).WebAssembly
@@ -165,7 +193,7 @@ function call<T>(
       throw cause;
     }
     if (RuntimeError !== undefined && cause instanceof RuntimeError && !engineIsHealthy(engine)) {
-      failedEngines.add(engine);
+      fail(engine);
       throw new EngineFailedError({ cause });
     }
     throw new Failure(`${what}: ${cause instanceof Error ? cause.message : String(cause)}`, { cause });
@@ -194,7 +222,12 @@ const KINDS: Record<ObjdiffWasm.display.InstructionDiffKind, RowKind> = {
 const DISPOSE: typeof Symbol.dispose = Symbol.dispose ?? (Symbol.for('dispose') as never);
 const disposeAll = (...handles: unknown[]): void => {
   for (const handle of handles) {
-    (handle as { [DISPOSE]?: () => void } | undefined)?.[DISPOSE]?.();
+    try {
+      (handle as { [DISPOSE]?: () => void } | undefined)?.[DISPOSE]?.();
+    } catch {
+      // The engine forgets a handle before its drop runs, so a drop that traps leaves nothing
+      // behind. The trap is the engine failing, and the next call finds that out.
+    }
   }
 };
 
@@ -224,6 +257,7 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
       throw new Error(`invalid diffSettings: ${key} = ${JSON.stringify(value)}`, { cause });
     }
   }
+  const heldConfig = hold(engine, config);
   const owner = {};
   let disposed = false;
   const live = (): void => {
@@ -360,6 +394,7 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
         () => engine.diff.Object.parse(bytes, config, 'target'),
         'the target object could not be parsed',
       );
+      const held = hold(engine, object);
       const target: ParsedTarget = {
         object,
         owner,
@@ -367,6 +402,7 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
         dispose() {
           if (!target.disposed) {
             target.disposed = true;
+            heldHandles.get(engine)?.delete(held);
             disposeAll(object);
           }
         },
@@ -387,6 +423,7 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
     dispose() {
       if (!disposed) {
         disposed = true;
+        heldHandles.get(engine)?.delete(heldConfig);
         disposeAll(config);
       }
     },

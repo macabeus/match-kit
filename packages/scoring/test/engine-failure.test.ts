@@ -4,6 +4,8 @@
 // runs in its own worker (vitest isolates files) and nothing else may share it.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { setFlagsFromString } from 'node:v8';
+import { runInNewContext } from 'node:vm';
 import { expect, test } from 'vitest';
 
 import { EngineFailedError, UndiffableError, createScorer, loadEngine } from '../src/index.js';
@@ -11,7 +13,18 @@ import { EngineFailedError, UndiffableError, createScorer, loadEngine } from '..
 const read = (name: string) => new Uint8Array(readFileSync(join(import.meta.dirname, 'fixtures', 'edge', name)));
 
 test('a dying engine is reported as one, never as a bad object or a score', { timeout: 60_000 }, async () => {
-  const scorer = createScorer(await loadEngine());
+  await killEngine();
+  // Nothing the test left undisposed (both scorers' configs, both targets) may reach the engine's own
+  // finalizers: their drop would trap on the dead instance, where no caller can catch it, and vitest
+  // fails the run on that uncaught error.
+  await collectGarbage();
+});
+
+async function killEngine(): Promise<void> {
+  const engine = await loadEngine();
+  // a second scorer on the same engine, holding a target it never uses again
+  createScorer(engine).parseTarget(read('target.o'));
+  const scorer = createScorer(engine);
   const target = scorer.parseTarget(read('target.o'));
   const odd = read('candidate-odd-size.o');
   const good = read('candidate-diff.o');
@@ -31,7 +44,19 @@ test('a dying engine is reported as one, never as a bad object or a score', { ti
   expect(panics).toBeLessThan(20_000);
   expect(() => scorer.score(target, good, 'add_one')).toThrow(EngineFailedError);
   expect(() => scorer.parseTarget(read('target.o'))).toThrow(EngineFailedError);
-});
+}
+
+/** A full collection, then a turn of the event loop for the finalizers it queued. */
+async function collectGarbage(): Promise<void> {
+  const bun = (globalThis as { Bun?: { gc(force: boolean): void } }).Bun;
+  if (bun) {
+    bun.gc(true);
+  } else {
+    setFlagsFromString('--expose-gc');
+    (runInNewContext('gc') as () => void)();
+  }
+  await new Promise((resolve) => setTimeout(resolve, 50));
+}
 
 function catchError(fn: () => unknown): unknown {
   try {
