@@ -1,5 +1,5 @@
 // The counting rules and failure classes, over a scripted engine: cases no fixture pair reaches
-// (the two sides' row counts and kinds agree on all 1,059 rows of the golden and edge pairs).
+// (the two sides' row counts and kinds agree on all 1,059 rows of the reference and edge pairs).
 import { describe, expect, test } from 'vitest';
 
 import { EngineFailedError, UndiffableError, createScorer } from '../src/index.js';

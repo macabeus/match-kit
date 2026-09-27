@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, test } from 'vitest';
 
 import { SymbolNotFoundError, UndiffableError, createScorer, loadEngine } from '../src/index.js';
-import { GOLDEN } from './fixtures.js';
+import { REFERENCE_PAIRS } from './fixtures.js';
 
 const FIXTURES = join(import.meta.dirname, 'fixtures');
 const read = (relative: string) => new Uint8Array(readFileSync(join(FIXTURES, relative)));
@@ -12,11 +12,11 @@ const engine = await loadEngine();
 const scorer = createScorer(engine);
 afterAll(() => scorer.dispose());
 
-describe('golden pairs: every score equals the one asmlift published for it', () => {
-  test.each(GOLDEN.map((p) => [p.id, p] as const))('%s', (_id, pair) => {
-    const target = scorer.parseTarget(read(`golden/${pair.target}`));
+describe('reference pairs: every score equals the one asmlift published for it', () => {
+  test.each(REFERENCE_PAIRS.map((p) => [p.id, p] as const))('%s', (_id, pair) => {
+    const target = scorer.parseTarget(read(`reference/${pair.target}`));
     try {
-      expect(scorer.score(target, read(`golden/${pair.candidate}`), pair.symbol)).toEqual(pair.expected);
+      expect(scorer.score(target, read(`reference/${pair.candidate}`), pair.symbol)).toEqual(pair.expected);
       expect(pair.expected.score).toBe(pair.from.publishedScore);
     } finally {
       target.dispose();
@@ -25,10 +25,10 @@ describe('golden pairs: every score equals the one asmlift published for it', ()
 });
 
 describe('inspect', () => {
-  test.each(GOLDEN.map((p) => [p.id, p] as const))('%s counts exactly what score counts', (_id, pair) => {
-    const target = scorer.parseTarget(read(`golden/${pair.target}`));
+  test.each(REFERENCE_PAIRS.map((p) => [p.id, p] as const))('%s counts exactly what score counts', (_id, pair) => {
+    const target = scorer.parseTarget(read(`reference/${pair.target}`));
     try {
-      const inspection = scorer.inspect(target, read(`golden/${pair.candidate}`), pair.symbol);
+      const inspection = scorer.inspect(target, read(`reference/${pair.candidate}`), pair.symbol);
       expect(inspection.score).toEqual(pair.expected);
       expect(inspection.rows).toHaveLength(pair.expected.rows);
       expect(inspection.rows.filter((r) => r.kind !== 'none')).toHaveLength(pair.expected.score);
@@ -160,12 +160,12 @@ describe('targets', () => {
 });
 
 describe('diffSettings', () => {
-  const breakloop = GOLDEN.find((p) => p.id === 'agbcc/breakloop.m2c')!;
+  const breakloop = REFERENCE_PAIRS.find((p) => p.id === 'agbcc/breakloop.m2c')!;
   const scoreUnder = (diffSettings: Record<string, string>) => {
     const s = createScorer(engine, { diffSettings });
-    const target = s.parseTarget(read(`golden/${breakloop.target}`));
+    const target = s.parseTarget(read(`reference/${breakloop.target}`));
     try {
-      return s.score(target, read(`golden/${breakloop.candidate}`), breakloop.symbol);
+      return s.score(target, read(`reference/${breakloop.candidate}`), breakloop.symbol);
     } finally {
       target.dispose();
       s.dispose();
