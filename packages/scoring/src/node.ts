@@ -2,10 +2,12 @@
 //
 // The engine loads in this module's top-level await, so `scoreFiles` is synchronous from the first
 // call. Two memos make a ranked run cheap; both are keyed on content, never on a path.
+import { loadEngine } from '#engine';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
-import { type MatchScore, type Target, createScorer, loadEngine } from './index.js';
+import { createScorer } from './scorer.js';
+import type { MatchScore, Target } from './types.js';
 
 const scorer = createScorer(await loadEngine());
 

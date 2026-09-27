@@ -1,6 +1,6 @@
 // Text views of an `Inspection`, for reports and prompts. Pure functions: nothing here touches the
 // engine.
-import type { DiffBreakdown, Inspection } from './index.js';
+import type { DiffBreakdown, Inspection } from './types.js';
 
 /** A row that differs, with both sides' text (`''` for a side the row does not reach). */
 export interface RowDifference {
