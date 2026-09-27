@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+# npm credentials live here on a publishing machine; never commit them
+.npmrc
+# vitest browser mode screenshots on failure
+__screenshots__/
+# vitest browser mode failure screenshots
+.vitest/
