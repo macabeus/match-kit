@@ -1,0 +1,765 @@
+{
+  "generatedFrom": {
+    "repo": "asmlift",
+    "commit": "fafa795dbef34c32e1a82025bf02a99cf2875499",
+    "tier": "synthetic"
+  },
+  "pairs": [
+    {
+      "id": "agbcc/absdiff.asmlift",
+      "toolchain": "agbcc",
+      "symbol": "absdiff",
+      "target": "agbcc/absdiff.target.o",
+      "candidate": "agbcc/absdiff.asmlift.candidate.o",
+      "from": {
+        "row": "synthetic:absdiff:agbcc",
+        "decompiler": "asmlift",
+        "publishedScore": 0,
+        "maxScore": 6
+      },
+      "expected": {
+        "symbol": "absdiff",
+        "rows": 6,
+        "matching": 6,
+        "score": 0,
+        "match": true,
+        "breakdown": {
+          "insert": 0,
+          "delete": 0,
+          "replace": 0,
+          "opMismatch": 0,
+          "argMismatch": 0
+        }
+      }
+    },
+    {
+      "id": "agbcc/arraysum.m2c",
+      "toolchain": "agbcc",
+      "symbol": "arraysum",
+      "target": "agbcc/arraysum.target.o",
+      "candidate": "agbcc/arraysum.m2c.candidate.o",
+      "from": {
+        "row": "synthetic:arraysum:agbcc",
+        "decompiler": "m2c",
+        "publishedScore": 8,
+        "maxScore": 12
+      },
+      "expected": {
+        "symbol": "arraysum",
+        "rows": 12,
+        "matching": 4,
+        "score": 8,
+        "match": false,
+        "breakdown": {
+          "insert": 1,
+          "delete": 0,
+          "replace": 1,
+          "opMismatch": 1,
+          "argMismatch": 5
+        }
+      }
+    },
+    {
+      "id": "agbcc/breakloop.m2c",
+      "toolchain": "agbcc",
+      "symbol": "breakloop",
+      "target": "agbcc/breakloop.target.o",
+      "candidate": "agbcc/breakloop.m2c.candidate.o",
+      "from": {
+        "row": "synthetic:breakloop:agbcc",
+        "decompiler": "m2c",
+        "publishedScore": 7,
+        "maxScore": 15
+      },
+      "expected": {
+        "symbol": "breakloop",
+        "rows": 15,
+        "matching": 8,
+        "score": 7,
+        "match": false,
+        "breakdown": {
+          "insert": 3,
+          "delete": 3,
+          "replace": 0,
+          "opMismatch": 1,
+          "argMismatch": 0
+        }
+      }
+    },
+    {
+      "id": "agbcc/continueloop.m2c",
+      "toolchain": "agbcc",
+      "symbol": "continueloop",
+      "target": "agbcc/continueloop.target.o",
+      "candidate": "agbcc/continueloop.m2c.candidate.o",
+      "from": {
+        "row": "synthetic:continueloop:agbcc",
+        "decompiler": "m2c",
+        "publishedScore": 3,
+        "maxScore": 13
+      },
+      "expected": {
+        "symbol": "continueloop",
+        "rows": 13,
+        "matching": 10,
+        "score": 3,
+        "match": false,
+        "breakdown": {
+          "insert": 0,
+          "delete": 0,
+          "replace": 0,
+          "opMismatch": 1,
+          "argMismatch": 2
+        }
+      }
+    },
+    {
+      "id": "agbcc/countpos.m2c",
+      "toolchain": "agbcc",
+      "symbol": "countpos",
+      "target": "agbcc/countpos.target.o",
+      "candidate": "agbcc/countpos.m2c.candidate.o",
+      "from": {
+        "row": "synthetic:countpos:agbcc",
+        "decompiler": "m2c",
+        "publishedScore": 3,
+        "maxScore": 14
+      },
+      "expected": {
+        "symbol": "countpos",
+        "rows": 14,
+        "matching": 11,
+        "score": 3,
+        "match": false,
+        "breakdown": {
+          "insert": 0,
+          "delete": 0,
+          "replace": 0,
+          "opMismatch": 1,
+          "argMismatch": 2
+        }
+      }
+    },
+    {
+      "id": "agbcc/dotprod.m2c",
+      "toolchain": "agbcc",
+      "symbol": "dotprod",
+      "target": "agbcc/dotprod.target.o",
+      "candidate": "agbcc/dotprod.m2c.candidate.o",
+      "from": {
+        "row": "synthetic:dotprod:agbcc",
+        "decompiler": "m2c",
+        "publishedScore": 11,
+        "maxScore": 19
+      },
+      "expected": {
+        "symbol": "dotprod",
+        "rows": 19,
+        "matching": 8,
+        "score": 11,
+        "match": false,
+        "breakdown": {
+          "insert": 2,
+          "delete": 0,
+          "replace": 2,
+          "opMismatch": 1,
+          "argMismatch": 6
+        }
+      }
+    },
+    {
+      "id": "agbcc/fib.asmlift",
+      "toolchain": "agbcc",
+      "symbol": "fib",
+      "target": "agbcc/fib.target.o",
+      "candidate": "agbcc/fib.asmlift.candidate.o",
+      "from": {
+        "row": "synthetic:fib:agbcc",
+        "decompiler": "asmlift",
+        "publishedScore": 14,
+        "maxScore": 18
+      },
+      "expected": {
+        "symbol": "fib",
+        "rows": 18,
+        "matching": 4,
+        "score": 14,
+        "match": false,
+        "breakdown": {
+          "insert": 5,
+          "delete": 3,
+          "replace": 1,
+          "opMismatch": 1,
+          "argMismatch": 4
+        }
+      }
+    },
+    {
+      "id": "ido7.1/add.asmlift",
+      "toolchain": "ido7.1",
+      "symbol": "add",
+      "target": "ido7.1/add.target.o",
+      "candidate": "ido7.1/add.asmlift.candidate.o",
+      "from": {
+        "row": "synthetic:add:ido7.1",
+        "decompiler": "asmlift",
+        "publishedScore": 0,
+        "maxScore": 2
+      },
+      "expected": {
+        "symbol": "add",
+        "rows": 2,
+        "matching": 2,
+        "score": 0,
+        "match": true,
+        "breakdown": {
+          "insert": 0,
+          "delete": 0,
+          "replace": 0,
+          "opMismatch": 0,
+          "argMismatch": 0
+        }
+      }
+    },
+    {
+      "id": "ido7.1/addu8.asmlift",
+      "toolchain": "ido7.1",
+      "symbol": "addu8",
+      "target": "ido7.1/addu8.target.o",
+      "candidate": "ido7.1/addu8.asmlift.candidate.o",
+      "from": {
+        "row": "synthetic:addu8:ido7.1",
+        "decompiler": "asmlift",
+        "publishedScore": 4,
+        "maxScore": 6
+      },
+      "expected": {
+        "symbol": "addu8",
+        "rows": 6,
+        "matching": 2,
+        "score": 4,
+        "match": false,
+        "breakdown": {
+          "insert": 1,
+          "delete": 3,
+          "replace": 0,
+          "opMismatch": 0,
+          "argMismatch": 0
+        }
+      }
+    },
+    {
+      "id": "ido7.1/absdiff.asmlift",
+      "toolchain": "ido7.1",
+      "symbol": "absdiff",
+      "target": "ido7.1/absdiff.target.o",
+      "candidate": "ido7.1/absdiff.asmlift.candidate.o",
+      "from": {
+        "row": "synthetic:absdiff:ido7.1",
+        "decompiler": "asmlift",
+        "publishedScore": 2,
+        "maxScore": 7
+      },
+      "expected": {
+        "symbol": "absdiff",
+        "rows": 7,
+        "matching": 5,
+        "score": 2,
+        "match": false,
+        "breakdown": {
+          "insert": 0,
+          "delete": 0,
+          "replace": 1,
+          "opMismatch": 0,
+          "argMismatch": 1
+        }
+      }
+    },
+    {
+      "id": "ido7.1/absi.asmlift",
+      "toolchain": "ido7.1",
+      "symbol": "absi",
+      "target": "ido7.1/absi.target.o",
+      "candidate": "ido7.1/absi.asmlift.candidate.o",
+      "from": {
+        "row": "synthetic:absi:ido7.1",
+        "decompiler": "asmlift",
+        "publishedScore": 2,
+        "maxScore": 6
+      },
+      "expected": {
+        "symbol": "absi",
+        "rows": 6,
+        "matching": 4,
+        "score": 2,
+        "match": false,
+        "breakdown": {
+          "insert": 0,
+          "delete": 0,
+          "replace": 1,
+          "opMismatch": 0,
+          "argMismatch": 1
+        }
+      }
+    },
+    {
+      "id": "ido7.1/breakloop.m2c",
+      "toolchain": "ido7.1",
+      "symbol": "breakloop",
+      "target": "ido7.1/breakloop.target.o",
+      "candidate": "ido7.1/breakloop.m2c.candidate.o",
+      "from": {
+        "row": "synthetic:breakloop:ido7.1",
+        "decompiler": "m2c",
+        "publishedScore": 1,
+        "maxScore": 11
+      },
+      "expected": {
+        "symbol": "breakloop",
+        "rows": 11,
+        "matching": 10,
+        "score": 1,
+        "match": false,
+        "breakdown": {
+          "insert": 0,
+          "delete": 0,
+          "replace": 0,
+          "opMismatch": 0,
+          "argMismatch": 1
+        }
+      }
+    },
+    {
+      "id": "ido7.1/clampr.asmlift",
+      "toolchain": "ido7.1",
+      "symbol": "clampr",
+      "target": "ido7.1/clampr.target.o",
+      "candidate": "ido7.1/clampr.asmlift.candidate.o",
+      "from": {
+        "row": "synthetic:clampr:ido7.1",
+        "decompiler": "asmlift",
+        "publishedScore": 5,
+        "maxScore": 11
+      },
+      "expected": {
+        "symbol": "clampr",
+        "rows": 11,
+        "matching": 6,
+        "score": 5,
+        "match": false,
+        "breakdown": {
+          "insert": 1,
+          "delete": 0,
+          "replace": 1,
+          "opMismatch": 0,
+          "argMismatch": 3
+        }
+      }
+    },
+    {
+      "id": "ido7.1/countdown.m2c",
+      "toolchain": "ido7.1",
+      "symbol": "countdown",
+      "target": "ido7.1/countdown.target.o",
+      "candidate": "ido7.1/countdown.m2c.candidate.o",
+      "from": {
+        "row": "synthetic:countdown:ido7.1",
+        "decompiler": "m2c",
+        "publishedScore": 12,
+        "maxScore": 16
+      },
+      "expected": {
+        "symbol": "countdown",
+        "rows": 16,
+        "matching": 4,
+        "score": 12,
+        "match": false,
+        "breakdown": {
+          "insert": 9,
+          "delete": 0,
+          "replace": 1,
+          "opMismatch": 0,
+          "argMismatch": 2
+        }
+      }
+    },
+    {
+      "id": "gcc2.7.2kmc/absdiff.asmlift",
+      "toolchain": "gcc2.7.2kmc",
+      "symbol": "absdiff",
+      "target": "gcc2.7.2kmc/absdiff.target.o",
+      "candidate": "gcc2.7.2kmc/absdiff.asmlift.candidate.o",
+      "from": {
+        "row": "synthetic:absdiff:gcc2.7.2kmc",
+        "decompiler": "asmlift",
+        "publishedScore": 0,
+        "maxScore": 6
+      },
+      "expected": {
+        "symbol": "absdiff",
+        "rows": 6,
+        "matching": 6,
+        "score": 0,
+        "match": true,
+        "breakdown": {
+          "insert": 0,
+          "delete": 0,
+          "replace": 0,
+          "opMismatch": 0,
+          "argMismatch": 0
+        }
+      }
+    },
+    {
+      "id": "gcc2.7.2kmc/breakloop.asmlift",
+      "toolchain": "gcc2.7.2kmc",
+      "symbol": "breakloop",
+      "target": "gcc2.7.2kmc/breakloop.target.o",
+      "candidate": "gcc2.7.2kmc/breakloop.asmlift.candidate.o",
+      "from": {
+        "row": "synthetic:breakloop:gcc2.7.2kmc",
+        "decompiler": "asmlift",
+        "publishedScore": 3,
+        "maxScore": 15
+      },
+      "expected": {
+        "symbol": "breakloop",
+        "rows": 15,
+        "matching": 12,
+        "score": 3,
+        "match": false,
+        "breakdown": {
+          "insert": 2,
+          "delete": 0,
+          "replace": 0,
+          "opMismatch": 0,
+          "argMismatch": 1
+        }
+      }
+    },
+    {
+      "id": "gcc2.7.2kmc/arraysum.asmlift",
+      "toolchain": "gcc2.7.2kmc",
+      "symbol": "arraysum",
+      "target": "gcc2.7.2kmc/arraysum.target.o",
+      "candidate": "gcc2.7.2kmc/arraysum.asmlift.candidate.o",
+      "from": {
+        "row": "synthetic:arraysum:gcc2.7.2kmc",
+        "decompiler": "asmlift",
+        "publishedScore": 8,
+        "maxScore": 13
+      },
+      "expected": {
+        "symbol": "arraysum",
+        "rows": 13,
+        "matching": 5,
+        "score": 8,
+        "match": false,
+        "breakdown": {
+          "insert": 0,
+          "delete": 2,
+          "replace": 1,
+          "opMismatch": 0,
+          "argMismatch": 5
+        }
+      }
+    },
+    {
+      "id": "gcc2.7.2kmc/clampu8.asmlift",
+      "toolchain": "gcc2.7.2kmc",
+      "symbol": "clampu8",
+      "target": "gcc2.7.2kmc/clampu8.target.o",
+      "candidate": "gcc2.7.2kmc/clampu8.asmlift.candidate.o",
+      "from": {
+        "row": "synthetic:clampu8:gcc2.7.2kmc",
+        "decompiler": "asmlift",
+        "publishedScore": 6,
+        "maxScore": 9
+      },
+      "expected": {
+        "symbol": "clampu8",
+        "rows": 9,
+        "matching": 3,
+        "score": 6,
+        "match": false,
+        "breakdown": {
+          "insert": 0,
+          "delete": 1,
+          "replace": 2,
+          "opMismatch": 0,
+          "argMismatch": 3
+        }
+      }
+    },
+    {
+      "id": "gcc2.7.2kmc/continueloop.m2c",
+      "toolchain": "gcc2.7.2kmc",
+      "symbol": "continueloop",
+      "target": "gcc2.7.2kmc/continueloop.target.o",
+      "candidate": "gcc2.7.2kmc/continueloop.m2c.candidate.o",
+      "from": {
+        "row": "synthetic:continueloop:gcc2.7.2kmc",
+        "decompiler": "m2c",
+        "publishedScore": 9,
+        "maxScore": 14
+      },
+      "expected": {
+        "symbol": "continueloop",
+        "rows": 14,
+        "matching": 5,
+        "score": 9,
+        "match": false,
+        "breakdown": {
+          "insert": 0,
+          "delete": 2,
+          "replace": 1,
+          "opMismatch": 0,
+          "argMismatch": 6
+        }
+      }
+    },
+    {
+      "id": "gcc2.7.2kmc/countdown.m2c",
+      "toolchain": "gcc2.7.2kmc",
+      "symbol": "countdown",
+      "target": "gcc2.7.2kmc/countdown.target.o",
+      "candidate": "gcc2.7.2kmc/countdown.m2c.candidate.o",
+      "from": {
+        "row": "synthetic:countdown:gcc2.7.2kmc",
+        "decompiler": "m2c",
+        "publishedScore": 3,
+        "maxScore": 7
+      },
+      "expected": {
+        "symbol": "countdown",
+        "rows": 7,
+        "matching": 4,
+        "score": 3,
+        "match": false,
+        "breakdown": {
+          "insert": 0,
+          "delete": 0,
+          "replace": 2,
+          "opMismatch": 0,
+          "argMismatch": 1
+        }
+      }
+    },
+    {
+      "id": "gcc2.7.2kmc/countpos.asmlift",
+      "toolchain": "gcc2.7.2kmc",
+      "symbol": "countpos",
+      "target": "gcc2.7.2kmc/countpos.target.o",
+      "candidate": "gcc2.7.2kmc/countpos.asmlift.candidate.o",
+      "from": {
+        "row": "synthetic:countpos:gcc2.7.2kmc",
+        "decompiler": "asmlift",
+        "publishedScore": 8,
+        "maxScore": 14
+      },
+      "expected": {
+        "symbol": "countpos",
+        "rows": 14,
+        "matching": 6,
+        "score": 8,
+        "match": false,
+        "breakdown": {
+          "insert": 0,
+          "delete": 2,
+          "replace": 1,
+          "opMismatch": 0,
+          "argMismatch": 5
+        }
+      }
+    },
+    {
+      "id": "mwcc_242_81/absdiff.asmlift",
+      "toolchain": "mwcc_242_81",
+      "symbol": "absdiff",
+      "target": "mwcc_242_81/absdiff.target.o",
+      "candidate": "mwcc_242_81/absdiff.asmlift.candidate.o",
+      "from": {
+        "row": "synthetic:absdiff:mwcc_242_81",
+        "decompiler": "asmlift",
+        "publishedScore": 0,
+        "maxScore": 6
+      },
+      "expected": {
+        "symbol": "absdiff",
+        "rows": 6,
+        "matching": 6,
+        "score": 0,
+        "match": true,
+        "breakdown": {
+          "insert": 0,
+          "delete": 0,
+          "replace": 0,
+          "opMismatch": 0,
+          "argMismatch": 0
+        }
+      }
+    },
+    {
+      "id": "mwcc_242_81/arraysum.asmlift",
+      "toolchain": "mwcc_242_81",
+      "symbol": "arraysum",
+      "target": "mwcc_242_81/arraysum.target.o",
+      "candidate": "mwcc_242_81/arraysum.asmlift.candidate.o",
+      "from": {
+        "row": "synthetic:arraysum:mwcc_242_81",
+        "decompiler": "asmlift",
+        "publishedScore": 45,
+        "maxScore": 52
+      },
+      "expected": {
+        "symbol": "arraysum",
+        "rows": 52,
+        "matching": 7,
+        "score": 45,
+        "match": false,
+        "breakdown": {
+          "insert": 8,
+          "delete": 6,
+          "replace": 7,
+          "opMismatch": 1,
+          "argMismatch": 23
+        }
+      }
+    },
+    {
+      "id": "mwcc_242_81/avg2.m2c",
+      "toolchain": "mwcc_242_81",
+      "symbol": "avg2",
+      "target": "mwcc_242_81/avg2.target.o",
+      "candidate": "mwcc_242_81/avg2.m2c.candidate.o",
+      "from": {
+        "row": "synthetic:avg2:mwcc_242_81",
+        "decompiler": "m2c",
+        "publishedScore": 1,
+        "maxScore": 5
+      },
+      "expected": {
+        "symbol": "avg2",
+        "rows": 5,
+        "matching": 4,
+        "score": 1,
+        "match": false,
+        "breakdown": {
+          "insert": 0,
+          "delete": 0,
+          "replace": 0,
+          "opMismatch": 0,
+          "argMismatch": 1
+        }
+      }
+    },
+    {
+      "id": "mwcc_242_81/breakloop.asmlift",
+      "toolchain": "mwcc_242_81",
+      "symbol": "breakloop",
+      "target": "mwcc_242_81/breakloop.target.o",
+      "candidate": "mwcc_242_81/breakloop.asmlift.candidate.o",
+      "from": {
+        "row": "synthetic:breakloop:mwcc_242_81",
+        "decompiler": "asmlift",
+        "publishedScore": 15,
+        "maxScore": 19
+      },
+      "expected": {
+        "symbol": "breakloop",
+        "rows": 19,
+        "matching": 4,
+        "score": 15,
+        "match": false,
+        "breakdown": {
+          "insert": 7,
+          "delete": 4,
+          "replace": 2,
+          "opMismatch": 2,
+          "argMismatch": 0
+        }
+      }
+    },
+    {
+      "id": "mwcc_242_81/continueloop.m2c",
+      "toolchain": "mwcc_242_81",
+      "symbol": "continueloop",
+      "target": "mwcc_242_81/continueloop.target.o",
+      "candidate": "mwcc_242_81/continueloop.m2c.candidate.o",
+      "from": {
+        "row": "synthetic:continueloop:mwcc_242_81",
+        "decompiler": "m2c",
+        "publishedScore": 9,
+        "maxScore": 14
+      },
+      "expected": {
+        "symbol": "continueloop",
+        "rows": 14,
+        "matching": 5,
+        "score": 9,
+        "match": false,
+        "breakdown": {
+          "insert": 2,
+          "delete": 2,
+          "replace": 0,
+          "opMismatch": 1,
+          "argMismatch": 4
+        }
+      }
+    },
+    {
+      "id": "mwcc_242_81/countdown.asmlift",
+      "toolchain": "mwcc_242_81",
+      "symbol": "countdown",
+      "target": "mwcc_242_81/countdown.target.o",
+      "candidate": "mwcc_242_81/countdown.asmlift.candidate.o",
+      "from": {
+        "row": "synthetic:countdown:mwcc_242_81",
+        "decompiler": "asmlift",
+        "publishedScore": 23,
+        "maxScore": 27
+      },
+      "expected": {
+        "symbol": "countdown",
+        "rows": 27,
+        "matching": 4,
+        "score": 23,
+        "match": false,
+        "breakdown": {
+          "insert": 12,
+          "delete": 1,
+          "replace": 3,
+          "opMismatch": 2,
+          "argMismatch": 5
+        }
+      }
+    },
+    {
+      "id": "mwcc_242_81/countpos.m2c",
+      "toolchain": "mwcc_242_81",
+      "symbol": "countpos",
+      "target": "mwcc_242_81/countpos.target.o",
+      "candidate": "mwcc_242_81/countpos.m2c.candidate.o",
+      "from": {
+        "row": "synthetic:countpos:mwcc_242_81",
+        "decompiler": "m2c",
+        "publishedScore": 6,
+        "maxScore": 14
+      },
+      "expected": {
+        "symbol": "countpos",
+        "rows": 14,
+        "matching": 8,
+        "score": 6,
+        "match": false,
+        "breakdown": {
+          "insert": 2,
+          "delete": 2,
+          "replace": 0,
+          "opMismatch": 1,
+          "argMismatch": 1
+        }
+      }
+    }
+  ]
+}

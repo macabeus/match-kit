@@ -1,0 +1,51 @@
+{
+  "name": "@matchkit/scoring",
+  "version": "0.0.0",
+  "description": "Score a compiled candidate against a target object with the objdiff engine: one scorer for every matching-decompilation tool",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/macabeus/matchkit.git",
+    "directory": "packages/scoring"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./display": {
+      "types": "./dist/display.d.ts",
+      "default": "./dist/display.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "default": "./dist/node.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "imports": {
+    "#engine": {
+      "matchkit-source": {
+        "browser": "./src/engine-browser.ts",
+        "default": "./src/engine-node.ts"
+      },
+      "types": "./dist/engine-node.d.ts",
+      "browser": "./dist/engine-browser.js",
+      "default": "./dist/engine-node.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch"
+  },
+  "dependencies": {
+    "objdiff-wasm": "3.8.1"
+  }
+}
