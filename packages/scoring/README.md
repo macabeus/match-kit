@@ -63,9 +63,10 @@ differences(inspection); // [{ row, kind: 'argMismatch', target: 'add r0, #0x1',
 - **Fails closed.** A failure is never a score:
   - `SymbolNotFoundError` (with `side`) when the symbol is missing from either object.
   - `UndiffableError` when this pair cannot be diffed. That covers an object that cannot be parsed,
-    a row that cannot be displayed, a row that does not decode as an instruction (objdiff diffs two
-    of those as matching; a wrong `arm.archVersion` makes every row one), and a symbol with zero
-    rows. The next pair may still score.
+    a row that cannot be displayed, a symbol with zero rows, and a row that does not decode as an
+    instruction and would count as matching (objdiff diffs any two undecoded rows as matching; a
+    wrong `arm.archVersion` makes every row one). An undecoded row that differs anyway is counted.
+    The next pair may still score.
   - `EngineFailedError` when the engine itself has failed. Every object the engine panics on costs
     it memory it never recovers, and after a few thousand panics it fails every call. From then on
     every call in the process throws this: stop, and restart the process.

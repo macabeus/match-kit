@@ -30,10 +30,18 @@ describe('counting', () => {
     expect(s).toMatchObject({ rows: 3, matching: 1, score: 2 });
   });
 
-  test('a row that does not decode is refused, even when both sides call it `none`', () => {
+  test('a row that does not decode is refused when it would count as matching', () => {
     const engine = fakeEngine({ target: { rows: ['none'], undecoded: [0] }, candidate: { rows: ['none'] } });
     expect(() => scoreWith(engine)).toThrow(UndiffableError);
     expect(() => scoreWith(engine)).toThrow(/does not decode as an instruction/);
+  });
+
+  test('a row that does not decode is counted when it differs anyway', () => {
+    // data a size-0 target symbol absorbs past its end: the target shows rows the candidate lacks
+    const s = scoreWith(
+      fakeEngine({ target: { rows: ['none', 'insert'], undecoded: [1] }, candidate: { rows: ['none'] } }),
+    );
+    expect(s).toMatchObject({ rows: 2, matching: 1, score: 1, breakdown: { insert: 1 } });
   });
 });
 

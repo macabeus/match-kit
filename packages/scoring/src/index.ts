@@ -318,16 +318,17 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
         // target's row said `none` would turn an engine refusal of the candidate into a score.
         const l = display(l0, lSym, lDisp.rowCount);
         const r = display(r0, rSym, rDisp.rowCount);
-        // objdiff diffs two rows it could not decode as `none`: counted, they would be a match
-        // between two objects nobody compared (every row of a Thumb object under
-        // `arm.archVersion: v4` does this)
-        if (isUndecoded(l) || isUndecoded(r)) {
-          throw new UndiffableError(
-            `row ${row} of '${symbol}' does not decode as an instruction; check diffSettings (the architecture version, for instance)`,
-          );
-        }
         const lk = KINDS[l?.diffKind ?? 'none'];
         const kind = lk !== 'none' ? lk : KINDS[r?.diffKind ?? 'none'];
+        // objdiff diffs two rows it could not decode as `none`, whatever their bytes: counted, they
+        // would be a match between two objects nobody compared (every row of a Thumb object under
+        // `arm.archVersion: v4` does this). A row that differs anyway is counted as it is — data a
+        // size-0 target symbol absorbs past its end is one.
+        if (kind === 'none' && (isUndecoded(l) || isUndecoded(r))) {
+          throw new UndiffableError(
+            `row ${row} of '${symbol}' does not decode as an instruction on either side, so it cannot be compared; check diffSettings (the architecture version, for instance)`,
+          );
+        }
         if (kind === 'none') {
           matching++;
         } else {
