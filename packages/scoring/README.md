@@ -37,7 +37,7 @@ import { releaseTarget, scoreFiles } from '@matchkit/scoring/node';
 scoreFiles('build/target.o', 'tmp/candidate.o', 'MyFunction');
 ```
 
-`scoreFiles` is synchronous and keeps two memos, both keyed on file content, never on a path:
+`scoreFiles` is synchronous and keeps two memos, both keyed on file content:
 
 - the parsed target, compared byte for byte, so a target rewritten in place is parsed again;
 - each candidate's score, keyed by the candidate's SHA-256 and the symbol.
@@ -59,7 +59,7 @@ differences(inspection); // [{ row, kind: 'argMismatch', target: 'add r0, #0x1',
 - **Sides.** The target is objdiff's left side and the candidate its right, as in objdiff's own UI.
 - **Row kind.** A row's kind is the target side's kind, else the candidate side's. A row counts as
   a difference when either side differs.
-- **Fails closed.** A failure is never a score:
+- **Fails closed.** Every failure throws:
   - `SymbolNotFoundError` (with `side`) when the symbol is missing from either object.
   - `UndiffableError` when this pair cannot be diffed: an object that cannot be parsed, a row that
     cannot be displayed, a symbol with zero rows, or a row that does not decode as an instruction

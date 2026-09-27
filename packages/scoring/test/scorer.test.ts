@@ -68,9 +68,8 @@ describe('fail closed: every failure throws, and none is a score', () => {
   });
 
   test('a candidate row the engine cannot display', () => {
-    // `candidate-odd-size.o` cuts `add_one` to 3 bytes, so its last row is half an instruction. The
-    // target's row 0 already differs: a scorer that displayed the candidate only where the target
-    // said `none` would return a score here.
+    // `candidate-odd-size.o` cuts `add_one` to 3 bytes, so its last row is half an instruction. Its
+    // row 0 already differs from the target, so this also checks every candidate row is displayed.
     expect(() => scorer.score(target, read('edge/candidate-odd-size.o'), 'add_one')).toThrow(UndiffableError);
     expect(() => scorer.score(target, read('edge/candidate-odd-size.o'), 'add_one')).toThrow(
       /^row \d+ of 'add_one' could not be displayed: \S/,

@@ -32,8 +32,7 @@ module.exports = {
     doNotFollow: { path: 'node_modules' },
     tsPreCompilationDeps: true,
     tsConfig: { fileName: 'tsconfig.json' },
-    // Explicit extensions make `.ts` imports resolve under any TypeScript version: under
-    // TypeScript 7, `tsConfig` alone leaves every import "unknown" and no rule fires.
+    // Explicit extensions, so `.ts` imports resolve under any TypeScript version.
     enhancedResolveOptions: {
       extensions: ['.ts', '.js', '.json'],
       // Resolve as a browser bundle does, so `#engine` lands on engine-browser.ts and the graph

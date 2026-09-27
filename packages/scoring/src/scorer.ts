@@ -1,5 +1,5 @@
-// Fails closed: every engine failure throws and is never turned into a number, since a swallowed
-// error could report a false byte-exact match.
+// Fails closed: every engine failure throws, since a swallowed error could report a false
+// byte-exact match.
 import type * as ObjdiffWasm from 'objdiff-wasm';
 
 import { call, disposeAll, hold, release } from './engine-calls.js';
@@ -69,7 +69,7 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
     return t;
   };
 
-  // The one row walk `score` and `inspect` share, so the two can never count differently.
+  // Shared by `score` and `inspect`, so both count the same way.
   const walk = (
     target: Target,
     candidateBytes: Uint8Array,
@@ -125,8 +125,7 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
       let differences = 0;
 
       for (let row = 0; row < rows; row++) {
-        // A row past a side's rowCount pads for the other side's insertions: `null` is a fact, not
-        // a swallowed error.
+        // A row past a side's rowCount is padding for the other side's insertions.
         const display = (od: ObjdiffWasm.diff.ObjectDiff, s: ObjdiffWasm.diff.SymbolInfo, count: number) => {
           if (row >= count) {
             return null;
@@ -138,16 +137,14 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
           );
         };
         // Both sides are displayed on every row, though only one kind is read: displaying a row is
-        // how the scorer learns the engine can decode it. Displaying the candidate only where the
-        // target's row says `none` would turn an engine refusal of the candidate into a score.
+        // how the scorer learns the engine can decode it.
         const l = display(l0, lSym, lDisp.rowCount);
         const r = display(r0, rSym, rDisp.rowCount);
         const lk = KINDS[l?.diffKind ?? 'none'];
         const kind = lk !== 'none' ? lk : KINDS[r?.diffKind ?? 'none'];
         // objdiff diffs two undecoded rows as `none` whatever their bytes (every row of a Thumb
-        // object under `arm.archVersion: v4`), so counting them would match objects nobody compared.
-        // An undecoded row that differs anyway, such as data a size-0 target symbol absorbs past
-        // its end, is counted.
+        // object under `arm.archVersion: v4`), so such a row cannot count as a match. An undecoded
+        // row that differs is counted as usual.
         if (kind === 'none' && (isUndecoded(l) || isUndecoded(r))) {
           throw new UndiffableError(
             `row ${row} of '${symbol}' does not decode as an instruction on either side, so it cannot be compared; check diffSettings (the architecture version, for instance)`,

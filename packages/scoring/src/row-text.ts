@@ -14,7 +14,7 @@ export function rowText(row: ObjdiffWasm.display.InstructionDiffRow): string {
     switch (part.tag) {
       case 'basic':
         if (part.val === ' ~>') {
-          // objdiff's marker for a branch source: nothing to print.
+          // objdiff's marker for a branch source.
         } else if (part.val === ' (->') {
           text += ' # REFERENCE_';
         } else if (part.val === ' ~> ') {
@@ -28,7 +28,7 @@ export function rowText(row: ObjdiffWasm.display.InstructionDiffRow): string {
       case 'line':
         break;
       case 'address':
-        // Kept for the label a later ` ~> ` prints; never printed as a prefix.
+        // Printed only in the label a later ` ~> ` emits.
         address = part.val.toString(16);
         break;
       case 'opcode':

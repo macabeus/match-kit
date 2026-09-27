@@ -1,5 +1,4 @@
-// Text views of an `Inspection`, for reports and prompts. Pure functions: nothing here touches the
-// engine.
+// Text views of an `Inspection`, for reports and prompts.
 import type { DiffBreakdown, Inspection } from './types.js';
 
 /** A row that differs, with both sides' text (`''` for a side the row does not reach). */

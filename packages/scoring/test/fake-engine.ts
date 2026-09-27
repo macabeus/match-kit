@@ -1,6 +1,6 @@
-// A scripted stand-in for the objdiff engine, for the rules no real object pair exercises: rows past
-// one side's end, the precedence of two sides' kinds, a trap mid-walk, an engine that dies. Only the
-// calls `createScorer` makes are implemented.
+// A scripted stand-in for the objdiff engine, for cases only a script produces: rows past one side's
+// end, the precedence of two sides' kinds, a trap mid-walk, an engine that dies. It implements the
+// calls `createScorer` makes.
 import type * as ObjdiffWasm from 'objdiff-wasm';
 
 import type { Engine } from '../src/index.js';

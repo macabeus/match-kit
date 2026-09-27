@@ -1,7 +1,6 @@
-// The engine for Node and Bun. objdiff-wasm fetches its sibling `objdiff.core.wasm` by file:// URL
-// in its top-level await, and Node's fetch cannot read file:// URLs, so the import runs under a
-// fetch patch that serves that one file from disk. Bun's fetch reads file:// URLs itself; the patch
-// is harmless there.
+// The engine for Node and Bun. objdiff-wasm fetches `objdiff.core.wasm` by file:// URL while it
+// loads, which Node's fetch cannot read, so the import runs under a fetch patch that serves that
+// file from disk.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -12,7 +11,6 @@ let loading: Promise<Engine> | undefined;
 /** The objdiff engine, loaded once per process and shared by every scorer. */
 export function loadEngine(): Promise<Engine> {
   loading ??= load().catch((error: unknown) => {
-    // Forgotten so a later call imports again, though the runtime may cache a failed evaluation.
     loading = undefined;
     throw error;
   });

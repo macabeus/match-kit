@@ -1,5 +1,4 @@
-// The engine for browsers and web workers. No fetch patch is needed: a bundler (Vite) rewrites
-// objdiff-wasm's `new URL('./objdiff.core.wasm', import.meta.url)` to a served asset.
+// The engine for browsers and web workers.
 import type { Engine } from './engine.js';
 
 let loading: Promise<Engine> | undefined;
@@ -7,7 +6,6 @@ let loading: Promise<Engine> | undefined;
 /** The objdiff engine, loaded once per page or worker and shared by every scorer. */
 export function loadEngine(): Promise<Engine> {
   loading ??= load().catch((error: unknown) => {
-    // Forgotten so a later call imports again, though the runtime may cache a failed evaluation.
     loading = undefined;
     throw error;
   });

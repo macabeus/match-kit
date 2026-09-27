@@ -59,7 +59,7 @@ test('an unparsable target THROWS and leaves the previous one intact', () => {
   writeFileSync(broken, 'not an object file');
   const before = scoreFiles(TARGET, DIFF, 'add_one');
   expect(() => scoreFiles(broken, DIFF, 'add_one')).toThrow();
-  // The very same object: the memo survived, so the previous target was never released.
+  // The same object: the memo kept the previous target.
   expect(scoreFiles(TARGET, DIFF, 'add_one')).toBe(before);
 });
 
@@ -85,8 +85,6 @@ test('releaseTarget drops the memo, is idempotent, and the next score re-parses'
 // The score memo: a score already taken against the memoized target is handed back.
 
 test('a candidate rewritten in place is re-scored, never handed the previous one’s score', () => {
-  // A compile worker rewrites one scratch slot's object, so a path-keyed memo would answer for the
-  // previous candidate.
   const slot = join(SCRATCH, 'cand.o');
   copyFileSync(DIFF, slot);
   expect(scoreFiles(TARGET, slot, 'add_one').match).toBe(false);

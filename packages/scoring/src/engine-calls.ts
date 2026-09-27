@@ -1,22 +1,18 @@
-// Every engine call and every engine handle goes through here. A call that traps either blames its
-// input or marks the whole engine failed; a handle is released explicitly, and at once for every
-// handle of an engine that fails.
+// Every engine call and every long-lived engine handle goes through here.
 import type { Engine } from './engine.js';
 import { EngineFailedError, SymbolNotFoundError, UndiffableError } from './errors.js';
 import { PROBE_OBJECT_BASE64 } from './probe-object.js';
 
-/** Engines that failed: shared by every scorer made from them, since they share the wasm instance. */
+/** Engines that failed, shared by every scorer on the same wasm instance. */
 const failedEngines = new WeakSet<Engine>();
 
 /**
- * The handles that outlive one call (each scorer's config, each parsed target), per engine, held
- * weakly. An undisposed handle is dropped by the engine's FinalizationRegistry when collected, and
- * on a failed engine that drop traps outside any caller, as an uncaught exception. So when an
- * engine fails, every handle still held here is released at once.
+ * Each engine's long-lived handles (scorer configs, parsed targets), held weakly. They are all
+ * released when the engine fails: left to the engine's FinalizationRegistry, their drop would trap
+ * on the dead instance as an uncaught exception.
  */
 const heldHandles = new WeakMap<Engine, Set<WeakRef<object>>>();
 
-/** Track a handle that outlives the call that made it, until `release`. */
 export function hold(engine: Engine, handle: object): WeakRef<object> {
   const ref = new WeakRef(handle);
   let held = heldHandles.get(engine);
@@ -42,11 +38,7 @@ function fail(engine: Engine): void {
   }
 }
 
-// The engine's handles are component-model resources. Without an explicit dispose they wait on the
-// FinalizationRegistry, which a synchronous scoring loop never lets run, until the wasm side
-// exhausts and panics and the instance fails every later call in the process.
-// The key is the one the engine binds: its jco output falls back to `Symbol.for('dispose')` where
-// `Symbol.dispose` is missing, and `Symbol.dispose` alone would silently no-op there.
+// The key jco binds: `Symbol.dispose`, or `Symbol.for('dispose')` where the runtime lacks it.
 const DISPOSE: typeof Symbol.dispose = Symbol.dispose ?? (Symbol.for('dispose') as never);
 
 export function disposeAll(...handles: unknown[]): void {
@@ -54,14 +46,13 @@ export function disposeAll(...handles: unknown[]): void {
     try {
       (handle as { [DISPOSE]?: () => void } | undefined)?.[DISPOSE]?.();
     } catch {
-      // The engine forgets a handle before its drop runs, so a drop that traps leaves nothing
-      // behind. The trap is the engine failing, and the next call finds that out.
+      // A drop that traps is the engine failing: the handle is already forgotten, and the next call
+      // detects the failure.
     }
   }
 }
 
-// `WebAssembly` is global in every supported runtime, but no type library here declares it without
-// the DOM.
+// Read through globalThis because `WebAssembly`'s types come only with the DOM library.
 const RuntimeError = (globalThis as { WebAssembly?: { RuntimeError?: abstract new () => Error } }).WebAssembly
   ?.RuntimeError;
 
@@ -83,10 +74,9 @@ function engineIsHealthy(engine: Engine): boolean {
 }
 
 /**
- * Run one engine call. A wasm trap is the engine panicking: if the engine still works afterwards the
- * input is to blame and a `Failure` naming `what` is thrown, otherwise the engine is marked failed
- * for good. Any other throw is the input's fault. The engine's reason goes into the message, since
- * most callers print only the message.
+ * Run one engine call. A throw is blamed on the input, as a `Failure` naming `what` with the engine's
+ * reason in its message, unless it is a wasm trap after which the engine cannot parse the probe
+ * object: then the engine is marked failed.
  */
 export function call<T>(
   engine: Engine,

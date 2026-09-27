@@ -1,5 +1,4 @@
-// The reference pairs, scored in a real browser: the engine loads without the Node fetch patch and
-// gives the same numbers.
+// The reference pairs, scored in a real browser through the browser engine loader.
 import { afterAll, expect, test } from 'vitest';
 import { commands } from 'vitest/browser';
 

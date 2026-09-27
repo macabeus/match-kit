@@ -23,9 +23,8 @@ export class UndiffableError extends Error {
 }
 
 /**
- * The engine failed and cannot score again in this process: each panic leaks engine memory, and
- * after a few thousand the engine fails every call. Every later call throws this too; restart the
- * process.
+ * The engine can no longer score in this process: each panic leaks engine memory, and after a few
+ * thousand every call fails. Restart the process.
  */
 export class EngineFailedError extends Error {
   constructor(options?: { cause?: unknown }) {

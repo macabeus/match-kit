@@ -1,7 +1,6 @@
-// The real engine dies after about 2,600 panics on objdiff-wasm 3.8.1, on Node and on Bun. Until
-// then each panic throws UndiffableError; from then on every call throws EngineFailedError, and
-// nothing is ever a score. This file poisons its engine, so nothing else may share its worker
-// (vitest isolates files).
+// The real engine dies after a few thousand panics. Until then each panic throws UndiffableError;
+// from then on every call throws EngineFailedError. This file poisons its engine, so it relies on
+// vitest running each file in its own worker.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setFlagsFromString } from 'node:v8';
@@ -14,8 +13,8 @@ const read = (name: string) => new Uint8Array(readFileSync(join(import.meta.dirn
 
 test('a dying engine is reported as one, never as a bad object or a score', { timeout: 60_000 }, async () => {
   await killEngine();
-  // Nothing left undisposed (both scorers' configs, both targets) may reach the engine's finalizers:
-  // their drop would trap on the dead instance, uncaught, and vitest fails the run on it.
+  // Runs the finalizers of everything left undisposed (both scorers' configs, both targets): a drop
+  // that traps on the dead instance is uncaught, and vitest fails the run on it.
   await collectGarbage();
 });
 

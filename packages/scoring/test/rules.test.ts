@@ -1,5 +1,4 @@
-// The counting rules and failure classes, over a scripted engine: cases no fixture pair reaches
-// (the two sides' row counts and kinds agree on all 1,059 rows of the reference and edge pairs).
+// The counting rules and failure classes, over a scripted engine: cases only a script produces.
 import { describe, expect, test } from 'vitest';
 
 import { EngineFailedError, UndiffableError, createScorer } from '../src/index.js';
@@ -66,7 +65,7 @@ describe('failures', () => {
     const scorer = createScorer(engine);
     const target = scorer.parseTarget(BYTES);
     expect(() => scorer.score(target, BYTES, 'f')).toThrow(EngineFailedError);
-    // No longer tried at all: the engine is refused before any call.
+    // Refused before any engine call.
     expect(() => scorer.score(target, BYTES, 'f')).toThrow(EngineFailedError);
     expect(() => scorer.parseTarget(BYTES)).toThrow(EngineFailedError);
     expect(() => createScorer(engine)).toThrow(EngineFailedError);

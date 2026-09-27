@@ -1,6 +1,5 @@
-// Every engine handle a call mints is released before it returns, whether it scores or throws. The
-// real engine survives hundreds of thousands of undisposed calls, so a loop cannot prove this;
-// counting the handles can.
+// Every engine handle a call mints is released before it returns, whether it scores or throws.
+// Counted, because the engine tolerates far more leaked handles than a test can create.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';

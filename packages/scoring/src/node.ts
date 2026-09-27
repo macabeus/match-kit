@@ -1,7 +1,5 @@
-// @matchkit/scoring/node — score object files synchronously, with objdiff's default config.
-//
-// The engine loads in this module's top-level await, so `scoreFiles` is synchronous from the first
-// call. Two memos make a ranked run cheap; both are keyed on content, never on a path.
+// @matchkit/scoring/node — score object files synchronously, with objdiff's default config. The
+// engine loads in this module's top-level await.
 import { loadEngine } from '#engine';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -12,10 +10,8 @@ import type { MatchScore, Target } from './types.js';
 const scorer = createScorer(await loadEngine());
 
 /**
- * The parsed target, memoized on its bytes. Every candidate in a ranked run is scored against the
- * same target, so it is parsed once (klonoa's 102 KB `gfx.o` parses in 3.81 ms, a one-function
- * candidate in 0.07 ms). The key is the whole file, compared byte for byte, so a target rewritten
- * in place is never scored against stale bytes. One entry, held until `releaseTarget()`.
+ * The parsed target, memoized on its whole content, so a file rewritten in place is parsed again.
+ * One entry, held until `releaseTarget()`.
  */
 let parsedTarget: { bytes: Uint8Array; target: Target; scores: Map<string, MatchScore> } | undefined;
 
@@ -39,11 +35,9 @@ function targetEntry(path: string): NonNullable<typeof parsedTarget> {
 }
 
 /**
- * The score memo's key: the candidate's content hash and the symbol. A ranked run compiles far more
- * candidates than distinct objects, and identical objects score the same. The rest of what a score
- * depends on is the target, so the memo lives on the target entry and dies with it. Never a path: a
- * compile worker rewrites one scratch slot's object, so a path key would answer for the previous
- * candidate. A throw is never remembered.
+ * The score memo's key: the candidate's content hash and the symbol. The memo lives on the target
+ * entry, which fixes the rest of what a score depends on. Content, not path: a compile worker writes
+ * every candidate to the same path.
  */
 const candidateKey = (bytes: Uint8Array, symbol: string): string =>
   `${createHash('sha256').update(bytes).digest('hex')} ${symbol}`;
