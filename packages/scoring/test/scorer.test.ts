@@ -73,17 +73,21 @@ describe('fail closed: every failure throws, and none is a score', () => {
     // The target's row 0 already differs: a scorer that read the candidate only where the target
     // said `none` would return a score here.
     expect(() => scorer.score(target, read('edge/candidate-odd-size.o'), 'add_one')).toThrow(UndiffableError);
+    expect(() => scorer.score(target, read('edge/candidate-odd-size.o'), 'add_one')).toThrow(
+      /^row \d+ of 'add_one' could not be displayed: \S/,
+    );
   });
 
+  // the engine's own reason is in the message, not only in `cause`: most callers print the message
   test('an unparsable candidate', () => {
     expect(() => scorer.score(target, new TextEncoder().encode('not an object'), 'add_one')).toThrow(
-      /candidate object could not be parsed/,
+      /^the candidate object could not be parsed: Could not read file magic$/,
     );
   });
 
   test('an unparsable target', () => {
     expect(() => scorer.parseTarget(new TextEncoder().encode('not an object'))).toThrow(
-      /target object could not be parsed/,
+      /^the target object could not be parsed: Could not read file magic$/,
     );
   });
 

@@ -145,10 +145,16 @@ function engineIsHealthy(engine: Engine): boolean {
 
 /**
  * Run one engine call. A wasm trap is the engine panicking: when the engine still works afterwards
- * it was this input's fault and `blame` says so; when it does not, the engine is marked failed for
- * good. Anything else the engine throws is this input's fault.
+ * it was this input's fault, and the error (`Failure`) names `what` failed; when it does not, the
+ * engine is marked failed for good. Anything else the engine throws is this input's fault. The
+ * engine's own reason goes into the message too, since most callers print only the message.
  */
-function call<T>(engine: Engine, fn: () => T, blame: (cause: unknown) => Error): T {
+function call<T>(
+  engine: Engine,
+  fn: () => T,
+  what: string,
+  Failure: new (message: string, options: ErrorOptions) => Error = UndiffableError,
+): T {
   if (failedEngines.has(engine)) {
     throw new EngineFailedError();
   }
@@ -162,7 +168,7 @@ function call<T>(engine: Engine, fn: () => T, blame: (cause: unknown) => Error):
       failedEngines.add(engine);
       throw new EngineFailedError({ cause });
     }
-    throw blame(cause);
+    throw new Failure(`${what}: ${cause instanceof Error ? cause.message : String(cause)}`, { cause });
   }
 }
 
@@ -209,11 +215,7 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
   }
   const settings = Object.entries(options.diffSettings ?? {}).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
   const configKey = settings.length === 0 ? '' : JSON.stringify(settings);
-  const config = call(
-    engine,
-    () => new engine.diff.DiffConfig(),
-    (cause) => new Error('the engine could not create a DiffConfig', { cause }),
-  );
+  const config = call(engine, () => new engine.diff.DiffConfig(), 'the engine could not create a DiffConfig', Error);
   for (const [key, value] of settings) {
     try {
       config.setProperty(key, value);
@@ -257,7 +259,7 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
       candidate = call(
         engine,
         () => engine.diff.Object.parse(candidateBytes, config, 'base'),
-        (cause) => new UndiffableError('the candidate object could not be parsed', { cause }),
+        'the candidate object could not be parsed',
       );
       const c = candidate;
 
@@ -265,7 +267,7 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
       ({ left, right } = call(
         engine,
         () => engine.diff.runDiff(t.object, c, config, MAPPING),
-        (cause) => new UndiffableError('objdiff could not diff the two objects', { cause }),
+        'objdiff could not diff the two objects',
       ));
       if (!left || !right) {
         throw new UndiffableError('objdiff runDiff returned an empty side');
@@ -283,11 +285,7 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
       const lSym = find(l0, 'target');
       const rSym = find(r0, 'candidate');
       const displaySymbol = (od: ObjdiffWasm.diff.ObjectDiff, id: number) =>
-        call(
-          engine,
-          () => engine.display.displaySymbol(od, id),
-          (cause) => new UndiffableError(`symbol '${symbol}' could not be displayed`, { cause }),
-        );
+        call(engine, () => engine.display.displaySymbol(od, id), `symbol '${symbol}' could not be displayed`);
       const lDisp = displaySymbol(l0, lSym.id);
       const rDisp = displaySymbol(r0, rSym.id);
       const rows = Math.max(lDisp.rowCount, rDisp.rowCount);
@@ -310,7 +308,7 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
           return call(
             engine,
             () => engine.display.displayInstructionRow(od, s.id, row, config),
-            (cause) => new UndiffableError(`row ${row} of '${symbol}' could not be displayed`, { cause }),
+            `row ${row} of '${symbol}' could not be displayed`,
           );
         };
         // BOTH sides are displayed on every row, though only one kind is read: displaying a row is
@@ -360,7 +358,7 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
       const object = call(
         engine,
         () => engine.diff.Object.parse(bytes, config, 'target'),
-        (cause) => new UndiffableError('the target object could not be parsed', { cause }),
+        'the target object could not be parsed',
       );
       const target: ParsedTarget = {
         object,
