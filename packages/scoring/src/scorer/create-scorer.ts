@@ -42,7 +42,7 @@ interface ParsedTarget extends Target {
 /** A scorer over `engine`, which must be objdiff-wasm `OBJDIFF_VERSION`. */
 export function createScorer(engine: Engine, options: ScorerOptions = {}): Scorer {
   // OBJDIFF_VERSION goes into cache keys, so an engine of another version would make them lie.
-  const version = engine.version();
+  const version = call(engine, () => engine.version(), 'the engine could not report its version', Error);
   if (version !== OBJDIFF_VERSION) {
     throw new Error(`this scorer is for objdiff-wasm ${OBJDIFF_VERSION}, and the engine given is ${version}`);
   }

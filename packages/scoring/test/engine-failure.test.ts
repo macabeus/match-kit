@@ -21,7 +21,8 @@ test('a dying engine is reported as one, never as a bad object or a score', { ti
 async function killEngine(): Promise<void> {
   const engine = await loadEngine();
   // A second scorer on the same engine, holding a target it never uses again.
-  createScorer(engine).parseTarget(read('target.o'));
+  const other = createScorer(engine);
+  other.parseTarget(read('target.o'));
   const scorer = createScorer(engine);
   const target = scorer.parseTarget(read('target.o'));
   const odd = read('candidate-odd-size.o');
@@ -42,6 +43,8 @@ async function killEngine(): Promise<void> {
   expect(panics).toBeLessThan(20_000);
   expect(() => scorer.score(target, good, 'add_one')).toThrow(EngineFailedError);
   expect(() => scorer.parseTarget(read('target.o'))).toThrow(EngineFailedError);
+  expect(() => other.parseTarget(read('target.o'))).toThrow(EngineFailedError);
+  expect(() => createScorer(engine)).toThrow(EngineFailedError);
 }
 
 /** A full collection, then a turn of the event loop for the finalizers it queued. */

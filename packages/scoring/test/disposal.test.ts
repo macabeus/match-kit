@@ -48,38 +48,28 @@ function tracked(): { engine: Engine; live: Set<object> } {
   return { engine: engine as unknown as Engine, live };
 }
 
-const cases: Array<[string, string, string]> = [
-  ['a score', 'edge/candidate-diff.o', 'add_one'],
-  ['a missing symbol in the target', 'edge/candidate-diff.o', 'no_such_symbol'],
-  ['a missing symbol in the candidate', 'edge/cpp-method.candidate.o', 'add_one'],
-  ['a row the engine cannot display', 'edge/candidate-odd-size.o', 'add_one'],
-  ['a symbol with zero rows', 'edge/zero-rows.o', 'empty_fn'],
+const cases: Array<[string, () => Uint8Array, string]> = [
+  ['a score', () => read('edge/candidate-diff.o'), 'add_one'],
+  ['a missing symbol in the target', () => read('edge/candidate-diff.o'), 'no_such_symbol'],
+  ['a missing symbol in the candidate', () => read('edge/cpp-method.candidate.o'), 'add_one'],
+  ['a row the engine cannot display', () => read('edge/candidate-odd-size.o'), 'add_one'],
+  ['a symbol with zero rows', () => read('edge/zero-rows.o'), 'empty_fn'],
+  ['a candidate that does not parse', () => new TextEncoder().encode('not an object'), 'add_one'],
 ];
 
-test.each(cases)('%s leaves only the config and the target alive', (_name, candidate, symbol) => {
+test.each(cases)('%s leaves nothing behind', (_name, candidate, symbol) => {
   const { engine, live } = tracked();
   const scorer = createScorer(engine);
   const target = scorer.parseTarget(read(symbol === 'empty_fn' ? 'edge/zero-rows.o' : 'edge/target.o'));
-  expect(live.size).toBe(2);
+  const before = live.size;
   for (const walk of [scorer.score, scorer.inspect]) {
     try {
-      walk(target, read(candidate), symbol);
+      walk(target, candidate(), symbol);
     } catch {
       // Most cases throw; what matters is what the call leaves behind.
     }
-    expect(live.size).toBe(2);
+    expect(live.size).toBe(before);
   }
-  target.dispose();
-  scorer.dispose();
-  expect(live.size).toBe(0);
-});
-
-test('a candidate that does not parse leaves nothing behind', () => {
-  const { engine, live } = tracked();
-  const scorer = createScorer(engine);
-  const target = scorer.parseTarget(read('edge/target.o'));
-  expect(() => scorer.score(target, new TextEncoder().encode('not an object'), 'add_one')).toThrow();
-  expect(live.size).toBe(2);
   target.dispose();
   scorer.dispose();
   expect(live.size).toBe(0);

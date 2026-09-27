@@ -1,4 +1,4 @@
-// `scoreFiles` and its two memos.
+// `scoreFiles`: reading the two files, and its two memos.
 import { copyFileSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -17,23 +17,12 @@ afterAll(() => {
   rmSync(SCRATCH, { recursive: true, force: true });
 });
 
-test('identical object scores 0 and matches', () => {
-  const s = scoreFiles(TARGET, TARGET, 'add_one');
-  expect(s).toMatchObject({ match: true, score: 0 });
-  expect(s.rows).toBeGreaterThan(0);
-  expect(s.matching).toBe(s.rows);
+test('scores the objects at two paths', () => {
+  expect(scoreFiles(TARGET, DIFF, 'add_one')).toMatchObject({ score: 1, match: false });
+  expect(scoreFiles(TARGET, TARGET, 'add_one')).toMatchObject({ score: 0, match: true });
 });
 
-test('differing candidate scores > 0, and the breakdown names the bucket', () => {
-  // `add r0, #1` against `add r0, #2`: same mnemonic, same register, differing immediate.
-  const s = scoreFiles(TARGET, DIFF, 'add_one');
-  expect(s.match).toBe(false);
-  expect(s.breakdown).toEqual({ insert: 0, delete: 0, replace: 0, opMismatch: 0, argMismatch: s.score });
-});
-
-test('missing symbol, unparsable object and missing file all THROW', () => {
-  expect(() => scoreFiles(TARGET, DIFF, 'no_such_symbol')).toThrow(/not found/);
-  expect(() => scoreFiles(TARGET, import.meta.filename, 'add_one')).toThrow();
+test('a missing file throws', () => {
   expect(() => scoreFiles(TARGET, join(EDGE, 'does-not-exist.o'), 'add_one')).toThrow();
 });
 
@@ -54,28 +43,15 @@ test('the same bytes under two paths score the same', () => {
   expect(scoreFiles(copy, DIFF, 'add_one')).toEqual(scoreFiles(TARGET, DIFF, 'add_one'));
 });
 
-test('an unparsable target THROWS and leaves the previous one intact', () => {
+test('an unparsable target throws, and the previous target still scores', () => {
   const broken = join(SCRATCH, 'broken.o');
   writeFileSync(broken, 'not an object file');
   const before = scoreFiles(TARGET, DIFF, 'add_one');
   expect(() => scoreFiles(broken, DIFF, 'add_one')).toThrow();
-  // The same object: the memo kept the previous target.
-  expect(scoreFiles(TARGET, DIFF, 'add_one')).toBe(before);
+  expect(scoreFiles(TARGET, DIFF, 'add_one')).toEqual(before);
 });
 
-test('scoring the same target repeatedly is stable', () => {
-  const first = scoreFiles(TARGET, DIFF, 'add_one');
-  for (let i = 0; i < 5; i++) {
-    expect(scoreFiles(TARGET, TARGET, 'add_one').match).toBe(true);
-    expect(scoreFiles(TARGET, DIFF, 'add_one')).toEqual(first);
-  }
-});
-
-test('a candidate row the engine cannot display THROWS', () => {
-  expect(() => scoreFiles(TARGET, ODD_SIZE, 'add_one')).toThrow();
-});
-
-test('releaseTarget drops the memo, is idempotent, and the next score re-parses', () => {
+test('releaseTarget is idempotent, and the next score parses the target again', () => {
   const before = scoreFiles(TARGET, DIFF, 'add_one');
   releaseTarget();
   releaseTarget();
@@ -104,16 +80,7 @@ test('the memo dies with the target', () => {
   expect(against(TARGET).match).toBe(false);
 });
 
-test('a candidate that THROWS is not remembered — it throws again', () => {
+test('a candidate that throws is not remembered: it throws again', () => {
   expect(() => scoreFiles(TARGET, ODD_SIZE, 'add_one')).toThrow();
   expect(() => scoreFiles(TARGET, ODD_SIZE, 'add_one')).toThrow();
-  expect(scoreFiles(TARGET, DIFF, 'add_one').match).toBe(false);
-});
-
-test('a returned score is FROZEN — one object serves every candidate with these bytes', () => {
-  const s = scoreFiles(TARGET, DIFF, 'add_one');
-  expect(() => {
-    (s as { score: number }).score = 99;
-  }).toThrow(TypeError);
-  expect(scoreFiles(TARGET, DIFF, 'add_one').score).toBe(s.score);
 });

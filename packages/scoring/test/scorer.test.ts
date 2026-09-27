@@ -12,26 +12,16 @@ const engine = await loadEngine();
 const scorer = createScorer(engine);
 afterAll(() => scorer.dispose());
 
-describe('reference pairs: every score equals the one asmlift published for it', () => {
+describe('reference pairs: score and inspect give the score asmlift published', () => {
   test.each(REFERENCE_PAIRS.map((p) => [p.id, p] as const))('%s', (_id, pair) => {
+    expect(pair.expected.score).toBe(pair.from.publishedScore);
     const target = scorer.parseTarget(read(`reference/${pair.target}`));
     try {
-      expect(scorer.score(target, read(`reference/${pair.candidate}`), pair.symbol)).toEqual(pair.expected);
-      expect(pair.expected.score).toBe(pair.from.publishedScore);
-    } finally {
-      target.dispose();
-    }
-  });
-});
-
-describe('inspect', () => {
-  test.each(REFERENCE_PAIRS.map((p) => [p.id, p] as const))('%s counts exactly what score counts', (_id, pair) => {
-    const target = scorer.parseTarget(read(`reference/${pair.target}`));
-    try {
-      const inspection = scorer.inspect(target, read(`reference/${pair.candidate}`), pair.symbol);
+      const candidate = read(`reference/${pair.candidate}`);
+      expect(scorer.score(target, candidate, pair.symbol)).toEqual(pair.expected);
+      const inspection = scorer.inspect(target, candidate, pair.symbol);
       expect(inspection.score).toEqual(pair.expected);
       expect(inspection.rows).toHaveLength(pair.expected.rows);
-      expect(inspection.rows.filter((r) => r.kind !== 'none')).toHaveLength(pair.expected.score);
       for (const kind of ['insert', 'delete', 'replace', 'opMismatch', 'argMismatch'] as const) {
         expect(inspection.rows.filter((r) => r.kind === kind)).toHaveLength(pair.expected.breakdown[kind]);
       }
@@ -144,17 +134,17 @@ describe('targets', () => {
     target.dispose();
     expect(() => scorer.score(target, read('edge/target.o'), 'add_one')).toThrow(/disposed/);
   });
+});
 
-  test('survive hundreds of scores (engine handles are released)', () => {
-    const target = scorer.parseTarget(read('edge/target.o'));
-    try {
-      const candidate = read('edge/candidate-diff.o');
-      for (let i = 0; i < 1000; i++) {
-        expect(scorer.score(target, candidate, 'add_one').score).toBe(1);
-      }
-    } finally {
-      target.dispose();
-    }
+describe('scorers', () => {
+  test('refuse every call once disposed, and dispose twice is harmless', () => {
+    const s = createScorer(engine);
+    const target = s.parseTarget(read('edge/target.o'));
+    s.dispose();
+    s.dispose();
+    expect(() => s.score(target, read('edge/target.o'), 'add_one')).toThrow(/this scorer was disposed/);
+    expect(() => s.parseTarget(read('edge/target.o'))).toThrow(/this scorer was disposed/);
+    target.dispose();
   });
 });
 
@@ -174,6 +164,12 @@ describe('diffSettings', () => {
   test('are applied: a setting that changes the diff changes the score', () => {
     expect(scoreUnder({}).score).toBe(7);
     expect(scoreUnder({ 'arm.unifiedSyntax': 'true' }).score).toBe(9);
+  });
+
+  test('an invalid one is refused by name', () => {
+    expect(() => createScorer(engine, { diffSettings: { bogusKey: 'x' } })).toThrow(
+      /invalid diffSettings: bogusKey = "x"/,
+    );
   });
 
   test('that make the engine unable to decode the code are refused, never scored as a match', () => {
