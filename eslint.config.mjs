@@ -8,7 +8,7 @@ export default [
     ignores: ['**/dist/**', '**/node_modules/**', '.vitest/**'],
   },
   {
-    files: ['**/*.ts', '**/*.mjs'],
+    files: ['**/*.ts', '**/*.mjs', '**/*.cjs'],
     plugins: {
       '@typescript-eslint': typescriptEslint,
       'unused-imports': unusedImports,
@@ -35,6 +35,23 @@ export default [
           selector: ':matches(PropertyDefinition, MethodDefinition)[accessibility="private"]',
           message: 'Use #private instead',
         },
+      ],
+    },
+  },
+  {
+    // Browser-safe modules: a Node or Bun global works in every test run here and breaks the first
+    // browser that loads the module. `pnpm check-deps` covers imports; this covers globals. The
+    // Node-only entry points are the same list as NODE_ONLY in .dependency-cruiser.cjs.
+    files: ['packages/*/src/**/*.ts'],
+    ignores: ['packages/scoring/src/node.ts', 'packages/scoring/src/engine-node.ts'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        { name: 'process', message: 'Node-only: move this to a Node-only module.' },
+        { name: 'Buffer', message: 'Node-only: use Uint8Array.' },
+        { name: 'Bun', message: 'Bun-only: packages run on Node, Bun and browsers.' },
+        { name: '__dirname', message: 'Node-only: move this to a Node-only module.' },
+        { name: 'require', message: 'Node-only: use an import.' },
       ],
     },
   },

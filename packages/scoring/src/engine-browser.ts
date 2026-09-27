@@ -8,7 +8,8 @@ let loading: Promise<Engine> | undefined;
 /** The objdiff engine, loaded once per page or worker and shared by every scorer. */
 export function loadEngine(): Promise<Engine> {
   loading ??= load().catch((error: unknown) => {
-    // a failed load is not remembered: the next call tries again
+    // not remembered here, so a later call imports again; a module whose evaluation failed may
+    // still fail the same way, since the runtime caches that failure
     loading = undefined;
     throw error;
   });

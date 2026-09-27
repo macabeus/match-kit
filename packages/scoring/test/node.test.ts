@@ -60,7 +60,8 @@ test('an unparsable target THROWS and leaves the previous one intact', () => {
   writeFileSync(broken, 'not an object file');
   const before = scoreFiles(TARGET, DIFF, 'add_one');
   expect(() => scoreFiles(broken, DIFF, 'add_one')).toThrow();
-  expect(scoreFiles(TARGET, DIFF, 'add_one')).toEqual(before);
+  // the very same object: the memo survived, so the previous target was never released
+  expect(scoreFiles(TARGET, DIFF, 'add_one')).toBe(before);
 });
 
 test('scoring the same target repeatedly is stable', () => {

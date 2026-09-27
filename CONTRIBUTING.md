@@ -24,7 +24,7 @@ pnpm install
 pnpm --filter @matchkit/scoring dev    # rebuilds dist/ on every change
 
 # in the tool, from the package that depends on @matchkit/scoring
-pnpm link ../../matchkit/packages/scoring    # the path from that package to matchkit's package
+pnpm link ../../../matchkit/packages/scoring    # from asmlift/packages/cli: the path to matchkit's package
 ```
 
 `pnpm link` only symlinks the package into that package's `node_modules`, and the next

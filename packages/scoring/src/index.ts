@@ -9,7 +9,9 @@
 import type * as ObjdiffWasm from 'objdiff-wasm';
 
 import type { Engine } from './engine.js';
+import { PROBE_OBJECT_BASE64 } from './probe-object.js';
 import { rowText } from './row-text.js';
+import { OBJDIFF_VERSION } from './version.js';
 
 export type { Engine } from './engine.js';
 export { loadEngine } from '#engine';
@@ -52,11 +54,26 @@ export class SymbolNotFoundError extends Error {
   }
 }
 
-/** The engine could not diff the pair: an object it cannot parse, a row it cannot display, a symbol with no rows. */
+/**
+ * The engine could not diff THIS pair: an object it cannot parse, a row it cannot display or decode,
+ * a symbol with no rows. The next pair may still score.
+ */
 export class UndiffableError extends Error {
   constructor(message: string, options?: { cause?: unknown }) {
     super(message, options);
     this.name = 'UndiffableError';
+  }
+}
+
+/**
+ * The engine itself failed, and it cannot score again in this process. Every panic the engine hits
+ * (an object it cannot handle) costs it memory it never gets back; after a few thousand, it fails
+ * every call. Stop scoring and restart the process: every later call throws this too.
+ */
+export class EngineFailedError extends Error {
+  constructor(options?: { cause?: unknown }) {
+    super('the objdiff engine failed and cannot score again in this process', options);
+    this.name = 'EngineFailedError';
   }
 }
 
@@ -101,6 +118,58 @@ export interface Scorer {
   dispose(): void;
 }
 
+/** Engines that failed: shared by every scorer made from them, since they share the wasm instance. */
+const failedEngines = new WeakSet<Engine>();
+
+// WebAssembly is a global in every runtime this package supports, but no type library in this repo
+// declares it without the DOM, so it is reached through globalThis.
+const RuntimeError = (globalThis as { WebAssembly?: { RuntimeError?: abstract new () => Error } }).WebAssembly
+  ?.RuntimeError;
+
+let probeBytes: Uint8Array | undefined;
+
+/** Whether the engine can still parse an object it is known to parse. */
+function engineIsHealthy(engine: Engine): boolean {
+  probeBytes ??= Uint8Array.from(atob(PROBE_OBJECT_BASE64), (c) => c.charCodeAt(0));
+  let config, object;
+  try {
+    config = new engine.diff.DiffConfig();
+    object = engine.diff.Object.parse(probeBytes, config, 'target');
+    return true;
+  } catch {
+    return false;
+  } finally {
+    disposeAll(object, config);
+  }
+}
+
+/**
+ * Run one engine call. A wasm trap is the engine panicking: when the engine still works afterwards
+ * it was this input's fault and `blame` says so; when it does not, the engine is marked failed for
+ * good. Anything else the engine throws is this input's fault.
+ */
+function call<T>(engine: Engine, fn: () => T, blame: (cause: unknown) => Error): T {
+  if (failedEngines.has(engine)) {
+    throw new EngineFailedError();
+  }
+  try {
+    return fn();
+  } catch (cause) {
+    if (cause instanceof SymbolNotFoundError || cause instanceof UndiffableError) {
+      throw cause;
+    }
+    if (RuntimeError !== undefined && cause instanceof RuntimeError && !engineIsHealthy(engine)) {
+      failedEngines.add(engine);
+      throw new EngineFailedError({ cause });
+    }
+    throw blame(cause);
+  }
+}
+
+/** A row that did not decode as an instruction: objdiff shows it as `<illegal>` and diffs it as `none`. */
+const isUndecoded = (row: ObjdiffWasm.display.InstructionDiffRow | null): boolean =>
+  row !== null && row.segments.some((s) => s.text.tag === 'opcode' && s.text.val.mnemonic === '<illegal>');
+
 const KINDS: Record<ObjdiffWasm.display.InstructionDiffKind, RowKind> = {
   none: 'none',
   insert: 'insert',
@@ -133,13 +202,33 @@ interface ParsedTarget extends Target {
 }
 
 export function createScorer(engine: Engine, options: ScorerOptions = {}): Scorer {
+  // OBJDIFF_VERSION goes into cache keys, so an engine of another version would make them lie
+  const version = engine.version();
+  if (version !== OBJDIFF_VERSION) {
+    throw new Error(`this scorer is for objdiff-wasm ${OBJDIFF_VERSION}, and the engine given is ${version}`);
+  }
   const settings = Object.entries(options.diffSettings ?? {}).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
   const configKey = settings.length === 0 ? '' : JSON.stringify(settings);
-  const config = new engine.diff.DiffConfig();
+  const config = call(
+    engine,
+    () => new engine.diff.DiffConfig(),
+    (cause) => new Error('the engine could not create a DiffConfig', { cause }),
+  );
   for (const [key, value] of settings) {
-    config.setProperty(key, value);
+    try {
+      config.setProperty(key, value);
+    } catch (cause) {
+      disposeAll(config);
+      throw new Error(`invalid diffSettings: ${key} = ${JSON.stringify(value)}`, { cause });
+    }
   }
   const owner = {};
+  let disposed = false;
+  const live = (): void => {
+    if (disposed) {
+      throw new Error('this scorer was disposed');
+    }
+  };
 
   const parsed = (target: Target): ParsedTarget => {
     const t = target as ParsedTarget;
@@ -159,20 +248,30 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
     symbol: string,
     onRow?: (row: number, kind: RowKind, target: string | null, candidate: string | null) => void,
   ): MatchScore => {
+    live();
     const t = parsed(target);
-    let candidate, left, right;
+    let candidate: ObjdiffWasm.diff.Object | undefined;
+    let left: ObjdiffWasm.diff.ObjectDiff | undefined;
+    let right: ObjdiffWasm.diff.ObjectDiff | undefined;
     try {
-      try {
-        candidate = engine.diff.Object.parse(candidateBytes, config, 'base');
-      } catch (cause) {
-        throw new UndiffableError('the candidate object could not be parsed', { cause });
-      }
+      candidate = call(
+        engine,
+        () => engine.diff.Object.parse(candidateBytes, config, 'base'),
+        (cause) => new UndiffableError('the candidate object could not be parsed', { cause }),
+      );
+      const c = candidate;
 
       // left = target, right = candidate, as objdiff's own UI lays them out
-      ({ left, right } = engine.diff.runDiff(t.object, candidate, config, MAPPING));
+      ({ left, right } = call(
+        engine,
+        () => engine.diff.runDiff(t.object, c, config, MAPPING),
+        (cause) => new UndiffableError('objdiff could not diff the two objects', { cause }),
+      ));
       if (!left || !right) {
         throw new UndiffableError('objdiff runDiff returned an empty side');
       }
+      const l0 = left;
+      const r0 = right;
 
       const find = (od: ObjdiffWasm.diff.ObjectDiff, side: 'target' | 'candidate') => {
         const s = od.findSymbol(symbol, undefined);
@@ -181,10 +280,16 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
         }
         return s;
       };
-      const lSym = find(left, 'target');
-      const rSym = find(right, 'candidate');
-      const lDisp = engine.display.displaySymbol(left, lSym.id);
-      const rDisp = engine.display.displaySymbol(right, rSym.id);
+      const lSym = find(l0, 'target');
+      const rSym = find(r0, 'candidate');
+      const displaySymbol = (od: ObjdiffWasm.diff.ObjectDiff, id: number) =>
+        call(
+          engine,
+          () => engine.display.displaySymbol(od, id),
+          (cause) => new UndiffableError(`symbol '${symbol}' could not be displayed`, { cause }),
+        );
+      const lDisp = displaySymbol(l0, lSym.id);
+      const rDisp = displaySymbol(r0, rSym.id);
       const rows = Math.max(lDisp.rowCount, rDisp.rowCount);
       // A symbol with no rows would fall through the loop with no differences, a spurious match.
       if (rows === 0) {
@@ -202,17 +307,25 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
           if (row >= count) {
             return null;
           }
-          try {
-            return engine.display.displayInstructionRow(od, s.id, row, config);
-          } catch (cause) {
-            throw new UndiffableError(`row ${row} of '${symbol}' could not be displayed`, { cause });
-          }
+          return call(
+            engine,
+            () => engine.display.displayInstructionRow(od, s.id, row, config),
+            (cause) => new UndiffableError(`row ${row} of '${symbol}' could not be displayed`, { cause }),
+          );
         };
         // BOTH sides are displayed on every row, though only one kind is read: displaying a row is
         // how the scorer learns the engine can decode it. Consulting the candidate only where the
         // target's row said `none` would turn an engine refusal of the candidate into a score.
-        const l = display(left, lSym, lDisp.rowCount);
-        const r = display(right, rSym, rDisp.rowCount);
+        const l = display(l0, lSym, lDisp.rowCount);
+        const r = display(r0, rSym, rDisp.rowCount);
+        // objdiff diffs two rows it could not decode as `none`: counted, they would be a match
+        // between two objects nobody compared (every row of a Thumb object under
+        // `arm.archVersion: v4` does this)
+        if (isUndecoded(l) || isUndecoded(r)) {
+          throw new UndiffableError(
+            `row ${row} of '${symbol}' does not decode as an instruction; check diffSettings (the architecture version, for instance)`,
+          );
+        }
         const lk = KINDS[l?.diffKind ?? 'none'];
         const kind = lk !== 'none' ? lk : KINDS[r?.diffKind ?? 'none'];
         if (kind === 'none') {
@@ -242,12 +355,12 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
     configKey,
 
     parseTarget(bytes) {
-      let object: ObjdiffWasm.diff.Object;
-      try {
-        object = engine.diff.Object.parse(bytes, config, 'target');
-      } catch (cause) {
-        throw new UndiffableError('the target object could not be parsed', { cause });
-      }
+      live();
+      const object = call(
+        engine,
+        () => engine.diff.Object.parse(bytes, config, 'target'),
+        (cause) => new UndiffableError('the target object could not be parsed', { cause }),
+      );
       const target: ParsedTarget = {
         object,
         owner,
@@ -273,7 +386,10 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
     },
 
     dispose() {
-      disposeAll(config);
+      if (!disposed) {
+        disposed = true;
+        disposeAll(config);
+      }
     },
   };
 }

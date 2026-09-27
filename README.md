@@ -27,6 +27,7 @@ pnpm test            # Node
 pnpm test:bun        # the same tests under Bun
 pnpm test:browser    # browser tests in headless Chromium (first run: pnpm exec playwright install chromium)
 pnpm typecheck && pnpm lint && pnpm format:check && pnpm check-deps
+pnpm check-package   # the packed tarball, installed into a throwaway consumer (Node, Bun, tsc, Vite)
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for trying a change inside asmlift or Transmuter before it is

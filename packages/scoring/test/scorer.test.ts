@@ -156,6 +156,31 @@ describe('targets', () => {
   });
 });
 
+describe('diffSettings', () => {
+  const breakloop = GOLDEN.find((p) => p.id === 'agbcc/breakloop.m2c')!;
+  const scoreUnder = (diffSettings: Record<string, string>) => {
+    const s = createScorer(engine, { diffSettings });
+    const target = s.parseTarget(read(`golden/${breakloop.target}`));
+    try {
+      return s.score(target, read(`golden/${breakloop.candidate}`), breakloop.symbol);
+    } finally {
+      target.dispose();
+      s.dispose();
+    }
+  };
+
+  test('are applied: a setting that changes the diff changes the score', () => {
+    expect(scoreUnder({}).score).toBe(7);
+    expect(scoreUnder({ 'arm.unifiedSyntax': 'true' }).score).toBe(9);
+  });
+
+  test('that make the engine unable to decode the code are refused, never scored as a match', () => {
+    // under ARMv4 no Thumb instruction decodes, and objdiff diffs every undecoded row as `none`:
+    // counted, two different objects would score 0 and match
+    expect(() => scoreUnder({ 'arm.archVersion': 'v4' })).toThrow(/does not decode as an instruction/);
+  });
+});
+
 describe('configKey', () => {
   test('is empty for the default config', () => {
     expect(scorer.configKey).toBe('');

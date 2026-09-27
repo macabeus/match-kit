@@ -13,7 +13,8 @@
     "node": ">=20"
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "exports": {
     ".": {
@@ -43,7 +44,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "dev": "tsc -p tsconfig.build.json --watch"
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "prepack": "pnpm build"
   },
   "dependencies": {
     "objdiff-wasm": "3.8.1"

@@ -8,3 +8,6 @@ dist/
 __screenshots__/
 # vitest browser mode failure screenshots
 .vitest/
+# local environment files
+.env
+.env.*

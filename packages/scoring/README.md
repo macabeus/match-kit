@@ -51,7 +51,7 @@ import { assembly, differences, sideBySide } from '@matchkit/scoring/display';
 
 const inspection = scorer.inspect(target, candidateBytes, 'MyFunction');
 console.log(sideBySide(inspection));
-differences(inspection); // [{ row, kind: 'argMismatch', target: 'add r0, 0x1', candidate: 'add r0, 0x2' }, …]
+differences(inspection); // [{ row, kind: 'argMismatch', target: 'add r0, #0x1', candidate: 'add r0, #0x2' }, …]
 ```
 
 ## How a score is counted
@@ -60,12 +60,31 @@ differences(inspection); // [{ row, kind: 'argMismatch', target: 'add r0, 0x1', 
   lays them out.
 - **Row kind.** A row's kind is the target side's kind, else the candidate side's. A row counts as
   a difference when either side differs.
-- **Fails closed.** Each failure throws, and a failure is never a score:
-  - `SymbolNotFoundError` (with `side`) when the symbol is missing from either object;
-  - `UndiffableError` when an object cannot be parsed, when a row cannot be displayed, or when the
-    symbol has zero rows.
+- **Fails closed.** A failure is never a score:
+  - `SymbolNotFoundError` (with `side`) when the symbol is missing from either object.
+  - `UndiffableError` when this pair cannot be diffed. That covers an object that cannot be parsed,
+    a row that cannot be displayed, a row that does not decode as an instruction (objdiff diffs two
+    of those as matching; a wrong `arm.archVersion` makes every row one), and a symbol with zero
+    rows. The next pair may still score.
+  - `EngineFailedError` when the engine itself has failed. Every object the engine panics on costs
+    it memory it never recovers, and after a few thousand panics it fails every call. From then on
+    every call in the process throws this: stop, and restart the process.
 - **Config.** The engine's `DiffConfig` is objdiff's default. `createScorer(engine, { diffSettings })`
-  changes it, and `scorer.configKey` then spells the settings. Put `configKey` into any cache key
-  next to `OBJDIFF_VERSION`, because both change what a score means.
-- **Engine handles.** Every handle is released after each call. Only the parsed target lives until
-  its `dispose()`.
+  changes it, and `scorer.configKey` then spells the settings. Put `configKey` into any cache key next
+  to `OBJDIFF_VERSION`, because both change what a score means. An invalid setting throws when the
+  scorer is created.
+- **Engine version.** `createScorer` refuses an engine whose `version()` is not `OBJDIFF_VERSION`, so
+  a cache key cannot name one version while another scores.
+- **Engine handles.** Every handle a call creates is released before it returns. The parsed target
+  lives until its `dispose()`, and the scorer's `DiffConfig` until `scorer.dispose()`.
+
+## Bundlers
+
+objdiff-wasm initializes with a top-level `await` and fetches its `.wasm` next to its own module.
+With Vite, exclude it from dependency pre-bundling, or the dev server serves the wasm with the wrong
+MIME type:
+
+```js
+// vite.config.js
+export default { optimizeDeps: { exclude: ['objdiff-wasm'] }, build: { target: 'es2022' } };
+```
