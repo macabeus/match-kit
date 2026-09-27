@@ -25,7 +25,7 @@ cp "$root/packages/scoring/test/fixtures/edge/target.o" "$root/packages/scoring/
 cat > package.json <<'EOF'
 { "name": "consumer", "private": true, "type": "module" }
 EOF
-npm install --silent --no-audit --no-fund "$tarball" typescript@6.0.3 @types/node@26 vite@8 >/dev/null
+npm install --silent --no-audit --no-fund "$tarball" typescript@6.0.3 @types/node@22 vite@8 >/dev/null
 
 cat > smoke.mjs <<'EOF'
 import { readFileSync } from 'node:fs';
