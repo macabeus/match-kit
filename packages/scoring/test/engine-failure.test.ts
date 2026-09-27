@@ -1,7 +1,7 @@
-// The real engine dies after a few thousand panics (about 2,600 on objdiff-wasm 3.8.1, on Node and on
-// Bun). Until then each panic is the object's fault and throws UndiffableError; from then on, every
-// call throws EngineFailedError, and nothing is ever a score. This file poisons its engine, so it
-// runs in its own worker (vitest isolates files) and nothing else may share it.
+// The real engine dies after about 2,600 panics on objdiff-wasm 3.8.1, on Node and on Bun. Until
+// then each panic throws UndiffableError; from then on every call throws EngineFailedError, and
+// nothing is ever a score. This file poisons its engine, so nothing else may share its worker
+// (vitest isolates files).
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setFlagsFromString } from 'node:v8';
@@ -14,15 +14,14 @@ const read = (name: string) => new Uint8Array(readFileSync(join(import.meta.dirn
 
 test('a dying engine is reported as one, never as a bad object or a score', { timeout: 60_000 }, async () => {
   await killEngine();
-  // Nothing the test left undisposed (both scorers' configs, both targets) may reach the engine's own
-  // finalizers: their drop would trap on the dead instance, where no caller can catch it, and vitest
-  // fails the run on that uncaught error.
+  // Nothing left undisposed (both scorers' configs, both targets) may reach the engine's finalizers:
+  // their drop would trap on the dead instance, uncaught, and vitest fails the run on it.
   await collectGarbage();
 });
 
 async function killEngine(): Promise<void> {
   const engine = await loadEngine();
-  // a second scorer on the same engine, holding a target it never uses again
+  // A second scorer on the same engine, holding a target it never uses again.
   createScorer(engine).parseTarget(read('target.o'));
   const scorer = createScorer(engine);
   const target = scorer.parseTarget(read('target.o'));
@@ -36,7 +35,7 @@ async function killEngine(): Promise<void> {
       break;
     }
     expect(error).toBeInstanceOf(UndiffableError);
-    // the good pair keeps scoring correctly right up to the failure
+    // The good pair keeps scoring correctly right up to the failure.
     if (panics % 500 === 0) {
       expect(scorer.score(target, good, 'add_one').score).toBe(1);
     }

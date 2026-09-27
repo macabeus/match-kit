@@ -1,6 +1,6 @@
 // A scripted stand-in for the objdiff engine, for the rules no real object pair exercises: rows past
-// one side's end, the precedence of two sides' kinds, a trap in the middle of a walk, an engine that
-// dies. Only the calls `createScorer` makes are implemented.
+// one side's end, the precedence of two sides' kinds, a trap mid-walk, an engine that dies. Only the
+// calls `createScorer` makes are implemented.
 import type * as ObjdiffWasm from 'objdiff-wasm';
 
 import type { Engine } from '../src/index.js';
@@ -9,9 +9,9 @@ import { PROBE_OBJECT_BASE64 } from '../src/probe-object.js';
 type Kind = ObjdiffWasm.display.InstructionDiffKind;
 
 export interface FakeSide {
-  /** one entry per row this side displays */
+  /** One kind per row this side displays. */
   rows: Kind[];
-  /** rows that do not decode as an instruction */
+  /** Rows that do not decode as an instruction. */
   undecoded?: number[];
 }
 
@@ -19,11 +19,11 @@ export interface FakeScript {
   target: FakeSide;
   candidate: FakeSide;
   version?: string;
-  /** the row whose display traps, as the engine panicking would */
+  /** The row whose display traps, as the engine panicking would. */
   trapAt?: { side: 'target' | 'candidate'; row: number };
-  /** whether the engine still parses its probe object after a trap */
+  /** Whether the engine still parses its probe object after a trap. */
   healthy?: () => boolean;
-  /** make DiffConfig.setProperty refuse every property */
+  /** Make `DiffConfig.setProperty` refuse every property. */
   rejectSettings?: boolean;
 }
 

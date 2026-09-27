@@ -4,9 +4,9 @@ import { expect, test } from 'vitest';
 import { rowText } from '../src/row-text.js';
 
 type Text = ObjdiffWasm.display.DiffText;
-// objdiff-wasm's generated types declare the opcode and symbol PAYLOADS under the same names as
-// their variants (`DiffTextOpcode`, `DiffTextSymbol`), and TypeScript merges each pair: a segment
-// written as the engine returns it does not type-check without this cast.
+// objdiff-wasm's generated types give the opcode and symbol payloads the same names as their
+// variants (`DiffTextOpcode`, `DiffTextSymbol`), and TypeScript merges each pair: a segment written
+// as the engine returns it does not type-check without this cast.
 const merged = (text: object) => text as Text;
 const row = (...texts: Text[]): ObjdiffWasm.display.InstructionDiffRow => ({
   diffKind: 'none',

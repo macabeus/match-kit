@@ -1,5 +1,4 @@
-// `scoreFiles` and its two memos. Moved from asmlift's `packages/cli/test/offline/objdiff.test.ts`,
-// where they pinned the same behaviour of `scoreObjects`.
+// `scoreFiles` and its two memos.
 import { copyFileSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -26,7 +25,7 @@ test('identical object scores 0 and matches', () => {
 });
 
 test('differing candidate scores > 0, and the breakdown names the bucket', () => {
-  // `add r0, #1` against `add r0, #2`: same mnemonic, same register, differing immediate
+  // `add r0, #1` against `add r0, #2`: same mnemonic, same register, differing immediate.
   const s = scoreFiles(TARGET, DIFF, 'add_one');
   expect(s.match).toBe(false);
   expect(s.breakdown).toEqual({ insert: 0, delete: 0, replace: 0, opMismatch: 0, argMismatch: s.score });
@@ -38,13 +37,13 @@ test('missing symbol, unparsable object and missing file all THROW', () => {
   expect(() => scoreFiles(TARGET, join(EDGE, 'does-not-exist.o'), 'add_one')).toThrow();
 });
 
-// THE TARGET MEMO: the parse is reused across calls, keyed on the file's whole content.
+// The target memo: the parse is reused across calls, keyed on the file's whole content.
 
 test('a target rewritten in place is re-parsed, never scored against stale bytes', () => {
   const moving = join(SCRATCH, 'target.o');
   copyFileSync(TARGET, moving);
   expect(scoreFiles(moving, DIFF, 'add_one').match).toBe(false);
-  // same path, different bytes: the candidate is now its own target
+  // Same path, different bytes: the candidate is now its own target.
   copyFileSync(DIFF, moving);
   expect(scoreFiles(moving, DIFF, 'add_one')).toMatchObject({ match: true, score: 0 });
 });
@@ -60,7 +59,7 @@ test('an unparsable target THROWS and leaves the previous one intact', () => {
   writeFileSync(broken, 'not an object file');
   const before = scoreFiles(TARGET, DIFF, 'add_one');
   expect(() => scoreFiles(broken, DIFF, 'add_one')).toThrow();
-  // the very same object: the memo survived, so the previous target was never released
+  // The very same object: the memo survived, so the previous target was never released.
   expect(scoreFiles(TARGET, DIFF, 'add_one')).toBe(before);
 });
 
@@ -83,11 +82,11 @@ test('releaseTarget drops the memo, is idempotent, and the next score re-parses'
   expect(scoreFiles(TARGET, DIFF, 'add_one')).toEqual(before);
 });
 
-// THE SCORE MEMO: a score already taken against the retained target is handed back.
+// The score memo: a score already taken against the memoized target is handed back.
 
 test('a candidate rewritten in place is re-scored, never handed the previous one’s score', () => {
-  // every compile worker rewrites ONE scratch slot's object, so a path-keyed memo would answer
-  // for the previous candidate
+  // A compile worker rewrites one scratch slot's object, so a path-keyed memo would answer for the
+  // previous candidate.
   const slot = join(SCRATCH, 'cand.o');
   copyFileSync(DIFF, slot);
   expect(scoreFiles(TARGET, slot, 'add_one').match).toBe(false);

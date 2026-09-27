@@ -1,6 +1,6 @@
-// Every engine handle a call mints is released before it returns, on every path, success or throw.
-// The real engine runs hundreds of thousands of undisposed calls before it fails, so a loop cannot
-// prove this; counting the handles can.
+// Every engine handle a call mints is released before it returns, whether it scores or throws. The
+// real engine survives hundreds of thousands of undisposed calls, so a loop cannot prove this;
+// counting the handles can.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
@@ -66,7 +66,7 @@ test.each(cases)('%s leaves only the config and the target alive', (_name, candi
     try {
       walk(target, read(candidate), symbol);
     } catch {
-      // the throw is the point of most cases; what matters is what it left behind
+      // Most cases throw; what matters is what the call leaves behind.
     }
     expect(live.size).toBe(2);
   }

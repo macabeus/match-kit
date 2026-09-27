@@ -1,7 +1,7 @@
-// @matchkit/scoring/node — score object FILES, synchronously, with objdiff's default config.
+// @matchkit/scoring/node — score object files synchronously, with objdiff's default config.
 //
 // The engine loads in this module's top-level await, so `scoreFiles` is synchronous from the first
-// call. Two memos make a ranked run cheap, and each is keyed on CONTENT, never on a path.
+// call. Two memos make a ranked run cheap; both are keyed on content, never on a path.
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
@@ -10,14 +10,10 @@ import { type MatchScore, type Target, createScorer, loadEngine } from './index.
 const scorer = createScorer(await loadEngine());
 
 /**
- * The parsed TARGET, memoized on its own bytes. Every candidate in a ranked run is scored against
- * the same target, and parsing it once rather than once per candidate is what this saves (on
- * klonoa's 102 KB `gfx.o` the parse measured 3.81 ms, against 0.07 ms for a one-function
- * candidate).
- *
- * The key is the whole file content, compared byte for byte: a hit then PROVES the parse would be
- * the same, so a target rewritten in place between two calls is never scored against stale bytes.
- * One entry, held for the life of the process; `releaseTarget()` gives it back.
+ * The parsed target, memoized on its bytes. Every candidate in a ranked run is scored against the
+ * same target, so it is parsed once (klonoa's 102 KB `gfx.o` parses in 3.81 ms, a one-function
+ * candidate in 0.07 ms). The key is the whole file, compared byte for byte, so a target rewritten
+ * in place is never scored against stale bytes. One entry, held until `releaseTarget()`.
  */
 let parsedTarget: { bytes: Uint8Array; target: Target; scores: Map<string, MatchScore> } | undefined;
 
@@ -32,8 +28,8 @@ function targetEntry(path: string): NonNullable<typeof parsedTarget> {
   if (parsedTarget && Buffer.compare(bytes, parsedTarget.bytes) === 0) {
     return parsedTarget;
   }
-  // Parse BEFORE dropping the entry it replaces: a target that fails to parse must leave the
-  // previous one intact and throw, never leave a disposed handle behind for the next call.
+  // Parse before releasing the previous entry, so a target that fails to parse throws and leaves
+  // that entry intact.
   const target = scorer.parseTarget(bytes);
   releaseTarget();
   parsedTarget = { bytes, target, scores: new Map() };
@@ -41,11 +37,11 @@ function targetEntry(path: string): NonNullable<typeof parsedTarget> {
 }
 
 /**
- * Identical candidate objects have one score by definition, and a ranked run compiles far more
- * candidates than it produces distinct objects. The key is the candidate's content, hashed, plus
- * the symbol; the rest of what a score depends on is the target, so the memo belongs to the target
- * entry and dies with it. Never a path: a compile worker rewrites one scratch slot's object, so a
- * path key would answer for the previous candidate. A throw is never remembered.
+ * The score memo's key: the candidate's content hash and the symbol. A ranked run compiles far more
+ * candidates than distinct objects, and identical objects score the same. The rest of what a score
+ * depends on is the target, so the memo lives on the target entry and dies with it. Never a path: a
+ * compile worker rewrites one scratch slot's object, so a path key would answer for the previous
+ * candidate. A throw is never remembered.
  */
 const candidateKey = (bytes: Uint8Array, symbol: string): string =>
   `${createHash('sha256').update(bytes).digest('hex')} ${symbol}`;

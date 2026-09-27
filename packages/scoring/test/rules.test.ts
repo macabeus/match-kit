@@ -1,6 +1,5 @@
-// The counting rules and failure classes, over a scripted engine: each of these is a case no real
-// object pair in the fixtures reaches (the two sides' row counts and kinds always agreed on all
-// 1,059 rows of the golden and edge pairs).
+// The counting rules and failure classes, over a scripted engine: cases no fixture pair reaches
+// (the two sides' row counts and kinds agree on all 1,059 rows of the golden and edge pairs).
 import { describe, expect, test } from 'vitest';
 
 import { EngineFailedError, UndiffableError, createScorer } from '../src/index.js';
@@ -37,7 +36,7 @@ describe('counting', () => {
   });
 
   test('a row that does not decode is counted when it differs anyway', () => {
-    // data a size-0 target symbol absorbs past its end: the target shows rows the candidate lacks
+    // Data a size-0 target symbol absorbs past its end: the target shows rows the candidate lacks.
     const s = scoreWith(
       fakeEngine({ target: { rows: ['none', 'insert'], undecoded: [1] }, candidate: { rows: ['none'] } }),
     );
@@ -67,7 +66,7 @@ describe('failures', () => {
     const scorer = createScorer(engine);
     const target = scorer.parseTarget(BYTES);
     expect(() => scorer.score(target, BYTES, 'f')).toThrow(EngineFailedError);
-    // no longer tried at all: the engine is refused before any call
+    // No longer tried at all: the engine is refused before any call.
     expect(() => scorer.score(target, BYTES, 'f')).toThrow(EngineFailedError);
     expect(() => scorer.parseTarget(BYTES)).toThrow(EngineFailedError);
     expect(() => createScorer(engine)).toThrow(EngineFailedError);

@@ -4,10 +4,10 @@ import { defineConfig } from 'vitest/config';
 
 const src = (file: string) => fileURLToPath(new URL(`./packages/scoring/src/${file}`, import.meta.url));
 
-// Two projects over the same sources, so tests never need a build:
-//   node    — every `*.test.ts`; also what `pnpm test:bun` runs under the Bun runtime
+// Two projects over the sources, so tests never need a build:
+//   node    — every `*.test.ts`; `pnpm test:bun` runs it under Bun
 //   browser — every `*.browser.test.ts`, in headless Chromium
-// `#engine` is the package's per-runtime import; each project points it at its runtime's loader.
+// Each project points `#engine` at its runtime's loader.
 export default defineConfig({
   test: {
     projects: [

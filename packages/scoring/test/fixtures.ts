@@ -6,7 +6,7 @@ export interface GoldenPair {
   id: string;
   toolchain: string;
   symbol: string;
-  /** paths relative to `test/fixtures/golden/` */
+  /** Paths relative to `test/fixtures/golden/`. */
   target: string;
   candidate: string;
   from: { row: string; decompiler: string; publishedScore: number; maxScore: number | null };

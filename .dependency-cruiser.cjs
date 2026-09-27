@@ -1,6 +1,6 @@
-// What `pnpm check-deps` enforces. The rules are about RUNTIMES: a package's browser-safe modules
-// must never reach a Node built-in, or a browser bundle breaks at import time — which no Node test
-// would notice. Every module is browser-safe unless listed as Node-only below.
+// What `pnpm check-deps` enforces: a browser-safe module never reaches a Node built-in, or a
+// browser bundle breaks at import time, which no Node test notices. Every module is browser-safe
+// unless listed in NODE_ONLY.
 const NODE_ONLY = ['^packages/scoring/src/node\\.ts$', '^packages/scoring/src/engine-node\\.ts$'];
 
 /** @type {import('dependency-cruiser').IConfiguration} */
@@ -32,12 +32,12 @@ module.exports = {
     doNotFollow: { path: 'node_modules' },
     tsPreCompilationDeps: true,
     tsConfig: { fileName: 'tsconfig.json' },
-    // the explicit extensions make `.ts` imports resolve, whatever the TypeScript version (under
-    // TypeScript 7, `tsConfig` alone left every import "unknown" and no rule ever fired)
+    // Explicit extensions make `.ts` imports resolve under any TypeScript version: under
+    // TypeScript 7, `tsConfig` alone leaves every import "unknown" and no rule fires.
     enhancedResolveOptions: {
       extensions: ['.ts', '.js', '.json'],
-      // resolve the way a browser bundle does, so `#engine` lands on engine-browser.ts: the graph
-      // checked is the one a browser loads
+      // Resolve as a browser bundle does, so `#engine` lands on engine-browser.ts and the graph
+      // checked is the one a browser loads.
       conditionNames: ['matchkit-source', 'browser', 'import', 'types', 'default'],
     },
   },

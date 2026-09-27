@@ -1,11 +1,9 @@
 import type * as ObjdiffWasm from 'objdiff-wasm';
 
 /**
- * One instruction row as assembly text, for people and for prompts.
- *
- * Ported from Transmuter's `Objdiff#instructionDiffRowToString` (itself Mizuchi's): branch targets
- * become `.L<addr>` labels, references are marked `# REFERENCE_`, and DWARF line numbers are left
- * out. Padding follows each segment's `padTo`, so columns line up as objdiff lays them out.
+ * One instruction row as assembly text, for people and for prompts. Branch targets become
+ * `.L<addr>` labels, references are marked `# REFERENCE_`, and DWARF line numbers are left out.
+ * Padding follows each segment's `padTo`, so columns line up as objdiff lays them out.
  */
 export function rowText(row: ObjdiffWasm.display.InstructionDiffRow): string {
   let text = '';
@@ -16,22 +14,21 @@ export function rowText(row: ObjdiffWasm.display.InstructionDiffRow): string {
     switch (part.tag) {
       case 'basic':
         if (part.val === ' ~>') {
-          // objdiff's marker for a branch source: nothing to print
+          // objdiff's marker for a branch source: nothing to print.
         } else if (part.val === ' (->') {
           text += ' # REFERENCE_';
         } else if (part.val === ' ~> ') {
           text += `.L${address}:\n`;
         } else if (part.val === ')' && text.includes(' # REFERENCE_')) {
-          // the reference's closing paren
+          // The reference's closing paren.
         } else {
           text += part.val;
         }
         break;
       case 'line':
-        // a C source line number from DWARF: not part of the instruction
         break;
       case 'address':
-        // kept for the label a later ` ~> ` prints, never printed as a prefix
+        // Kept for the label a later ` ~> ` prints; never printed as a prefix.
         address = part.val.toString(16);
         break;
       case 'opcode':

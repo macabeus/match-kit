@@ -2,7 +2,7 @@
 
 Score a compiled candidate against a target object, one symbol at a time, with the
 [objdiff](https://github.com/encounter/objdiff) engine (`objdiff-wasm`, pinned to an exact version).
-Runs on Node ≥ 20, Bun and browsers.
+Runs on Node ≥ 22, Bun and browsers.
 
 ```sh
 npm install @matchkit/scoring
@@ -56,24 +56,22 @@ differences(inspection); // [{ row, kind: 'argMismatch', target: 'add r0, #0x1',
 
 ## How a score is counted
 
-- **Sides.** The target is objdiff's left side and the candidate its right side, as objdiff's own UI
-  lays them out.
+- **Sides.** The target is objdiff's left side and the candidate its right, as in objdiff's own UI.
 - **Row kind.** A row's kind is the target side's kind, else the candidate side's. A row counts as
   a difference when either side differs.
 - **Fails closed.** A failure is never a score:
   - `SymbolNotFoundError` (with `side`) when the symbol is missing from either object.
-  - `UndiffableError` when this pair cannot be diffed. That covers an object that cannot be parsed,
-    a row that cannot be displayed, a symbol with zero rows, and a row that does not decode as an
-    instruction and would count as matching (objdiff diffs any two undecoded rows as matching; a
-    wrong `arm.archVersion` makes every row one). An undecoded row that differs anyway is counted.
-    The next pair may still score.
-  - `EngineFailedError` when the engine itself has failed. Every object the engine panics on costs
-    it memory it never recovers, and after a few thousand panics it fails every call. From then on
-    every call in the process throws this: stop, and restart the process.
-- **Config.** The engine's `DiffConfig` is objdiff's default. `createScorer(engine, { diffSettings })`
-  changes it, and `scorer.configKey` then spells the settings. Put `configKey` into any cache key next
-  to `OBJDIFF_VERSION`, because both change what a score means. An invalid setting throws when the
-  scorer is created.
+  - `UndiffableError` when this pair cannot be diffed: an object that cannot be parsed, a row that
+    cannot be displayed, a symbol with zero rows, or a row that does not decode as an instruction
+    and would count as matching (objdiff diffs any two undecoded rows as matching; a wrong
+    `arm.archVersion` makes every row one). An undecoded row that differs anyway is counted. The
+    next pair may still score.
+  - `EngineFailedError` when the engine itself has failed. Each panic leaks engine memory, and
+    after a few thousand the engine fails every call. From then on every call in the process throws
+    this: restart the process.
+- **Config.** The `DiffConfig` is objdiff's default unless `createScorer(engine, { diffSettings })`
+  sets properties, and `scorer.configKey` spells them. Put `configKey` into any cache key next to
+  `OBJDIFF_VERSION`: both change what a score means. An invalid setting throws in `createScorer`.
 - **Engine version.** `createScorer` refuses an engine whose `version()` is not `OBJDIFF_VERSION`, so
   a cache key cannot name one version while another scores.
 - **Engine handles.** Every handle a call creates is released before it returns. The parsed target

@@ -3,9 +3,8 @@
 // This module runs anywhere: no `node:` import and no `Bun.*` API. `loadEngine` is the one piece
 // that differs per runtime, and the package's `#engine` import map picks it.
 //
-// FAIL-CLOSED: nothing here is caught and turned into a number. Any engine failure throws, and a
-// row that cannot be displayed can never count as matched — a swallowed error could report a false
-// byte-exact match, the worst defect a scorer can have.
+// Fails closed: every engine failure throws and is never turned into a number, since a swallowed
+// error could report a false byte-exact match.
 import type * as ObjdiffWasm from 'objdiff-wasm';
 
 import type { Engine } from './engine.js';
@@ -29,10 +28,10 @@ export interface DiffBreakdown {
 
 export interface MatchScore {
   symbol: string;
-  /** differing instruction rows; 0 is a byte-exact match */
+  /** Differing instruction rows; 0 is a byte-exact match. */
   score: number;
   match: boolean;
-  /** rows in this candidate's alignment against the target: the scale `score` is measured on */
+  /** Rows in this candidate's alignment against the target: the scale `score` is measured on. */
   rows: number;
   matching: number;
   breakdown: DiffBreakdown;
@@ -55,7 +54,7 @@ export class SymbolNotFoundError extends Error {
 }
 
 /**
- * The engine could not diff THIS pair: an object it cannot parse, a row it cannot display or decode,
+ * The engine could not diff this pair: an object it cannot parse, a row it cannot display or decode,
  * a symbol with no rows. The next pair may still score.
  */
 export class UndiffableError extends Error {
@@ -66,9 +65,9 @@ export class UndiffableError extends Error {
 }
 
 /**
- * The engine itself failed, and it cannot score again in this process. Every panic the engine hits
- * (an object it cannot handle) costs it memory it never gets back; after a few thousand, it fails
- * every call. Stop scoring and restart the process: every later call throws this too.
+ * The engine failed and cannot score again in this process: each panic leaks engine memory, and
+ * after a few thousand the engine fails every call. Every later call throws this too; restart the
+ * process.
  */
 export class EngineFailedError extends Error {
   constructor(options?: { cause?: unknown }) {
@@ -79,16 +78,16 @@ export class EngineFailedError extends Error {
 
 export interface ScorerOptions {
   /**
-   * objdiff `DiffConfig` properties, as `DiffConfig.setProperty` takes them. Absent, the config is
-   * objdiff's default. A setting changes what a diff counts, so it belongs in every cache key next
-   * to `OBJDIFF_VERSION` — that is what `Scorer.configKey` is for.
+   * objdiff `DiffConfig` properties, as `DiffConfig.setProperty` takes them; absent, objdiff's
+   * default. A setting changes what a diff counts, so `Scorer.configKey` belongs in every cache key
+   * next to `OBJDIFF_VERSION`.
    */
   diffSettings?: Readonly<Record<string, string>>;
 }
 
 /** A parsed target object, reused across every candidate scored against it. */
 export interface Target {
-  /** release the engine handle; the target cannot be scored against afterwards */
+  /** Release the engine handle; the target cannot be scored against afterwards. */
   dispose(): void;
 }
 
@@ -106,15 +105,17 @@ export interface Inspection {
   rows: readonly InspectedRow[];
 }
 
+/** Scores candidates against targets under one `DiffConfig`. Made by `createScorer`. */
 export interface Scorer {
-  /** '' for objdiff's default config, else a stable spelling of `diffSettings` */
+  /** `''` for objdiff's default config, else a stable spelling of `diffSettings`. */
   readonly configKey: string;
+  /** Parse a target object once, to score many candidates against. */
   parseTarget(bytes: Uint8Array): Target;
   /** Score `candidate` against `target` for one symbol. The result is frozen. */
   score(target: Target, candidate: Uint8Array, symbol: string): MatchScore;
-  /** The same score, plus each row's text: what a report or a prompt shows. */
+  /** The same score, plus each row's text. */
   inspect(target: Target, candidate: Uint8Array, symbol: string): Inspection;
-  /** release the config; every target this scorer parsed must be disposed too */
+  /** Release the config; every target this scorer parsed must be disposed too. */
   dispose(): void;
 }
 
@@ -123,9 +124,9 @@ const failedEngines = new WeakSet<Engine>();
 
 /**
  * The handles that outlive one call (each scorer's config, each parsed target), per engine, held
- * weakly. A handle nobody disposes is dropped by the engine's own FinalizationRegistry whenever the
- * garbage collector reaches it, and on a failed engine that drop traps outside any caller, as an
- * uncaught exception. So when an engine fails, every handle still held here is released at once.
+ * weakly. An undisposed handle is dropped by the engine's FinalizationRegistry when collected, and
+ * on a failed engine that drop traps outside any caller, as an uncaught exception. So when an
+ * engine fails, every handle still held here is released at once.
  */
 const heldHandles = new WeakMap<Engine, Set<WeakRef<object>>>();
 
@@ -149,8 +150,8 @@ function fail(engine: Engine): void {
   }
 }
 
-// WebAssembly is a global in every runtime this package supports, but no type library in this repo
-// declares it without the DOM, so it is reached through globalThis.
+// `WebAssembly` is global in every supported runtime, but no type library here declares it without
+// the DOM.
 const RuntimeError = (globalThis as { WebAssembly?: { RuntimeError?: abstract new () => Error } }).WebAssembly
   ?.RuntimeError;
 
@@ -172,10 +173,10 @@ function engineIsHealthy(engine: Engine): boolean {
 }
 
 /**
- * Run one engine call. A wasm trap is the engine panicking: when the engine still works afterwards
- * it was this input's fault, and the error (`Failure`) names `what` failed; when it does not, the
- * engine is marked failed for good. Anything else the engine throws is this input's fault. The
- * engine's own reason goes into the message too, since most callers print only the message.
+ * Run one engine call. A wasm trap is the engine panicking: if the engine still works afterwards the
+ * input is to blame and a `Failure` naming `what` is thrown, otherwise the engine is marked failed
+ * for good. Any other throw is the input's fault. The engine's reason goes into the message, since
+ * most callers print only the message.
  */
 function call<T>(
   engine: Engine,
@@ -213,12 +214,11 @@ const KINDS: Record<ObjdiffWasm.display.InstructionDiffKind, RowKind> = {
   'arg-mismatch': 'argMismatch',
 };
 
-// The engine's handles are component-model RESOURCES. Without an explicit dispose they wait on the
-// FinalizationRegistry, which a tight synchronous scoring loop never lets run: after a few hundred
-// calls the wasm side exhausts and panics, and the poisoned instance then fails every later call
-// in the process. Disposal is the fix, not a nicety.
-// The key is the one the engine binds: its jco output uses Symbol.dispose with a Symbol.for
-// fallback on runtimes that predate it, and using only Symbol.dispose would silently no-op there.
+// The engine's handles are component-model resources. Without an explicit dispose they wait on the
+// FinalizationRegistry, which a synchronous scoring loop never lets run, until the wasm side
+// exhausts and panics and the instance fails every later call in the process.
+// The key is the one the engine binds: its jco output falls back to `Symbol.for('dispose')` where
+// `Symbol.dispose` is missing, and `Symbol.dispose` alone would silently no-op there.
 const DISPOSE: typeof Symbol.dispose = Symbol.dispose ?? (Symbol.for('dispose') as never);
 const disposeAll = (...handles: unknown[]): void => {
   for (const handle of handles) {
@@ -240,8 +240,9 @@ interface ParsedTarget extends Target {
   disposed: boolean;
 }
 
+/** A scorer over `engine`, which must be objdiff-wasm `OBJDIFF_VERSION`. */
 export function createScorer(engine: Engine, options: ScorerOptions = {}): Scorer {
-  // OBJDIFF_VERSION goes into cache keys, so an engine of another version would make them lie
+  // OBJDIFF_VERSION goes into cache keys, so an engine of another version would make them lie.
   const version = engine.version();
   if (version !== OBJDIFF_VERSION) {
     throw new Error(`this scorer is for objdiff-wasm ${OBJDIFF_VERSION}, and the engine given is ${version}`);
@@ -277,7 +278,7 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
     return t;
   };
 
-  /** The one row walk `score` and `inspect` share, so the two can never count differently. */
+  // The one row walk `score` and `inspect` share, so the two can never count differently.
   const walk = (
     target: Target,
     candidateBytes: Uint8Array,
@@ -297,7 +298,7 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
       );
       const c = candidate;
 
-      // left = target, right = candidate, as objdiff's own UI lays them out
+      // Left is the target and right the candidate, as objdiff's own UI lays them out.
       ({ left, right } = call(
         engine,
         () => engine.diff.runDiff(t.object, c, config, MAPPING),
@@ -333,8 +334,8 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
       let differences = 0;
 
       for (let row = 0; row < rows; row++) {
-        // A row past a side's own rowCount is that side's padding for the other side's insertions:
-        // `null` here is a fact, not a swallowed error.
+        // A row past a side's rowCount pads for the other side's insertions: `null` is a fact, not
+        // a swallowed error.
         const display = (od: ObjdiffWasm.diff.ObjectDiff, s: ObjdiffWasm.diff.SymbolInfo, count: number) => {
           if (row >= count) {
             return null;
@@ -345,17 +346,17 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
             `row ${row} of '${symbol}' could not be displayed`,
           );
         };
-        // BOTH sides are displayed on every row, though only one kind is read: displaying a row is
-        // how the scorer learns the engine can decode it. Consulting the candidate only where the
-        // target's row said `none` would turn an engine refusal of the candidate into a score.
+        // Both sides are displayed on every row, though only one kind is read: displaying a row is
+        // how the scorer learns the engine can decode it. Displaying the candidate only where the
+        // target's row says `none` would turn an engine refusal of the candidate into a score.
         const l = display(l0, lSym, lDisp.rowCount);
         const r = display(r0, rSym, rDisp.rowCount);
         const lk = KINDS[l?.diffKind ?? 'none'];
         const kind = lk !== 'none' ? lk : KINDS[r?.diffKind ?? 'none'];
-        // objdiff diffs two rows it could not decode as `none`, whatever their bytes: counted, they
-        // would be a match between two objects nobody compared (every row of a Thumb object under
-        // `arm.archVersion: v4` does this). A row that differs anyway is counted as it is — data a
-        // size-0 target symbol absorbs past its end is one.
+        // objdiff diffs two undecoded rows as `none` whatever their bytes (every row of a Thumb
+        // object under `arm.archVersion: v4`), so counting them would match objects nobody compared.
+        // An undecoded row that differs anyway, such as data a size-0 target symbol absorbs past
+        // its end, is counted.
         if (kind === 'none' && (isUndecoded(l) || isUndecoded(r))) {
           throw new UndiffableError(
             `row ${row} of '${symbol}' does not decode as an instruction on either side, so it cannot be compared; check diffSettings (the architecture version, for instance)`,
@@ -379,7 +380,7 @@ export function createScorer(engine: Engine, options: ScorerOptions = {}): Score
         breakdown: Object.freeze(breakdown),
       });
     } finally {
-      // the target and the config outlive the call by design; everything minted here does not
+      // The target and the config outlive the call; every handle minted here is released.
       disposeAll(left, right, candidate);
     }
   };

@@ -1,8 +1,7 @@
 #!/bin/sh
-# The published package, checked the way a consumer gets it. The tests and the typecheck resolve
-# `#engine` to src/ (the `matchkit-source` condition and the vitest aliases), so nothing else looks
-# at dist/, the `exports` map or the `imports` map a consumer resolves. This packs @matchkit/scoring,
-# installs the tarball into a throwaway project, and:
+# The published package, checked as a consumer gets it. The tests and the typecheck resolve
+# `#engine` to src/, so only this checks dist/ and the `exports` and `imports` maps. It packs
+# @matchkit/scoring, installs the tarball into a throwaway project, and:
 #   - imports `.`, `./node` and `./display` and scores a pair on Node (and on Bun, when present);
 #   - typechecks a consumer under `node16` and `bundler` resolution, with no custom conditions;
 #   - bundles it for the browser with Vite and checks the bundle reaches no Node built-in.

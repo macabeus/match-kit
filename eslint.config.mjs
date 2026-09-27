@@ -39,9 +39,9 @@ export default [
     },
   },
   {
-    // Browser-safe modules: a Node or Bun global works in every test run here and breaks the first
+    // Browser-safe modules: a Node or Bun global passes every test here and breaks the first
     // browser that loads the module. `pnpm check-deps` covers imports; this covers globals. The
-    // Node-only entry points are the same list as NODE_ONLY in .dependency-cruiser.cjs.
+    // ignored files are NODE_ONLY in .dependency-cruiser.cjs.
     files: ['packages/*/src/**/*.ts'],
     ignores: ['packages/scoring/src/node.ts', 'packages/scoring/src/engine-node.ts'],
     rules: {

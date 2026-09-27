@@ -14,7 +14,7 @@ const installed = JSON.parse(
 );
 
 test('OBJDIFF_VERSION is the exact version package.json pins', () => {
-  // an exact pin, never a range: two objdiff releases can score the same pair differently
+  // An exact pin, never a range: two objdiff releases can score the same pair differently.
   expect(manifest.dependencies['objdiff-wasm']).toMatch(/^\d+\.\d+\.\d+$/);
   expect(OBJDIFF_VERSION).toBe(manifest.dependencies['objdiff-wasm']);
 });

@@ -1,5 +1,5 @@
-// Text views of an `Inspection`, for reports and prompts. Pure functions over plain data: nothing
-// here touches the engine, so they run anywhere and cost nothing to test.
+// Text views of an `Inspection`, for reports and prompts. Pure functions: nothing here touches the
+// engine.
 import type { DiffBreakdown, Inspection } from './index.js';
 
 /** A row that differs, with both sides' text (`''` for a side the row does not reach). */

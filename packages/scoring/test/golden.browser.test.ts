@@ -1,12 +1,12 @@
-// The golden pairs, scored in a real browser: the engine must load without the Node fetch patch
-// and give the very same numbers.
+// The golden pairs, scored in a real browser: the engine loads without the Node fetch patch and
+// gives the same numbers.
 import { afterAll, expect, test } from 'vitest';
 import { commands } from 'vitest/browser';
 
 import { createScorer, loadEngine } from '../src/index.js';
 import { GOLDEN, fixturePath } from './fixtures.js';
 
-// read on the Vitest server (paths from the repo root) and carried across as base64
+// Read on the vitest server (paths from the repo root) and carried across as base64.
 const fetchBytes = async (relative: string): Promise<Uint8Array> =>
   Uint8Array.from(atob(await commands.readFile(fixturePath(`golden/${relative}`), 'base64')), (c) => c.charCodeAt(0));
 
