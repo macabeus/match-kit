@@ -79,6 +79,21 @@ describe('fail closed: every failure throws, and none is a score', () => {
     );
   });
 
+  test('an undecoded row that differs counts as a difference, not a refusal', () => {
+    // The target's unsized `F` absorbs a halfword ARMv4T cannot decode, and the candidate has no row there.
+    const absorbing = scorer.parseTarget(read('edge/absorbed-data.target.o'));
+    try {
+      expect(scorer.score(absorbing, read('edge/absorbed-data.candidate.o'), 'F')).toMatchObject({
+        rows: 4,
+        matching: 2,
+        score: 2,
+        breakdown: { delete: 2 },
+      });
+    } finally {
+      absorbing.dispose();
+    }
+  });
+
   test('the scorer keeps working after a failure', () => {
     expect(() => scorer.score(target, read('edge/candidate-odd-size.o'), 'add_one')).toThrow();
     expect(scorer.score(target, read('edge/candidate-diff.o'), 'add_one').score).toBe(1);

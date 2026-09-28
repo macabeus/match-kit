@@ -22,9 +22,10 @@ expected score. Keep only pairs whose score equals the published one.
 
 ## `edge/`: objects for the cases a scorer must refuse or handle specially
 
-| File                                            | What it is                                                                                                                      |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `target.o`, `candidate-diff.o`                  | agbcc, `int add_one(int x) { return x + 1; }` against `x + 2`                                                                   |
-| `candidate-odd-size.o`                          | `candidate-diff.o` with `add_one`'s `st_size` cut to 3, so its last row is half an instruction and the engine cannot display it |
-| `zero-rows.o`                                   | `empty_fn` with size 0, beside a real `add_one`; assembled with `arm-none-eabi-as`                                              |
-| `cpp-method.target.o`, `cpp-method.candidate.o` | CodeWarrior 2.4.2 C++, `Counter::inc()` (`inc__7CounterFv`), `n += 1` against `n += 2`                                          |
+| File                                                  | What it is                                                                                                                                              |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `target.o`, `candidate-diff.o`                        | agbcc, `int add_one(int x) { return x + 1; }` against `x + 2`                                                                                           |
+| `candidate-odd-size.o`                                | `candidate-diff.o` with `add_one`'s `st_size` cut to 3, so its last row is half an instruction and the engine cannot display it                         |
+| `zero-rows.o`                                         | `empty_fn` with size 0, beside a real `add_one`; assembled with `arm-none-eabi-as`                                                                      |
+| `absorbed-data.target.o`, `absorbed-data.candidate.o` | `F` = `add r0, #1; bx lr`; the target's has no `.size` and is followed by `.inst.n 0xe800`, which it absorbs; assembled with `arm-none-eabi-as -mthumb` |
+| `cpp-method.target.o`, `cpp-method.candidate.o`       | CodeWarrior 2.4.2 C++, `Counter::inc()` (`inc__7CounterFv`), `n += 1` against `n += 2`                                                                  |
