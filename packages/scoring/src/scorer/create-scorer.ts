@@ -13,7 +13,7 @@ import type {
   ScorerOptions,
   Target,
 } from '../types.js';
-import { call, disposeAll, hold, release } from './engine-guard.js';
+import { Handles, call, disposeAll, hold, release } from './engine-guard.js';
 import { SymbolNotFoundError, UndiffableError } from './errors.js';
 import { rowText } from './row-text.js';
 
@@ -86,99 +86,93 @@ export function createScorerFor(engine: Engine, options: ScorerOptions = {}): Sc
   ): MatchScore => {
     live();
     const t = parsed(target);
-    let candidate: ObjdiffWasm.diff.Object | undefined;
-    let left: ObjdiffWasm.diff.ObjectDiff | undefined;
-    let right: ObjdiffWasm.diff.ObjectDiff | undefined;
-    try {
-      candidate = call(
+    // The target and the config outlive the call; every handle minted here is released.
+    using handles = new Handles();
+    const candidate = handles.add(
+      call(
         engine,
         () => engine.diff.Object.parse(candidateBytes, config, 'base'),
         'the candidate object could not be parsed',
-      );
-      const c = candidate;
-
-      // Left is the target and right the candidate, as objdiff's own UI lays them out.
-      ({ left, right } = call(
-        engine,
-        () => engine.diff.runDiff(t.object, c, config, MAPPING),
-        'objdiff could not diff the two objects',
-      ));
-      if (!left || !right) {
-        throw new UndiffableError('objdiff runDiff returned an empty side');
-      }
-      const l0 = left;
-      const r0 = right;
-
-      const find = (od: ObjdiffWasm.diff.ObjectDiff, side: 'target' | 'candidate') => {
-        const s = od.findSymbol(symbol, undefined);
-        if (!s) {
-          throw new SymbolNotFoundError(symbol, side);
-        }
-        return s;
-      };
-      const lSym = find(l0, 'target');
-      const rSym = find(r0, 'candidate');
-      const displaySymbol = (od: ObjdiffWasm.diff.ObjectDiff, id: number) =>
-        call(engine, () => engine.display.displaySymbol(od, id), `symbol '${symbol}' could not be displayed`);
-      const lDisp = displaySymbol(l0, lSym.id);
-      const rDisp = displaySymbol(r0, rSym.id);
-      const rows = Math.max(lDisp.rowCount, rDisp.rowCount);
-      // A symbol with no rows would fall through the loop with no differences, a spurious match.
-      if (rows === 0) {
-        throw new UndiffableError(`symbol '${symbol}' has no instruction rows to diff`);
-      }
-
-      const breakdown: DiffBreakdown = { insert: 0, delete: 0, replace: 0, opMismatch: 0, argMismatch: 0 };
-      let matching = 0;
-      let differences = 0;
-
-      for (let row = 0; row < rows; row++) {
-        // A row past a side's rowCount is padding for the other side's insertions.
-        const display = (od: ObjdiffWasm.diff.ObjectDiff, s: ObjdiffWasm.diff.SymbolInfo, count: number) => {
-          if (row >= count) {
-            return null;
-          }
-          return call(
-            engine,
-            () => engine.display.displayInstructionRow(od, s.id, row, config),
-            `row ${row} of '${symbol}' could not be displayed`,
-          );
-        };
-        // Both sides are displayed on every row, though only one kind is read: displaying a row is
-        // how the scorer learns the engine can decode it.
-        const l = display(l0, lSym, lDisp.rowCount);
-        const r = display(r0, rSym, rDisp.rowCount);
-        const lk = KINDS[l?.diffKind ?? 'none'];
-        const kind = lk !== 'none' ? lk : KINDS[r?.diffKind ?? 'none'];
-        // objdiff diffs two undecoded rows as `none` whatever their bytes (every row of a Thumb
-        // object under `arm.archVersion: v4`), so such a row cannot count as a match. An undecoded
-        // row that differs is counted as usual.
-        if (kind === 'none' && (isUndecoded(l) || isUndecoded(r))) {
-          throw new UndiffableError(
-            `row ${row} of '${symbol}' does not decode as an instruction on either side, so it cannot be compared; check diffSettings (the architecture version, for instance)`,
-          );
-        }
-        if (kind === 'none') {
-          matching++;
-        } else {
-          differences++;
-          breakdown[kind]++;
-        }
-        onRow?.(row, kind, l && rowText(l), r && rowText(r));
-      }
-
-      return Object.freeze({
-        symbol,
-        rows,
-        matching,
-        score: differences,
-        match: differences === 0,
-        breakdown: Object.freeze(breakdown),
-      });
-    } finally {
-      // The target and the config outlive the call; every handle minted here is released.
-      disposeAll(left, right, candidate);
+      ),
+    );
+    // Left is the target and right the candidate, as objdiff's own UI lays them out.
+    const { left, right } = call(
+      engine,
+      () => engine.diff.runDiff(t.object, candidate, config, MAPPING),
+      'objdiff could not diff the two objects',
+    );
+    handles.add(left);
+    handles.add(right);
+    if (!left || !right) {
+      throw new UndiffableError('objdiff runDiff returned an empty side');
     }
+
+    const find = (od: ObjdiffWasm.diff.ObjectDiff, side: 'target' | 'candidate') => {
+      const s = od.findSymbol(symbol, undefined);
+      if (!s) {
+        throw new SymbolNotFoundError(symbol, side);
+      }
+      return s;
+    };
+    const lSym = find(left, 'target');
+    const rSym = find(right, 'candidate');
+    const displaySymbol = (od: ObjdiffWasm.diff.ObjectDiff, id: number) =>
+      call(engine, () => engine.display.displaySymbol(od, id), `symbol '${symbol}' could not be displayed`);
+    const lDisp = displaySymbol(left, lSym.id);
+    const rDisp = displaySymbol(right, rSym.id);
+    const rows = Math.max(lDisp.rowCount, rDisp.rowCount);
+    // A symbol with no rows would fall through the loop with no differences, a spurious match.
+    if (rows === 0) {
+      throw new UndiffableError(`symbol '${symbol}' has no instruction rows to diff`);
+    }
+
+    const breakdown: DiffBreakdown = { insert: 0, delete: 0, replace: 0, opMismatch: 0, argMismatch: 0 };
+    let matching = 0;
+    let differences = 0;
+
+    for (let row = 0; row < rows; row++) {
+      // A row past a side's rowCount is padding for the other side's insertions.
+      const display = (od: ObjdiffWasm.diff.ObjectDiff, s: ObjdiffWasm.diff.SymbolInfo, count: number) => {
+        if (row >= count) {
+          return null;
+        }
+        return call(
+          engine,
+          () => engine.display.displayInstructionRow(od, s.id, row, config),
+          `row ${row} of '${symbol}' could not be displayed`,
+        );
+      };
+      // Both sides are displayed on every row, though only one kind is read: displaying a row is
+      // how the scorer learns the engine can decode it.
+      const l = display(left, lSym, lDisp.rowCount);
+      const r = display(right, rSym, rDisp.rowCount);
+      const lk = KINDS[l?.diffKind ?? 'none'];
+      const kind = lk !== 'none' ? lk : KINDS[r?.diffKind ?? 'none'];
+      // objdiff diffs two undecoded rows as `none` whatever their bytes (every row of a Thumb
+      // object under `arm.archVersion: v4`), so such a row cannot count as a match. An undecoded
+      // row that differs is counted as usual.
+      if (kind === 'none' && (isUndecoded(l) || isUndecoded(r))) {
+        throw new UndiffableError(
+          `row ${row} of '${symbol}' does not decode as an instruction on either side, so it cannot be compared; check diffSettings (the architecture version, for instance)`,
+        );
+      }
+      if (kind === 'none') {
+        matching++;
+      } else {
+        differences++;
+        breakdown[kind]++;
+      }
+      onRow?.(row, kind, l && rowText(l), r && rowText(r));
+    }
+
+    return Object.freeze({
+      symbol,
+      rows,
+      matching,
+      score: differences,
+      match: differences === 0,
+      breakdown: Object.freeze(breakdown),
+    });
   };
 
   return {
@@ -202,6 +196,9 @@ export function createScorerFor(engine: Engine, options: ScorerOptions = {}): Sc
             release(engine, held);
           }
         },
+        [Symbol.dispose]() {
+          target.dispose();
+        },
       };
       return target;
     },
@@ -221,6 +218,10 @@ export function createScorerFor(engine: Engine, options: ScorerOptions = {}): Sc
         disposed = true;
         release(engine, heldConfig);
       }
+    },
+
+    [Symbol.dispose]() {
+      this.dispose();
     },
   };
 }

@@ -14,18 +14,14 @@ afterAll(() => scorer.dispose());
 describe('reference pairs: score and inspect give the score asmlift published', () => {
   test.each(REFERENCE_PAIRS.map((p) => [p.id, p] as const))('%s', (_id, pair) => {
     expect(pair.expected.score).toBe(pair.from.publishedScore);
-    const target = scorer.parseTarget(read(`reference/${pair.target}`));
-    try {
-      const candidate = read(`reference/${pair.candidate}`);
-      expect(scorer.score(target, candidate, pair.symbol)).toEqual(pair.expected);
-      const inspection = scorer.inspect(target, candidate, pair.symbol);
-      expect(inspection.score).toEqual(pair.expected);
-      expect(inspection.rows).toHaveLength(pair.expected.rows);
-      for (const kind of ['insert', 'delete', 'replace', 'opMismatch', 'argMismatch'] as const) {
-        expect(inspection.rows.filter((r) => r.kind === kind)).toHaveLength(pair.expected.breakdown[kind]);
-      }
-    } finally {
-      target.dispose();
+    using target = scorer.parseTarget(read(`reference/${pair.target}`));
+    const candidate = read(`reference/${pair.candidate}`);
+    expect(scorer.score(target, candidate, pair.symbol)).toEqual(pair.expected);
+    const inspection = scorer.inspect(target, candidate, pair.symbol);
+    expect(inspection.score).toEqual(pair.expected);
+    expect(inspection.rows).toHaveLength(pair.expected.rows);
+    for (const kind of ['insert', 'delete', 'replace', 'opMismatch', 'argMismatch'] as const) {
+      expect(inspection.rows.filter((r) => r.kind === kind)).toHaveLength(pair.expected.breakdown[kind]);
     }
   });
 });
@@ -47,13 +43,9 @@ describe('fail closed: every failure throws, and none is a score', () => {
   });
 
   test('a symbol with zero rows is refused, never counted as a match', () => {
-    const zero = scorer.parseTarget(read('edge/zero-rows.o'));
-    try {
-      expect(() => scorer.score(zero, read('edge/zero-rows.o'), 'empty_fn')).toThrow(UndiffableError);
-      expect(() => scorer.score(zero, read('edge/zero-rows.o'), 'empty_fn')).toThrow(/no instruction rows/);
-    } finally {
-      zero.dispose();
-    }
+    using zero = scorer.parseTarget(read('edge/zero-rows.o'));
+    expect(() => scorer.score(zero, read('edge/zero-rows.o'), 'empty_fn')).toThrow(UndiffableError);
+    expect(() => scorer.score(zero, read('edge/zero-rows.o'), 'empty_fn')).toThrow(/no instruction rows/);
   });
 
   test('a candidate row the engine cannot display', () => {
@@ -80,17 +72,13 @@ describe('fail closed: every failure throws, and none is a score', () => {
 
   test('an undecoded row that differs counts as a difference, not a refusal', () => {
     // The target's unsized `F` absorbs a halfword ARMv4T cannot decode, and the candidate has no row there.
-    const absorbing = scorer.parseTarget(read('edge/absorbed-data.target.o'));
-    try {
-      expect(scorer.score(absorbing, read('edge/absorbed-data.candidate.o'), 'F')).toMatchObject({
-        rows: 4,
-        matching: 2,
-        score: 2,
-        breakdown: { delete: 2 },
-      });
-    } finally {
-      absorbing.dispose();
-    }
+    using absorbing = scorer.parseTarget(read('edge/absorbed-data.target.o'));
+    expect(scorer.score(absorbing, read('edge/absorbed-data.candidate.o'), 'F')).toMatchObject({
+      rows: 4,
+      matching: 2,
+      score: 2,
+      breakdown: { delete: 2 },
+    });
   });
 
   test('the scorer keeps working after a failure', () => {
@@ -101,45 +89,32 @@ describe('fail closed: every failure throws, and none is a score', () => {
 
 describe('results', () => {
   test('are frozen, breakdown included', () => {
-    const target = scorer.parseTarget(read('edge/target.o'));
-    try {
-      const s = scorer.score(target, read('edge/candidate-diff.o'), 'add_one');
-      expect(Object.isFrozen(s)).toBe(true);
-      expect(Object.isFrozen(s.breakdown)).toBe(true);
-    } finally {
-      target.dispose();
-    }
+    using target = scorer.parseTarget(read('edge/target.o'));
+    const s = scorer.score(target, read('edge/candidate-diff.o'), 'add_one');
+    expect(Object.isFrozen(s)).toBe(true);
+    expect(Object.isFrozen(s.breakdown)).toBe(true);
   });
 
   test('a mangled C++ symbol scores like any other', () => {
-    const target = scorer.parseTarget(read('edge/cpp-method.target.o'));
-    try {
-      expect(scorer.score(target, read('edge/cpp-method.target.o'), 'inc__7CounterFv')).toMatchObject({
-        score: 0,
-        match: true,
-        rows: 7,
-      });
-      expect(scorer.score(target, read('edge/cpp-method.candidate.o'), 'inc__7CounterFv')).toMatchObject({
-        score: 1,
-        match: false,
-        breakdown: { argMismatch: 1 },
-      });
-    } finally {
-      target.dispose();
-    }
+    using target = scorer.parseTarget(read('edge/cpp-method.target.o'));
+    expect(scorer.score(target, read('edge/cpp-method.target.o'), 'inc__7CounterFv')).toMatchObject({
+      score: 0,
+      match: true,
+      rows: 7,
+    });
+    expect(scorer.score(target, read('edge/cpp-method.candidate.o'), 'inc__7CounterFv')).toMatchObject({
+      score: 1,
+      match: false,
+      breakdown: { argMismatch: 1 },
+    });
   });
 });
 
 describe('targets', () => {
   test('belong to the scorer that parsed them', async () => {
-    const other = await createScorer();
-    const target = other.parseTarget(read('edge/target.o'));
-    try {
-      expect(() => scorer.score(target, read('edge/target.o'), 'add_one')).toThrow(/another scorer/);
-    } finally {
-      target.dispose();
-      other.dispose();
-    }
+    using other = await createScorer();
+    using target = other.parseTarget(read('edge/target.o'));
+    expect(() => scorer.score(target, read('edge/target.o'), 'add_one')).toThrow(/another scorer/);
   });
 
   test('cannot be scored against once disposed, and dispose twice is harmless', () => {
@@ -165,14 +140,9 @@ describe('scorers', () => {
 describe('diffSettings', () => {
   const breakloop = REFERENCE_PAIRS.find((p) => p.id === 'agbcc/breakloop.m2c')!;
   const scoreUnder = async (diffSettings: Record<string, string>) => {
-    const s = await createScorer({ diffSettings });
-    const target = s.parseTarget(read(`reference/${breakloop.target}`));
-    try {
-      return s.score(target, read(`reference/${breakloop.candidate}`), breakloop.symbol);
-    } finally {
-      target.dispose();
-      s.dispose();
-    }
+    using s = await createScorer({ diffSettings });
+    using target = s.parseTarget(read(`reference/${breakloop.target}`));
+    return s.score(target, read(`reference/${breakloop.candidate}`), breakloop.symbol);
   };
 
   test('are applied: a setting that changes the diff changes the score', async () => {
@@ -199,15 +169,10 @@ describe('configKey', () => {
   });
 
   test('is the same whatever order the settings come in', async () => {
-    const a = await createScorer({ diffSettings: { functionRelocDiffs: 'none', spaceBetweenArgs: 'false' } });
-    const b = await createScorer({ diffSettings: { spaceBetweenArgs: 'false', functionRelocDiffs: 'none' } });
-    try {
-      expect(a.configKey).not.toBe('');
-      expect(a.configKey).toBe(b.configKey);
-    } finally {
-      a.dispose();
-      b.dispose();
-    }
+    using a = await createScorer({ diffSettings: { functionRelocDiffs: 'none', spaceBetweenArgs: 'false' } });
+    using b = await createScorer({ diffSettings: { spaceBetweenArgs: 'false', functionRelocDiffs: 'none' } });
+    expect(a.configKey).not.toBe('');
+    expect(a.configKey).toBe(b.configKey);
   });
 });
 

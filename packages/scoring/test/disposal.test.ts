@@ -77,6 +77,17 @@ test.each(cases)('%s leaves nothing behind', (_name, candidate, symbol) => {
   expect(live.size).toBe(0);
 });
 
+test('a scorer and a target held by `using` are released when the block ends', () => {
+  const { engine, live } = tracked();
+  {
+    using scorer = createScorerFor(engine);
+    using target = scorer.parseTarget(read('edge/target.o'));
+    scorer.score(target, read('edge/candidate-diff.o'), 'add_one');
+    expect(live.size).toBeGreaterThan(0);
+  }
+  expect(live.size).toBe(0);
+});
+
 test('an invalid diffSetting leaves nothing behind', () => {
   const { engine, live } = tracked();
   expect(() => createScorerFor(engine, { diffSettings: { bogusKey: 'x' } })).toThrow(/invalid diffSettings/);

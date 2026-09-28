@@ -15,10 +15,6 @@ const scorer = await createScorer();
 afterAll(() => scorer.dispose());
 
 test.each(REFERENCE_PAIRS.map((p) => [p.id, p] as const))('%s', async (_id, pair) => {
-  const target = scorer.parseTarget(await fetchBytes(pair.target));
-  try {
-    expect(scorer.score(target, await fetchBytes(pair.candidate), pair.symbol)).toEqual(pair.expected);
-  } finally {
-    target.dispose();
-  }
+  using target = scorer.parseTarget(await fetchBytes(pair.target));
+  expect(scorer.score(target, await fetchBytes(pair.candidate), pair.symbol)).toEqual(pair.expected);
 });

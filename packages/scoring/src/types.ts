@@ -36,7 +36,7 @@ export interface ScorerOptions {
 }
 
 /** A parsed target object, reused across every candidate scored against it. */
-export interface Target {
+export interface Target extends Disposable {
   /** Release the engine handle; the target cannot be scored against afterwards. */
   dispose(): void;
 }
@@ -56,7 +56,7 @@ export interface Inspection {
 }
 
 /** Scores candidates against targets under one `DiffConfig`. Made by `createScorer`. */
-export interface Scorer {
+export interface Scorer extends Disposable {
   /** `''` for objdiff's default config, else a stable spelling of `diffSettings`. */
   readonly configKey: string;
   /** Parse a target object once, to score many candidates against. */

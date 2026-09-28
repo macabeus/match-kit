@@ -2,7 +2,7 @@
 
 Score a compiled candidate against a target object, one symbol at a time, with the
 [objdiff](https://github.com/encounter/objdiff) engine (`objdiff-wasm`, pinned to an exact version).
-Runs on Node ≥ 22, Bun and browsers.
+Runs on Node ≥ 22, Bun and browsers with `Symbol.dispose` (Chrome ≥ 125, Firefox ≥ 141).
 
 ```sh
 npm install @matchkit/scoring
@@ -13,15 +13,12 @@ npm install @matchkit/scoring
 ```ts
 import { createScorer } from '@matchkit/scoring';
 
-const scorer = await createScorer(); // loads the engine once per process or worker
-const target = scorer.parseTarget(targetBytes); // parse once, score many candidates against it
+using scorer = await createScorer(); // loads the engine once per process or worker
+using target = scorer.parseTarget(targetBytes); // parse once, score many candidates against it
 
 const score = scorer.score(target, candidateBytes, 'MyFunction');
 // { symbol, score: 3, match: false, rows: 14, matching: 11,
 //   breakdown: { insert: 1, delete: 0, replace: 0, opMismatch: 0, argMismatch: 2 } }
-
-target.dispose();
-scorer.dispose();
 ```
 
 - `score` is the number of differing instruction rows; `0` is a byte-exact match.
@@ -73,7 +70,7 @@ differences(inspection); // [{ row, kind: 'argMismatch', target: 'add r0, #0x1',
   sets properties, and `scorer.configKey` spells them. Put `configKey` into any cache key next to
   `OBJDIFF_VERSION`: both change what a score means. An invalid setting rejects `createScorer`.
 - **Engine handles.** Every handle a call creates is released before it returns. The parsed target
-  lives until its `dispose()`, and the scorer's `DiffConfig` until `scorer.dispose()`.
+  and the scorer's `DiffConfig` live until their `using` block ends, or until `dispose()`.
 
 ## Bundlers
 
