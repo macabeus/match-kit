@@ -28,12 +28,12 @@ npm install --silent --no-audit --no-fund "$tarball" typescript@6.0.3 @types/nod
 
 cat > smoke.mjs <<'EOF'
 import { readFileSync } from 'node:fs';
-import { OBJDIFF_VERSION, createScorer, loadEngine } from '@matchkit/scoring';
+import { OBJDIFF_VERSION, createScorer } from '@matchkit/scoring';
 import { sideBySide } from '@matchkit/scoring/display';
 import { releaseTarget, scoreFiles } from '@matchkit/scoring/files';
 
 const fromFiles = scoreFiles('target.o', 'candidate-diff.o', 'add_one');
-const scorer = createScorer(await loadEngine());
+const scorer = await createScorer();
 const target = scorer.parseTarget(new Uint8Array(readFileSync('target.o')));
 const inspection = scorer.inspect(target, new Uint8Array(readFileSync('candidate-diff.o')), 'add_one');
 if (fromFiles.score !== 1 || inspection.score.score !== 1 || !sideBySide(inspection).includes('| ')) {
@@ -52,11 +52,11 @@ if command -v bun >/dev/null 2>&1; then
 fi
 
 cat > src/consumer.ts <<'EOF'
-import { type MatchScore, createScorer, loadEngine } from '@matchkit/scoring';
+import { type MatchScore, createScorer } from '@matchkit/scoring';
 import { differences } from '@matchkit/scoring/display';
 import { scoreFiles } from '@matchkit/scoring/files';
 
-const scorer = createScorer(await loadEngine());
+const scorer = await createScorer();
 const score: MatchScore = scoreFiles('target.o', 'candidate-diff.o', 'add_one');
 const kinds: string[] = differences(scorer.inspect(scorer.parseTarget(new Uint8Array()), new Uint8Array(), 'f')).map(
   (d) => d.kind,
@@ -75,9 +75,9 @@ cat > index.html <<'EOF'
 <!doctype html><script type="module" src="/src/browser.ts"></script>
 EOF
 cat > src/browser.ts <<'EOF'
-import { createScorer, loadEngine } from '@matchkit/scoring';
+import { createScorer } from '@matchkit/scoring';
 
-createScorer(await loadEngine()).dispose();
+(await createScorer()).dispose();
 EOF
 cat > vite.config.mjs <<'EOF'
 export default { build: { target: 'es2022' }, optimizeDeps: { exclude: ['objdiff-wasm'] } };

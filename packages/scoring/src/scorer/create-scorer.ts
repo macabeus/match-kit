@@ -1,8 +1,8 @@
 // Fails closed: every engine failure throws, since a swallowed error could report a false
 // byte-exact match.
+import { loadEngine } from '#engine';
 import type * as ObjdiffWasm from 'objdiff-wasm';
 
-import { OBJDIFF_VERSION } from '../engine/version.js';
 import type {
   DiffBreakdown,
   Engine,
@@ -39,13 +39,13 @@ interface ParsedTarget extends Target {
   disposed: boolean;
 }
 
-/** A scorer over `engine`, which must be objdiff-wasm `OBJDIFF_VERSION`. */
-export function createScorer(engine: Engine, options: ScorerOptions = {}): Scorer {
-  // OBJDIFF_VERSION goes into cache keys, so an engine of another version would make them lie.
-  const version = call(engine, () => engine.version(), 'the engine could not report its version', Error);
-  if (version !== OBJDIFF_VERSION) {
-    throw new Error(`this scorer is for objdiff-wasm ${OBJDIFF_VERSION}, and the engine given is ${version}`);
-  }
+/** A scorer over the objdiff engine, which loads once per process or worker. */
+export async function createScorer(options: ScorerOptions = {}): Promise<Scorer> {
+  return createScorerFor(await loadEngine(), options);
+}
+
+/** A scorer over `engine`. */
+export function createScorerFor(engine: Engine, options: ScorerOptions = {}): Scorer {
   const settings = Object.entries(options.diffSettings ?? {}).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
   const configKey = settings.length === 0 ? '' : JSON.stringify(settings);
   const config = call(engine, () => new engine.diff.DiffConfig(), 'the engine could not create a DiffConfig', Error);

@@ -3,12 +3,12 @@ import { join } from 'node:path';
 import { expect, test } from 'vitest';
 
 import { assembly, differences, sideBySide } from '../src/display.js';
-import { type Inspection, createScorer, loadEngine } from '../src/index.js';
+import { type Inspection, createScorer } from '../src/index.js';
 
 const EDGE = join(import.meta.dirname, 'fixtures', 'edge');
 const read = (name: string) => new Uint8Array(readFileSync(join(EDGE, name)));
 
-const scorer = createScorer(await loadEngine());
+const scorer = await createScorer();
 const target = scorer.parseTarget(read('target.o'));
 const inspection: Inspection = scorer.inspect(target, read('candidate-diff.o'), 'add_one');
 

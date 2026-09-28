@@ -11,9 +11,9 @@ npm install @matchkit/scoring
 ## Score two objects
 
 ```ts
-import { createScorer, loadEngine } from '@matchkit/scoring';
+import { createScorer } from '@matchkit/scoring';
 
-const scorer = createScorer(await loadEngine());
+const scorer = await createScorer(); // loads the engine once per process or worker
 const target = scorer.parseTarget(targetBytes); // parse once, score many candidates against it
 
 const score = scorer.score(target, candidateBytes, 'MyFunction');
@@ -69,11 +69,9 @@ differences(inspection); // [{ row, kind: 'argMismatch', target: 'add r0, #0x1',
   - `EngineFailedError` when the engine itself has failed. Each panic leaks engine memory, and
     after a few thousand the engine fails every call. From then on every call in the process throws
     this: restart the process.
-- **Config.** The `DiffConfig` is objdiff's default unless `createScorer(engine, { diffSettings })`
+- **Config.** The `DiffConfig` is objdiff's default unless `createScorer({ diffSettings })`
   sets properties, and `scorer.configKey` spells them. Put `configKey` into any cache key next to
-  `OBJDIFF_VERSION`: both change what a score means. An invalid setting throws in `createScorer`.
-- **Engine version.** `createScorer` refuses an engine whose `version()` is not `OBJDIFF_VERSION`, so
-  a cache key cannot name one version while another scores.
+  `OBJDIFF_VERSION`: both change what a score means. An invalid setting rejects `createScorer`.
 - **Engine handles.** Every handle a call creates is released before it returns. The parsed target
   lives until its `dispose()`, and the scorer's `DiffConfig` until `scorer.dispose()`.
 

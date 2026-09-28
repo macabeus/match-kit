@@ -1,6 +1,6 @@
 import type * as ObjdiffWasm from 'objdiff-wasm';
 
-/** The objdiff engine: the `objdiff-wasm` module, initialized. Obtain it with `loadEngine()`. */
+/** The objdiff engine: the `objdiff-wasm` module, initialized. */
 export type Engine = typeof ObjdiffWasm;
 
 /** How many differing rows fell into each of objdiff's kinds. They sum to `MatchScore.score`. */

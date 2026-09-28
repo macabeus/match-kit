@@ -2,7 +2,7 @@
 import { afterAll, expect, test } from 'vitest';
 import { commands } from 'vitest/browser';
 
-import { createScorer, loadEngine } from '../src/index.js';
+import { createScorer } from '../src/index.js';
 import { REFERENCE_PAIRS, fixturePath } from './fixtures.js';
 
 // Read on the vitest server (paths from the repo root) and carried across as base64.
@@ -11,7 +11,7 @@ const fetchBytes = async (relative: string): Promise<Uint8Array> =>
     c.charCodeAt(0),
   );
 
-const scorer = createScorer(await loadEngine());
+const scorer = await createScorer();
 afterAll(() => scorer.dispose());
 
 test.each(REFERENCE_PAIRS.map((p) => [p.id, p] as const))('%s', async (_id, pair) => {

@@ -2,14 +2,13 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, describe, expect, test } from 'vitest';
 
-import { SymbolNotFoundError, UndiffableError, createScorer, loadEngine } from '../src/index.js';
+import { SymbolNotFoundError, UndiffableError, createScorer } from '../src/index.js';
 import { REFERENCE_PAIRS } from './fixtures.js';
 
 const FIXTURES = join(import.meta.dirname, 'fixtures');
 const read = (relative: string) => new Uint8Array(readFileSync(join(FIXTURES, relative)));
 
-const engine = await loadEngine();
-const scorer = createScorer(engine);
+const scorer = await createScorer();
 afterAll(() => scorer.dispose());
 
 describe('reference pairs: score and inspect give the score asmlift published', () => {
@@ -132,8 +131,8 @@ describe('results', () => {
 });
 
 describe('targets', () => {
-  test('belong to the scorer that parsed them', () => {
-    const other = createScorer(engine);
+  test('belong to the scorer that parsed them', async () => {
+    const other = await createScorer();
     const target = other.parseTarget(read('edge/target.o'));
     try {
       expect(() => scorer.score(target, read('edge/target.o'), 'add_one')).toThrow(/another scorer/);
@@ -152,8 +151,8 @@ describe('targets', () => {
 });
 
 describe('scorers', () => {
-  test('refuse every call once disposed, and dispose twice is harmless', () => {
-    const s = createScorer(engine);
+  test('refuse every call once disposed, and dispose twice is harmless', async () => {
+    const s = await createScorer();
     const target = s.parseTarget(read('edge/target.o'));
     s.dispose();
     s.dispose();
@@ -165,8 +164,8 @@ describe('scorers', () => {
 
 describe('diffSettings', () => {
   const breakloop = REFERENCE_PAIRS.find((p) => p.id === 'agbcc/breakloop.m2c')!;
-  const scoreUnder = (diffSettings: Record<string, string>) => {
-    const s = createScorer(engine, { diffSettings });
+  const scoreUnder = async (diffSettings: Record<string, string>) => {
+    const s = await createScorer({ diffSettings });
     const target = s.parseTarget(read(`reference/${breakloop.target}`));
     try {
       return s.score(target, read(`reference/${breakloop.candidate}`), breakloop.symbol);
@@ -176,21 +175,21 @@ describe('diffSettings', () => {
     }
   };
 
-  test('are applied: a setting that changes the diff changes the score', () => {
-    expect(scoreUnder({}).score).toBe(7);
-    expect(scoreUnder({ 'arm.unifiedSyntax': 'true' }).score).toBe(9);
+  test('are applied: a setting that changes the diff changes the score', async () => {
+    expect((await scoreUnder({})).score).toBe(7);
+    expect((await scoreUnder({ 'arm.unifiedSyntax': 'true' })).score).toBe(9);
   });
 
-  test('an invalid one is refused by name', () => {
-    expect(() => createScorer(engine, { diffSettings: { bogusKey: 'x' } })).toThrow(
+  test('an invalid one is refused by name', async () => {
+    await expect(createScorer({ diffSettings: { bogusKey: 'x' } })).rejects.toThrow(
       /invalid diffSettings: bogusKey = "x"/,
     );
   });
 
-  test('that make the engine unable to decode the code are refused, never scored as a match', () => {
+  test('that make the engine unable to decode the code are refused, never scored as a match', async () => {
     // Under ARMv4 no Thumb instruction decodes, and objdiff diffs every undecoded row as `none`:
     // counted, two different objects would score 0 and match.
-    expect(() => scoreUnder({ 'arm.archVersion': 'v4' })).toThrow(/does not decode as an instruction/);
+    await expect(scoreUnder({ 'arm.archVersion': 'v4' })).rejects.toThrow(/does not decode as an instruction/);
   });
 });
 
@@ -199,9 +198,9 @@ describe('configKey', () => {
     expect(scorer.configKey).toBe('');
   });
 
-  test('is the same whatever order the settings come in', () => {
-    const a = createScorer(engine, { diffSettings: { functionRelocDiffs: 'none', spaceBetweenArgs: 'false' } });
-    const b = createScorer(engine, { diffSettings: { spaceBetweenArgs: 'false', functionRelocDiffs: 'none' } });
+  test('is the same whatever order the settings come in', async () => {
+    const a = await createScorer({ diffSettings: { functionRelocDiffs: 'none', spaceBetweenArgs: 'false' } });
+    const b = await createScorer({ diffSettings: { spaceBetweenArgs: 'false', functionRelocDiffs: 'none' } });
     try {
       expect(a.configKey).not.toBe('');
       expect(a.configKey).toBe(b.configKey);

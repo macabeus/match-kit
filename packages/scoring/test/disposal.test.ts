@@ -1,10 +1,12 @@
 // Every engine handle a call mints is released before it returns, whether it scores or throws.
 // Counted, because the engine tolerates far more leaked handles than a test can create.
+import { loadEngine } from '#engine';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
 
-import { type Engine, createScorer, loadEngine } from '../src/index.js';
+import { createScorerFor } from '../src/scorer/create-scorer.js';
+import type { Engine } from '../src/types.js';
 
 const read = (relative: string) => new Uint8Array(readFileSync(join(import.meta.dirname, 'fixtures', relative)));
 const real = await loadEngine();
@@ -59,7 +61,7 @@ const cases: Array<[string, () => Uint8Array, string]> = [
 
 test.each(cases)('%s leaves nothing behind', (_name, candidate, symbol) => {
   const { engine, live } = tracked();
-  const scorer = createScorer(engine);
+  const scorer = createScorerFor(engine);
   const target = scorer.parseTarget(read(symbol === 'empty_fn' ? 'edge/zero-rows.o' : 'edge/target.o'));
   const before = live.size;
   for (const walk of [scorer.score, scorer.inspect]) {
@@ -77,6 +79,6 @@ test.each(cases)('%s leaves nothing behind', (_name, candidate, symbol) => {
 
 test('an invalid diffSetting leaves nothing behind', () => {
   const { engine, live } = tracked();
-  expect(() => createScorer(engine, { diffSettings: { bogusKey: 'x' } })).toThrow(/invalid diffSettings/);
+  expect(() => createScorerFor(engine, { diffSettings: { bogusKey: 'x' } })).toThrow(/invalid diffSettings/);
   expect(live.size).toBe(0);
 });
