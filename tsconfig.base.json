@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    // ESNext, not a year: every year target up to ES2025 compiles `using` into helpers.
+    "target": "ESNext",
     "lib": ["ESNext"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
