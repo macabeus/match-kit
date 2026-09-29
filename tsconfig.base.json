@@ -17,6 +17,6 @@
     "types": ["node"],
     // Under this condition `#engine` (packages/scoring) resolves to its TypeScript source, so the
     // repo typechecks and tests without a build; a consumer never sets it and gets dist/.
-    "customConditions": ["matchkit-source"]
+    "customConditions": ["match-kit-source"]
   }
 }

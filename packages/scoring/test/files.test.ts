@@ -11,7 +11,7 @@ const TARGET = join(EDGE, 'target.o');
 const DIFF = join(EDGE, 'candidate-diff.o');
 const ODD_SIZE = join(EDGE, 'candidate-odd-size.o');
 
-const SCRATCH = mkdtempSync(join(tmpdir(), 'matchkit-scoring-'));
+const SCRATCH = mkdtempSync(join(tmpdir(), 'match-kit-scoring-'));
 afterAll(() => {
   releaseTarget();
   rmSync(SCRATCH, { recursive: true, force: true });

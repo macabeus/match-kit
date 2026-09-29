@@ -37,7 +37,7 @@ module.exports = {
       extensions: ['.ts', '.js', '.json'],
       // Resolve as a browser bundle does, so `#engine` lands on engine/load-browser.ts and the graph
       // checked is the one a browser loads.
-      conditionNames: ['matchkit-source', 'browser', 'import', 'types', 'default'],
+      conditionNames: ['match-kit-source', 'browser', 'import', 'types', 'default'],
     },
   },
 };

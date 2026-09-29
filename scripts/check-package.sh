@@ -1,7 +1,7 @@
 #!/bin/sh
 # The published package, checked as a consumer gets it. The tests and the typecheck resolve
 # `#engine` to src/, so only this checks dist/ and the `exports` and `imports` maps. It packs
-# @matchkit/scoring, installs the tarball into a throwaway project, and:
+# @match-kit/scoring, installs the tarball into a throwaway project, and:
 #   - imports `.`, `./files` and `./display` and scores a pair on Node (and on Bun, when present);
 #   - typechecks a consumer under `node16` and `bundler` resolution, with no custom conditions;
 #   - bundles it for the browser with Vite and checks the bundle reaches no Node built-in.
@@ -13,9 +13,9 @@ root=$(pwd)
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 
-pnpm --filter @matchkit/scoring build >/dev/null
+pnpm --filter @match-kit/scoring build >/dev/null
 (cd packages/scoring && pnpm pack --pack-destination "$work" >/dev/null)
-tarball=$(ls "$work"/matchkit-scoring-*.tgz)
+tarball=$(ls "$work"/match-kit-scoring-*.tgz)
 
 consumer="$work/consumer"
 mkdir -p "$consumer/src"
@@ -28,9 +28,9 @@ npm install --silent --no-audit --no-fund "$tarball" typescript@6.0.3 @types/nod
 
 cat > smoke.mjs <<'EOF'
 import { readFileSync } from 'node:fs';
-import { OBJDIFF_VERSION, createScorer } from '@matchkit/scoring';
-import { sideBySide } from '@matchkit/scoring/display';
-import { releaseTarget, scoreFiles } from '@matchkit/scoring/files';
+import { OBJDIFF_VERSION, createScorer } from '@match-kit/scoring';
+import { sideBySide } from '@match-kit/scoring/display';
+import { releaseTarget, scoreFiles } from '@match-kit/scoring/files';
 
 const fromFiles = scoreFiles('target.o', 'candidate-diff.o', 'add_one');
 const scorer = await createScorer();
@@ -52,9 +52,9 @@ if command -v bun >/dev/null 2>&1; then
 fi
 
 cat > src/consumer.ts <<'EOF'
-import { type MatchScore, createScorer } from '@matchkit/scoring';
-import { differences } from '@matchkit/scoring/display';
-import { scoreFiles } from '@matchkit/scoring/files';
+import { type MatchScore, createScorer } from '@match-kit/scoring';
+import { differences } from '@match-kit/scoring/display';
+import { scoreFiles } from '@match-kit/scoring/files';
 
 const scorer = await createScorer();
 const score: MatchScore = scoreFiles('target.o', 'candidate-diff.o', 'add_one');
@@ -75,7 +75,7 @@ cat > index.html <<'EOF'
 <!doctype html><script type="module" src="/src/browser.ts"></script>
 EOF
 cat > src/browser.ts <<'EOF'
-import { createScorer } from '@matchkit/scoring';
+import { createScorer } from '@match-kit/scoring';
 
 (await createScorer()).dispose();
 EOF

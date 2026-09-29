@@ -1,17 +1,17 @@
-# @matchkit/scoring
+# @match-kit/scoring
 
 Score a compiled candidate against a target object, one symbol at a time, with the
 [objdiff](https://github.com/encounter/objdiff) engine (`objdiff-wasm`, pinned to an exact version).
 Runs on Node ≥ 24, Bun and browsers with `DisposableStack` (Chrome ≥ 134, Firefox ≥ 141).
 
 ```sh
-npm install @matchkit/scoring
+npm install @match-kit/scoring
 ```
 
 ## Score two objects
 
 ```ts
-import { createScorer } from '@matchkit/scoring';
+import { createScorer } from '@match-kit/scoring';
 
 using scorer = await createScorer(); // loads the engine once per process or worker
 using target = scorer.parseTarget(targetBytes); // parse once, score many candidates against it
@@ -29,7 +29,7 @@ const score = scorer.score(target, candidateBytes, 'MyFunction');
 ## Score files on Node
 
 ```ts
-import { releaseTarget, scoreFiles } from '@matchkit/scoring/files';
+import { releaseTarget, scoreFiles } from '@match-kit/scoring/files';
 
 scoreFiles('build/target.o', 'tmp/candidate.o', 'MyFunction');
 ```
@@ -44,7 +44,7 @@ scoreFiles('build/target.o', 'tmp/candidate.o', 'MyFunction');
 ## Show the rows
 
 ```ts
-import { assembly, differences, sideBySide } from '@matchkit/scoring/display';
+import { assembly, differences, sideBySide } from '@match-kit/scoring/display';
 
 const inspection = scorer.inspect(target, candidateBytes, 'MyFunction');
 console.log(sideBySide(inspection));

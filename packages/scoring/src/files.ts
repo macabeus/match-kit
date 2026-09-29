@@ -1,4 +1,4 @@
-// @matchkit/scoring/files — score object files synchronously, with objdiff's default config. The
+// @match-kit/scoring/files — score object files synchronously, with objdiff's default config. The
 // engine loads in this module's top-level await.
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';

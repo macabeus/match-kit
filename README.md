@@ -1,14 +1,14 @@
-# matchkit
+# match-kit
 
 Shared building blocks for matching-decompilation tools: the parts
 [asmlift](https://github.com/macabeus/asmlift) and [Transmuter](https://github.com/macabeus/transmuter)
 both need, implemented once so the two tools never score the same pair of objects differently.
 
-| Package                                 | What it does                                                               |
-| --------------------------------------- | -------------------------------------------------------------------------- |
-| [`@matchkit/scoring`](packages/scoring) | Score a compiled candidate against a target object with the objdiff engine |
+| Package                                  | What it does                                                               |
+| ---------------------------------------- | -------------------------------------------------------------------------- |
+| [`@match-kit/scoring`](packages/scoring) | Score a compiled candidate against a target object with the objdiff engine |
 
-Planned next: `@matchkit/decomp-yaml` (read a project's `decomp.yaml`) and `@matchkit/compiler` (run a
+Planned next: `@match-kit/decomp-yaml` (read a project's `decomp.yaml`) and `@match-kit/compiler` (run a
 project's compile command template).
 
 ## Rules every package follows

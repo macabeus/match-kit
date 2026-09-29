@@ -1,12 +1,12 @@
 {
-  "name": "@matchkit/scoring",
+  "name": "@match-kit/scoring",
   "version": "0.0.0",
   "description": "Score a compiled candidate against a target object with the objdiff engine: one scorer for every matching-decompilation tool",
   "license": "MIT",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/macabeus/matchkit.git",
+    "url": "git+https://github.com/macabeus/match-kit.git",
     "directory": "packages/scoring"
   },
   "engines": {
@@ -33,7 +33,7 @@
   },
   "imports": {
     "#engine": {
-      "matchkit-source": {
+      "match-kit-source": {
         "browser": "./src/engine/load-browser.ts",
         "default": "./src/engine/load-node-bun.ts"
       },
