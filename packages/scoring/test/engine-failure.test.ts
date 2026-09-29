@@ -5,17 +5,19 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setFlagsFromString } from 'node:v8';
 import { runInNewContext } from 'node:vm';
-import { expect, test } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { EngineFailedError, UndiffableError, createScorer } from '../src/index.js';
 
 const read = (name: string) => new Uint8Array(readFileSync(join(import.meta.dirname, 'fixtures', 'edge', name)));
 
-test('a dying engine is reported as one, never as a bad object or a score', { timeout: 60_000 }, async () => {
-  await killEngine();
-  // Runs the finalizers of everything left undisposed (both scorers' configs, both targets): a drop
-  // that traps on the dead instance is uncaught, and vitest fails the run on it.
-  await collectGarbage();
+describe('Scorer', () => {
+  it('reports a dying engine as EngineFailedError, never as a bad object or a score', { timeout: 60_000 }, async () => {
+    await killEngine();
+    // Runs the finalizers of everything left undisposed (both scorers' configs, both targets): a drop
+    // that traps on the dead instance is uncaught, and vitest fails the run on it.
+    await collectGarbage();
+  });
 });
 
 async function killEngine(): Promise<void> {

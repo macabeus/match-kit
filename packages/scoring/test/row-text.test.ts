@@ -1,5 +1,5 @@
 import type * as ObjdiffWasm from 'objdiff-wasm';
-import { expect, test } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { rowText } from '../src/scorer/row-text.js';
 
@@ -13,70 +13,72 @@ const row = (...texts: Text[]): ObjdiffWasm.display.InstructionDiffRow => ({
   segments: texts.map((text) => ({ text, color: { tag: 'normal' }, padTo: 0 })),
 });
 
-test('an instruction: opcode, registers, immediates', () => {
-  expect(
-    rowText(
-      row(
-        { tag: 'address', val: 0x10n },
-        merged({ tag: 'opcode', val: { mnemonic: 'add', opcode: 0 } }),
-        { tag: 'basic', val: 'r0, ' },
-        { tag: 'signed', val: -4n },
-        { tag: 'basic', val: ', ' },
-        { tag: 'unsigned', val: 255n },
-        { tag: 'eol' },
+describe('rowText', () => {
+  it('prints the opcode, registers and immediates', () => {
+    expect(
+      rowText(
+        row(
+          { tag: 'address', val: 0x10n },
+          merged({ tag: 'opcode', val: { mnemonic: 'add', opcode: 0 } }),
+          { tag: 'basic', val: 'r0, ' },
+          { tag: 'signed', val: -4n },
+          { tag: 'basic', val: ', ' },
+          { tag: 'unsigned', val: 255n },
+          { tag: 'eol' },
+        ),
       ),
-    ),
-  ).toBe('add r0, -0x4, 0xff');
-});
+    ).toBe('add r0, -0x4, 0xff');
+  });
 
-test('branch targets become labels, and line numbers are left out', () => {
-  expect(
-    rowText(
-      row(
-        { tag: 'line', val: 42 },
-        merged({ tag: 'opcode', val: { mnemonic: 'b', opcode: 0 } }),
-        { tag: 'branch-dest', val: 0x2an },
-        { tag: 'branch-arrow', val: 1 },
+  it('turns branch targets into labels and leaves out line numbers', () => {
+    expect(
+      rowText(
+        row(
+          { tag: 'line', val: 42 },
+          merged({ tag: 'opcode', val: { mnemonic: 'b', opcode: 0 } }),
+          { tag: 'branch-dest', val: 0x2an },
+          { tag: 'branch-arrow', val: 1 },
+        ),
       ),
-    ),
-  ).toBe('b .L2a');
-});
+    ).toBe('b .L2a');
+  });
 
-test('symbols prefer their demangled name; addends carry their sign', () => {
-  expect(
-    rowText(
-      row(
-        merged({ tag: 'symbol', val: { name: 'inc__7CounterFv', demangledName: 'Counter::inc()' } }),
-        { tag: 'addend', val: 8n },
-        { tag: 'basic', val: ' ' },
-        merged({ tag: 'symbol', val: { name: 'gCount' } }),
-        { tag: 'addend', val: -8n },
+  it('prefers a symbol’s demangled name and signs its addend', () => {
+    expect(
+      rowText(
+        row(
+          merged({ tag: 'symbol', val: { name: 'inc__7CounterFv', demangledName: 'Counter::inc()' } }),
+          { tag: 'addend', val: 8n },
+          { tag: 'basic', val: ' ' },
+          merged({ tag: 'symbol', val: { name: 'gCount' } }),
+          { tag: 'addend', val: -8n },
+        ),
       ),
-    ),
-  ).toBe('Counter::inc()+0x8 gCount-0x8');
-});
+    ).toBe('Counter::inc()+0x8 gCount-0x8');
+  });
 
-test('a reference is marked, and its closing paren dropped', () => {
-  expect(
-    rowText(
-      row(
-        merged({ tag: 'opcode', val: { mnemonic: 'ldr', opcode: 0 } }),
-        { tag: 'basic', val: 'r0' },
-        { tag: 'basic', val: ' (->' },
-        merged({ tag: 'symbol', val: { name: 'gData' } }),
-        { tag: 'basic', val: ')' },
+  it('marks a reference and drops its closing paren', () => {
+    expect(
+      rowText(
+        row(
+          merged({ tag: 'opcode', val: { mnemonic: 'ldr', opcode: 0 } }),
+          { tag: 'basic', val: 'r0' },
+          { tag: 'basic', val: ' (->' },
+          merged({ tag: 'symbol', val: { name: 'gData' } }),
+          { tag: 'basic', val: ')' },
+        ),
       ),
-    ),
-  ).toBe('ldr r0 # REFERENCE_gData');
-});
+    ).toBe('ldr r0 # REFERENCE_gData');
+  });
 
-test('padTo pads the current line to a column', () => {
-  const padded: ObjdiffWasm.display.InstructionDiffRow = {
-    diffKind: 'none',
-    segments: [
-      { text: merged({ tag: 'opcode', val: { mnemonic: 'mov', opcode: 0 } }), color: { tag: 'normal' }, padTo: 8 },
-      { text: { tag: 'basic', val: 'r0' }, color: { tag: 'normal' }, padTo: 0 },
-    ],
-  };
-  expect(rowText(padded)).toBe('mov     r0');
+  it('pads the line to a segment’s padTo column', () => {
+    const padded: ObjdiffWasm.display.InstructionDiffRow = {
+      diffKind: 'none',
+      segments: [
+        { text: merged({ tag: 'opcode', val: { mnemonic: 'mov', opcode: 0 } }), color: { tag: 'normal' }, padTo: 8 },
+        { text: { tag: 'basic', val: 'r0' }, color: { tag: 'normal' }, padTo: 0 },
+      ],
+    };
+    expect(rowText(padded)).toBe('mov     r0');
+  });
 });

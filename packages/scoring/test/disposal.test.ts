@@ -3,7 +3,7 @@
 import { loadEngine } from '#engine';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { expect, test } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { createScorerFor } from '../src/scorer/create-scorer.js';
 import type { Engine } from '../src/types.js';
@@ -59,37 +59,39 @@ const cases: Array<[string, () => Uint8Array, string]> = [
   ['a candidate that does not parse', () => new TextEncoder().encode('not an object'), 'add_one'],
 ];
 
-test.each(cases)('%s leaves nothing behind', (_name, candidate, symbol) => {
-  const { engine, live } = tracked();
-  const scorer = createScorerFor(engine);
-  const target = scorer.parseTarget(read(symbol === 'empty_fn' ? 'edge/zero-rows.o' : 'edge/target.o'));
-  const before = live.size;
-  for (const walk of [scorer.score, scorer.inspect]) {
-    try {
-      walk(target, candidate(), symbol);
-    } catch {
-      // Most cases throw; what matters is what the call leaves behind.
+describe('Scorer', () => {
+  it.each(cases)('releases every engine handle it mints for %s', (_name, candidate, symbol) => {
+    const { engine, live } = tracked();
+    const scorer = createScorerFor(engine);
+    const target = scorer.parseTarget(read(symbol === 'empty_fn' ? 'edge/zero-rows.o' : 'edge/target.o'));
+    const before = live.size;
+    for (const walk of [scorer.score, scorer.inspect]) {
+      try {
+        walk(target, candidate(), symbol);
+      } catch {
+        // Most cases throw; what matters is what the call leaves behind.
+      }
+      expect(live.size).toBe(before);
     }
-    expect(live.size).toBe(before);
-  }
-  target.dispose();
-  scorer.dispose();
-  expect(live.size).toBe(0);
-});
+    target.dispose();
+    scorer.dispose();
+    expect(live.size).toBe(0);
+  });
 
-test('a scorer and a target held by `using` are released when the block ends', () => {
-  const { engine, live } = tracked();
-  {
-    using scorer = createScorerFor(engine);
-    using target = scorer.parseTarget(read('edge/target.o'));
-    scorer.score(target, read('edge/candidate-diff.o'), 'add_one');
-    expect(live.size).toBeGreaterThan(0);
-  }
-  expect(live.size).toBe(0);
-});
+  it('releases its config and its target when the `using` block holding them ends', () => {
+    const { engine, live } = tracked();
+    {
+      using scorer = createScorerFor(engine);
+      using target = scorer.parseTarget(read('edge/target.o'));
+      scorer.score(target, read('edge/candidate-diff.o'), 'add_one');
+      expect(live.size).toBeGreaterThan(0);
+    }
+    expect(live.size).toBe(0);
+  });
 
-test('an invalid diffSetting leaves nothing behind', () => {
-  const { engine, live } = tracked();
-  expect(() => createScorerFor(engine, { diffSettings: { bogusKey: 'x' } })).toThrow(/invalid diffSettings/);
-  expect(live.size).toBe(0);
+  it('releases its config when a diffSetting is invalid', () => {
+    const { engine, live } = tracked();
+    expect(() => createScorerFor(engine, { diffSettings: { bogusKey: 'x' } })).toThrow(/invalid diffSettings/);
+    expect(live.size).toBe(0);
+  });
 });

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
-import { expect, test } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { OBJDIFF_VERSION } from '../src/index.js';
 
@@ -13,12 +13,14 @@ const installed = JSON.parse(
   ),
 );
 
-test('OBJDIFF_VERSION is the exact version package.json pins', () => {
-  // An exact pin, never a range: two objdiff releases can score the same pair differently.
-  expect(manifest.dependencies['objdiff-wasm']).toMatch(/^\d+\.\d+\.\d+$/);
-  expect(OBJDIFF_VERSION).toBe(manifest.dependencies['objdiff-wasm']);
-});
+describe('OBJDIFF_VERSION', () => {
+  it('is the exact version package.json pins', () => {
+    // An exact pin, never a range: two objdiff releases can score the same pair differently.
+    expect(manifest.dependencies['objdiff-wasm']).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(OBJDIFF_VERSION).toBe(manifest.dependencies['objdiff-wasm']);
+  });
 
-test('OBJDIFF_VERSION is the version installed', () => {
-  expect(OBJDIFF_VERSION).toBe(installed.version);
+  it('is the version installed', () => {
+    expect(OBJDIFF_VERSION).toBe(installed.version);
+  });
 });
