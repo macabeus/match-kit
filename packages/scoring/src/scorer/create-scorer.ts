@@ -13,7 +13,7 @@ import type {
   ScorerOptions,
   Target,
 } from '../types.js';
-import { Handles, call, disposeAll, hold, release } from './engine-guard.js';
+import { call, drop, hold } from './engine-guard.js';
 import { SymbolNotFoundError, UndiffableError } from './errors.js';
 import { rowText } from './row-text.js';
 
@@ -36,7 +36,7 @@ const MAPPING = { mappings: [], selectingLeft: undefined, selectingRight: undefi
 interface ParsedTarget extends Target {
   readonly object: ObjdiffWasm.diff.Object;
   readonly owner: object;
-  disposed: boolean;
+  readonly disposed: boolean;
 }
 
 /** A scorer over the objdiff engine, which loads once per process or worker. */
@@ -48,20 +48,23 @@ export async function createScorer(options: ScorerOptions = {}): Promise<Scorer>
 export function createScorerFor(engine: Engine, options: ScorerOptions = {}): Scorer {
   const settings = Object.entries(options.diffSettings ?? {}).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
   const configKey = settings.length === 0 ? '' : JSON.stringify(settings);
-  const config = call(engine, () => new engine.diff.DiffConfig(), 'the engine could not create a DiffConfig', Error);
+  using setup = new DisposableStack();
+  const config = setup.adopt(
+    call(engine, () => new engine.diff.DiffConfig(), 'the engine could not create a DiffConfig', Error),
+    drop,
+  );
   for (const [key, value] of settings) {
     try {
       config.setProperty(key, value);
     } catch (cause) {
-      disposeAll(config);
       throw new Error(`invalid diffSettings: ${key} = ${JSON.stringify(value)}`, { cause });
     }
   }
-  const heldConfig = hold(engine, config);
+  const resources = setup.move();
+  hold(engine, config, resources);
   const owner = {};
-  let disposed = false;
   const live = (): void => {
-    if (disposed) {
+    if (resources.disposed) {
       throw new Error('this scorer was disposed');
     }
   };
@@ -87,13 +90,14 @@ export function createScorerFor(engine: Engine, options: ScorerOptions = {}): Sc
     live();
     const t = parsed(target);
     // The target and the config outlive the call; every handle minted here is released.
-    using handles = new Handles();
-    const candidate = handles.add(
+    using handles = new DisposableStack();
+    const candidate = handles.adopt(
       call(
         engine,
         () => engine.diff.Object.parse(candidateBytes, config, 'base'),
         'the candidate object could not be parsed',
       ),
+      drop,
     );
     // Left is the target and right the candidate, as objdiff's own UI lays them out.
     const { left, right } = call(
@@ -101,8 +105,8 @@ export function createScorerFor(engine: Engine, options: ScorerOptions = {}): Sc
       () => engine.diff.runDiff(t.object, candidate, config, MAPPING),
       'objdiff could not diff the two objects',
     );
-    handles.add(left);
-    handles.add(right);
+    handles.adopt(left, drop);
+    handles.adopt(right, drop);
     if (!left || !right) {
       throw new UndiffableError('objdiff runDiff returned an empty side');
     }
@@ -180,25 +184,20 @@ export function createScorerFor(engine: Engine, options: ScorerOptions = {}): Sc
 
     parseTarget(bytes) {
       live();
-      const object = call(
-        engine,
-        () => engine.diff.Object.parse(bytes, config, 'target'),
-        'the target object could not be parsed',
+      const targetResources = new DisposableStack();
+      const object = targetResources.adopt(
+        call(engine, () => engine.diff.Object.parse(bytes, config, 'target'), 'the target object could not be parsed'),
+        drop,
       );
-      const held = hold(engine, object);
+      hold(engine, object, targetResources);
       const target: ParsedTarget = {
         object,
         owner,
-        disposed: false,
-        dispose() {
-          if (!target.disposed) {
-            target.disposed = true;
-            release(engine, held);
-          }
+        get disposed() {
+          return targetResources.disposed;
         },
-        [Symbol.dispose]() {
-          target.dispose();
-        },
+        dispose: () => targetResources.dispose(),
+        [Symbol.dispose]: () => targetResources.dispose(),
       };
       return target;
     },
@@ -213,15 +212,7 @@ export function createScorerFor(engine: Engine, options: ScorerOptions = {}): Sc
       return { score, rows };
     },
 
-    dispose() {
-      if (!disposed) {
-        disposed = true;
-        release(engine, heldConfig);
-      }
-    },
-
-    [Symbol.dispose]() {
-      this.dispose();
-    },
+    dispose: () => resources.dispose(),
+    [Symbol.dispose]: () => resources.dispose(),
   };
 }

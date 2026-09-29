@@ -13,7 +13,8 @@ const failedEngines = new WeakSet<Engine>();
  */
 const heldHandles = new WeakMap<Engine, Set<WeakRef<object>>>();
 
-export function hold(engine: Engine, handle: object): WeakRef<object> {
+/** Hold `handle` among `engine`'s long-lived handles until `owner` is disposed. */
+export function hold(engine: Engine, handle: object, owner: DisposableStack): void {
   const ref = new WeakRef(handle);
   let held = heldHandles.get(engine);
   if (!held) {
@@ -21,12 +22,7 @@ export function hold(engine: Engine, handle: object): WeakRef<object> {
     heldHandles.set(engine, held);
   }
   held.add(ref);
-  return ref;
-}
-
-export function release(engine: Engine, ref: WeakRef<object>): void {
-  heldHandles.get(engine)?.delete(ref);
-  disposeAll(ref.deref());
+  owner.defer(() => heldHandles.get(engine)?.delete(ref));
 }
 
 function fail(engine: Engine): void {
@@ -34,35 +30,17 @@ function fail(engine: Engine): void {
   const held = heldHandles.get(engine);
   heldHandles.delete(engine);
   for (const ref of held ?? []) {
-    disposeAll(ref.deref());
+    drop(ref.deref());
   }
 }
 
-export function disposeAll(...handles: unknown[]): void {
-  for (const handle of handles) {
-    try {
-      (handle as Partial<Disposable> | undefined)?.[Symbol.dispose]?.();
-    } catch {
-      // A drop that traps is the engine failing: the handle is already forgotten, and the next call
-      // detects the failure.
-    }
-  }
-}
-
-/**
- * The handles one call mints, released in reverse when the `using` that holds them ends. A bare
- * `using` per handle would turn a drop that traps into a SuppressedError hiding the call's own error.
- */
-export class Handles implements Disposable {
-  readonly #held: unknown[] = [];
-
-  add<T>(handle: T): T {
-    this.#held.push(handle);
-    return handle;
-  }
-
-  [Symbol.dispose](): void {
-    disposeAll(...this.#held.reverse());
+/** Release one engine handle: the release every `DisposableStack` here adopts handles with. */
+export function drop(handle: unknown): void {
+  try {
+    (handle as Partial<Disposable> | undefined)?.[Symbol.dispose]?.();
+  } catch {
+    // A drop that traps is the engine failing: the handle is already forgotten, the next call
+    // detects the failure, and a throw here would bury the call's own error in a SuppressedError.
   }
 }
 
@@ -75,10 +53,10 @@ let probeBytes: Uint8Array | undefined;
 /** Whether the engine can still parse an object it is known to parse. */
 function engineIsHealthy(engine: Engine): boolean {
   probeBytes ??= Uint8Array.from(atob(PROBE_OBJECT_BASE64), (c) => c.charCodeAt(0));
-  using handles = new Handles();
+  using handles = new DisposableStack();
   try {
-    const config = handles.add(new engine.diff.DiffConfig());
-    handles.add(engine.diff.Object.parse(probeBytes, config, 'target'));
+    const config = handles.adopt(new engine.diff.DiffConfig(), drop);
+    handles.adopt(engine.diff.Object.parse(probeBytes, config, 'target'), drop);
     return true;
   } catch {
     return false;
