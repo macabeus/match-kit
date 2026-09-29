@@ -1,0 +1,53 @@
+{
+  "name": "@match-kit/scoring",
+  "version": "0.1.0",
+  "description": "Score a compiled candidate against a target object with the objdiff engine: one scorer for every matching-decompilation tool",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/macabeus/match-kit.git",
+    "directory": "packages/scoring"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./display": {
+      "types": "./dist/display.d.ts",
+      "default": "./dist/display.js"
+    },
+    "./files": {
+      "types": "./dist/files.d.ts",
+      "default": "./dist/files.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "imports": {
+    "#engine": {
+      "match-kit-source": {
+        "browser": "./src/engine/load-browser.ts",
+        "default": "./src/engine/load-node-bun.ts"
+      },
+      "types": "./dist/engine/load-node-bun.d.ts",
+      "browser": "./dist/engine/load-browser.js",
+      "default": "./dist/engine/load-node-bun.js"
+    }
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "prepack": "pnpm build"
+  },
+  "dependencies": {
+    "objdiff-wasm": "3.8.1"
+  }
+}

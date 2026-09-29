@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+# npm credentials live here on a publishing machine; never commit them
+.npmrc
+# vitest browser mode failure screenshots
+__screenshots__/
+.vitest/
+# local environment files
+.env
+.env.*

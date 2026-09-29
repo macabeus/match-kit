@@ -1,0 +1,9 @@
+{
+  // What `pnpm typecheck` checks: every package's sources and tests, and the root configs. Each
+  // package's tsconfig.build.json emits its dist/.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["*.ts", "packages/*/src", "packages/*/test"]
+}

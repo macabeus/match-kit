@@ -1,0 +1,31 @@
+# Fixtures
+
+## `reference/`: 28 target/candidate pairs with the score asmlift published for each
+
+Seven pairs per compiler: agbcc (GBA), IDO 7.1 and KMC GCC (N64), CodeWarrior 2.4.2 build 81
+(GameCube). Together they cover an exact match and every breakdown kind.
+
+Each pair is one row of asmlift's synthetic benchmark tier, at the asmlift commit named in
+`manifest.json`:
+
+- **target:** the row's original C source, compiled by the benchmark's own target build.
+- **candidate:** asmlift's or m2c's published output for that row, compiled through the benchmark's
+  own candidate compiler. m2c's output is also retried with the benchmark's dialect typedefs.
+- **expected:** the score asmlift's scorer gave the pair at that commit.
+
+Every pair's score equals the one the benchmark published for that row. `manifest.json` records
+the row, the decompiler, the published score and the expected `MatchScore` for each pair.
+
+To add pairs, build them the same way from an asmlift checkout: `cachedBuildTarget` for the target,
+`benchCompilerFor(toolchain, row.cflags)` for the candidate, and asmlift's `scoreObjects` for the
+expected score. Keep only pairs whose score equals the published one.
+
+## `edge/`: objects for the cases a scorer must refuse or handle specially
+
+| File                                                  | What it is                                                                                                                                              |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `target.o`, `candidate-diff.o`                        | agbcc, `int add_one(int x) { return x + 1; }` against `x + 2`                                                                                           |
+| `candidate-odd-size.o`                                | `candidate-diff.o` with `add_one`'s `st_size` cut to 3, so its last row is half an instruction and the engine cannot display it                         |
+| `zero-rows.o`                                         | `empty_fn` with size 0, beside a real `add_one`; assembled with `arm-none-eabi-as`                                                                      |
+| `absorbed-data.target.o`, `absorbed-data.candidate.o` | `F` = `add r0, #1; bx lr`; the target's has no `.size` and is followed by `.inst.n 0xe800`, which it absorbs; assembled with `arm-none-eabi-as -mthumb` |
+| `cpp-method.target.o`, `cpp-method.candidate.o`       | CodeWarrior 2.4.2 C++, `Counter::inc()` (`inc__7CounterFv`), `n += 1` against `n += 2`                                                                  |
