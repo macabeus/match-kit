@@ -2,7 +2,7 @@
 
 Score a compiled candidate against a target object, one symbol at a time, with the
 [objdiff](https://github.com/encounter/objdiff) engine (`objdiff-wasm`, pinned to an exact version).
-Runs on Node ≥ 22, Bun and browsers with `Symbol.dispose` (Chrome ≥ 125, Firefox ≥ 141).
+Runs on Node ≥ 24, Bun and browsers with `DisposableStack` (Chrome ≥ 134, Firefox ≥ 141).
 
 ```sh
 npm install @matchkit/scoring

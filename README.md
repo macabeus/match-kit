@@ -13,7 +13,7 @@ project's compile command template).
 
 ## Rules every package follows
 
-- **Runs on Node ≥ 22, Bun and browsers with `Symbol.dispose`.** No `Bun.*` API. A module that needs Node is a separate,
+- **Runs on Node ≥ 24, Bun and browsers with `DisposableStack`.** No `Bun.*` API. A module that needs Node is a separate,
   Node-only entry point, and `pnpm check-deps` fails if a browser-safe module reaches one.
 - **Fails closed.** An error throws; it never becomes a plausible-looking result.
 - **Tested without compilers.** Tests read committed fixtures, so CI needs nothing but `node_modules`.
