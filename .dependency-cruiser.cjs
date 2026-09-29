@@ -35,7 +35,7 @@ module.exports = {
     // Explicit extensions, so `.ts` imports resolve under any TypeScript version.
     enhancedResolveOptions: {
       extensions: ['.ts', '.js', '.json'],
-      // Resolve as a browser bundle does, so `#engine` lands on engine-browser.ts and the graph
+      // Resolve as a browser bundle does, so `#engine` lands on engine/load-browser.ts and the graph
       // checked is the one a browser loads.
       conditionNames: ['matchkit-source', 'browser', 'import', 'types', 'default'],
     },
