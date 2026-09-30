@@ -1,0 +1,25 @@
+# Every field the decomp_settings spec names, plus a tool block.
+name: Dr. Mario 64
+repo: https://github.com/example/drmario64
+website: https://example.com
+discord: https://discord.gg/example
+platform: n64
+build_system: make
+versions:
+  - name: us
+    fullname: US
+    sha1: 8ff5d4a2e7d3e8e4c4e1f4b7a1d2c3b4a5f6e7d8
+    paths:
+      target: config/us/baserom.us.z64
+      build_dir: build/us
+      map: build/us/drmario64.us.map
+      compiled_target: build/us/drmario64.us.z64
+      elf: build/us/drmario64.us.elf
+      expected_dir: expected/
+      asm: asm/us
+      nonmatchings: asm/us/nonmatchings
+      compressed_target: config/us/baserom.us.compressed.z64
+      compressed_compiled_target: build/us/drmario64.us.compressed.z64
+tools:
+  asmlift:
+    target: ido7.1
