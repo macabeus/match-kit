@@ -43,8 +43,10 @@ a typo, and `z.object` drops it. The schema must validate synchronously.
 ## What is checked
 
 - **Accepted:** every field may be missing, and keys the decomp_settings spec does not name are kept.
-  The spec itself requires `name`, `platform`, `versions` and four paths per version, and refuses
-  unknown keys; most real projects' files do not meet that.
+  The official decomp_settings reader (0.0.10) is stricter: it requires `name`, `platform`, `versions`,
+  and per version `fullname` plus four paths (`target`, `build_dir`, `map`, `compiled_target`), and
+  refuses unknown keys. Files written for decomp_settings 0.0.8 (`github`, `baserom`, `build`) and files
+  holding only a tool's block fail it, and this package reads them.
 - **Refused:** a file that is not YAML, a top level that is not a mapping, and a field the spec names
   with the wrong type (`platform: 64`, `versions: us`).
 
