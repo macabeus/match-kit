@@ -1,10 +1,9 @@
 # @match-kit/decomp-yaml
 
 Read a project's `decomp.yaml`, the [decomp_settings](https://github.com/ethteck/decomp_settings)
-format that matching-decompilation tools share, checked against its spec, and check your tool's block
-with your own
-[Standard Schema](https://standardschema.dev) (zod, valibot, ArkType, …). Runs on Node ≥ 24, Bun and
-browsers.
+format that matching-decompilation tools share, checked against its spec. Read your tool's block with
+your own [Standard Schema](https://standardschema.dev) (zod, valibot, ArkType, …). Runs on Node ≥ 24,
+Bun and browsers.
 
 ```sh
 npm install @match-kit/decomp-yaml
@@ -15,7 +14,7 @@ npm install @match-kit/decomp-yaml
 ```ts
 import { toolBlock } from '@match-kit/decomp-yaml';
 import { loadDecompYaml } from '@match-kit/decomp-yaml/files';
-import { z } from 'zod';
+import * as z from 'zod';
 
 const loaded = loadDecompYaml(); // { path, dir, config }, or null when there is none
 loaded?.config.platform; // 'gba'
@@ -26,7 +25,7 @@ const settings = toolBlock(loaded, 'mytool', MyTool); // { compiler?, jobs? }, o
 
 - `loadDecompYaml(explicitPath?, startDir?)` reads `explicitPath`, or else the nearest file from
   `startDir` (default: the working directory) up to the root, trying `decomp.yaml` before
-  `decomp.yml` in each directory. An explicit path that does not exist throws.
+  `decomp.yml` in each directory. A missing explicit path throws.
 - `findDecompYaml(startDir?)` returns that nearest path without reading it.
 - `dir` is the file's directory. The config's relative paths are relative to it.
 - `@match-kit/decomp-yaml/files` needs Node or Bun. In a browser, parse the text you have:
@@ -38,8 +37,8 @@ const settings = toolBlock(loaded, 'mytool', MyTool); // { compiler?, jobs? }, o
 output, so defaults and transforms apply. It returns `undefined` when there is no config or no block
 for the tool.
 
-The schema decides what the block may hold: `z.strictObject` refuses a key it does not name, such as
-a typo, and `z.object` drops it. The schema must validate synchronously.
+The schema decides what the block may hold: `z.strictObject` refuses unknown keys, such as a typo,
+and `z.object` drops them. The schema must validate synchronously.
 
 ## The format
 
@@ -53,8 +52,8 @@ a typo, and `z.object` drops it. The schema must validate synchronously.
 
 ## What is checked
 
-A decomp.yaml must meet the spec: the required fields, no key the spec does not name outside `tools`,
-and every field of its type. A field left empty (`null`) reads as missing. The one difference from the
+A decomp.yaml must meet the spec: its required fields, only the keys it names (any key inside
+`tools`), and every field of its type. A field left empty (`null`) reads as missing. The one difference from the
 official decomp_settings reader: that reader also takes a number or boolean where a string is expected,
 and this package refuses it.
 

@@ -3,10 +3,11 @@
 // schema.json and SPEC.md's field reference are generated from it.
 import * as z from 'zod';
 
-/** A field the spec does not require. Left empty (`null`), it reads as missing. */
+/** An optional field. Left empty (`null`), it reads as missing. */
 const optional = <Schema extends z.ZodType>(schema: Schema, meta: { description: string; examples?: string[] }) =>
   schema
     .nullish()
+    // before the transform, where z.toJSONSchema keeps the examples
     .meta(meta)
     .transform((value) => value ?? undefined)
     .optional();
@@ -36,7 +37,7 @@ const paths = z
     }),
     asm: optional(z.string(), { description: 'The directory of disassembled assembly.', examples: ['asm/'] }),
     nonmatchings: optional(z.string(), {
-      description: 'The directory of functions or files that do not match the target yet.',
+      description: 'The directory of the functions and files still to match.',
       examples: ['asm/nonmatchings'],
     }),
     compressed_target: optional(z.string(), {

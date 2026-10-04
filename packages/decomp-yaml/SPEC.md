@@ -37,8 +37,8 @@ tools:
 
 ## Fields
 
-Paths are relative to the directory that holds the decomp.yaml. A field that is not required may be
-left out or left empty (`null`). No key outside the tables is allowed, except inside `tools`.
+Paths are relative to the directory that holds the decomp.yaml. An optional field may be left out or
+left empty (`null`). Only the keys in these tables are allowed, plus any key inside `tools`.
 
 <!-- fields: generated from schema.json by test/schema.test.ts -->
 
@@ -69,7 +69,7 @@ left out or left empty (`null`). No key outside the tables is allowed, except in
 | `versions[].paths.elf`                        | string |          | The intermediate ELF the build produces, if any.                                                | `build/pokemonsnap.elf`                  |
 | `versions[].paths.expected_dir`               | string |          | The directory of expected build output to compare against, often a copy of the build directory. | `expected/`                              |
 | `versions[].paths.asm`                        | string |          | The directory of disassembled assembly.                                                         | `asm/`                                   |
-| `versions[].paths.nonmatchings`               | string |          | The directory of functions or files that do not match the target yet.                           | `asm/nonmatchings`                       |
+| `versions[].paths.nonmatchings`               | string |          | The directory of the functions and files still to match.                                        | `asm/nonmatchings`                       |
 | `versions[].paths.compressed_target`          | string |          | The original binary before decompression, if the target is compressed.                          | `config/usa/rom_original.z64`            |
 | `versions[].paths.compressed_compiled_target` | string |          | The compressed binary the build produces, if any.                                               | `build/usa/compressed_rom.z64`           |
 
@@ -88,9 +88,7 @@ and @match-kit/decomp-yaml refuses both:
 - A number or boolean where a string is expected (`name: 123`) is read as its text.
 - `versions:` left empty is read as no versions.
 
-The reader also stops with a panic, not an error value, on the first problem it finds.
-
 ## How @match-kit/decomp-yaml reads it
 
-[@match-kit/decomp-yaml](README.md) accepts exactly the files this specification accepts. It also
-finds a file named `decomp.yml` when there is no `decomp.yaml`.
+[@match-kit/decomp-yaml](README.md) accepts exactly the files this specification accepts. Its loader
+also finds `decomp.yml`, trying it after `decomp.yaml`.

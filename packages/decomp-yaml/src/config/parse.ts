@@ -6,8 +6,7 @@ import { issueLines } from './issues.js';
 import { DECOMP_YAML } from './spec.js';
 
 /**
- * Parse a decomp.yaml's text and check it against the decomp_settings spec: every required field,
- * no key the spec does not name outside `tools`, each field of its type. A field left empty
+ * Parse a decomp.yaml's text and check it against the decomp_settings spec. A field left empty
  * (`null`) reads as missing. `path` names the file in errors.
  */
 export function parseDecompYaml(text: string, path = 'decomp.yaml'): DecompConfig {

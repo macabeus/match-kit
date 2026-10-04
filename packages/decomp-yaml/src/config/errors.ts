@@ -1,4 +1,4 @@
-/** A decomp.yaml that cannot be read, is not valid YAML, or has a field of the wrong type. */
+/** A decomp.yaml that cannot be read, is not valid YAML, or fails the spec or a tool's schema. */
 export class DecompYamlError extends Error {
   /** The decomp.yaml the error is about. */
   readonly path: string;

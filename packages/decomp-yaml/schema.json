@@ -97,7 +97,7 @@
           "type": ["string", "null"]
         },
         "nonmatchings": {
-          "description": "The directory of functions or files that do not match the target yet.",
+          "description": "The directory of the functions and files still to match.",
           "examples": ["asm/nonmatchings"],
           "type": ["string", "null"]
         },

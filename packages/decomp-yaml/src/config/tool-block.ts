@@ -7,8 +7,8 @@ import { issueLines } from './issues.js';
 /**
  * Read `tools.<tool>` through the tool's own schema: any Standard Schema, such as a zod, valibot or
  * ArkType schema, that validates synchronously. Returns the schema's output, or `undefined` when
- * there is no config or it has no block for this tool. The schema decides what else the block may
- * hold, including keys it does not name.
+ * there is no config or it has no block for this tool. The schema decides which keys the block may
+ * hold.
  */
 export function toolBlock<Schema extends StandardSchemaV1>(
   loaded: LoadedConfig | null,

@@ -2,7 +2,8 @@
 # The published packages, checked as a consumer gets them. The tests and the typecheck resolve
 # `#engine` to src/, so only this checks dist/ and the `exports` and `imports` maps. It packs every
 # package, installs the tarballs into a throwaway project, and:
-#   - imports every entry, scores a pair and reads a decomp.yaml on Node (and on Bun, when present);
+#   - imports every entry, scores a pair and reads a decomp.yaml on Node (and on Bun, when present),
+#     and checks that decomp-yaml ships schema.json and SPEC.md;
 #   - typechecks a consumer under `node16` and `bundler` resolution, with no custom conditions;
 #   - bundles the browser entries with Vite and checks the bundle reaches no Node built-in.
 #
@@ -106,7 +107,7 @@ export default { build: { target: 'es2022' }, optimizeDeps: { exclude: ['objdiff
 EOF
 printf 'vite build: '
 npx vite build --logLevel error >/dev/null
-# A quoted `node:` specifier, so an object key such as yaml's `node:null` does not count.
+# A quoted `node:` specifier: yaml's bundle holds an object key `node:null`.
 if grep -lE "[\"'\`]node:[a-z]" dist/assets/*.js >/dev/null 2>&1; then
   echo 'the browser bundle reaches a Node built-in'
   exit 1
