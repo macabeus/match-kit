@@ -1,35 +1,37 @@
+import SCHEMA from '#schema' with { type: 'json' };
 import YAML from 'yaml';
 
 import type { DecompConfig } from '../types.js';
 import { DecompYamlError } from './errors.js';
 
-const CONFIG_STRINGS = ['name', 'repo', 'website', 'discord', 'platform', 'build_system'];
-const VERSION_STRINGS = ['name', 'fullname', 'sha1'];
-const PATH_STRINGS = [
-  'target',
-  'build_dir',
-  'map',
-  'compiled_target',
-  'elf',
-  'expected_dir',
-  'asm',
-  'nonmatchings',
-  'compressed_target',
-  'compressed_compiled_target',
-];
+/** The part of schema.json the parser reads: each field's type, and the fields inside it. */
+interface SchemaNode {
+  type?: string | string[];
+  properties?: Record<string, SchemaNode>;
+  items?: SchemaNode;
+  $ref?: string;
+}
+
+const DEFS = (SCHEMA as { $defs: Record<string, SchemaNode> }).$defs;
 
 type Mapping = Record<string, unknown>;
 
 const isMapping = (value: unknown): value is Mapping =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
 
+const KINDS: Record<string, { is: (value: unknown) => boolean; name: string }> = {
+  string: { is: (value) => typeof value === 'string', name: 'a string' },
+  object: { is: isMapping, name: 'a mapping' },
+  array: { is: Array.isArray, name: 'a list' },
+};
+
 const describe = (value: unknown): string =>
   value === null ? 'null' : Array.isArray(value) ? 'a list' : isMapping(value) ? 'a mapping' : `a ${typeof value}`;
 
 /**
- * Parse a decomp.yaml's text. A missing field is accepted, and so is a field left empty (`null`),
- * which is dropped; a field the spec names must otherwise have the spec's type. `path` names the
- * file in errors.
+ * Parse a decomp.yaml's text. Each field schema.json names must have the type it gives; unlike the
+ * schema, no field is required, keys it does not name are kept, and a field left empty (`null`) is
+ * dropped as if it were missing. `path` names the file in errors.
  */
 export function parseDecompYaml(text: string, path = 'decomp.yaml'): DecompConfig {
   let parsed: unknown;
@@ -43,51 +45,34 @@ export function parseDecompYaml(text: string, path = 'decomp.yaml'): DecompConfi
   if (!isMapping(parsed)) {
     throw new DecompYamlError(path, `must be a mapping at the top level, not ${describe(parsed)}`);
   }
-  const problems = fieldProblems(parsed);
+  const problems: string[] = [];
+  checkFields(parsed, SCHEMA as SchemaNode, '', problems);
   if (problems.length > 0) {
     throw new DecompYamlError(path, problems);
   }
   return parsed as DecompConfig;
 }
 
-function fieldProblems(config: Mapping): string[] {
-  const problems: string[] = [];
-  /** Whether `mapping[key]` is present and has the right kind; a `null` is dropped as absent. */
-  const check = (mapping: Mapping, key: string, where: string, ok: (value: unknown) => boolean, kind: string) => {
-    const value = mapping[key];
-    if (value === null) {
-      delete mapping[key];
-      return false;
-    }
-    if (value === undefined) {
-      return false;
-    }
-    if (!ok(value)) {
-      problems.push(`${where} must be ${kind}, not ${describe(value)}`);
-      return false;
-    }
-    return true;
-  };
-  const strings = (mapping: Mapping, keys: string[], prefix: string) => {
-    for (const key of keys) {
-      check(mapping, key, `${prefix}${key}`, (value) => typeof value === 'string', 'a string');
-    }
-  };
-
-  strings(config, CONFIG_STRINGS, '');
-  check(config, 'tools', 'tools', isMapping, 'a mapping');
-  if (check(config, 'versions', 'versions', Array.isArray, 'a list')) {
-    (config.versions as unknown[]).forEach((version, i) => {
-      const where = `versions[${i}]`;
-      if (!isMapping(version)) {
-        problems.push(`${where} must be a mapping, not ${describe(version)}`);
-        return;
-      }
-      strings(version, VERSION_STRINGS, `${where}.`);
-      if (check(version, 'paths', `${where}.paths`, isMapping, 'a mapping')) {
-        strings(version.paths as Mapping, PATH_STRINGS, `${where}.paths.`);
-      }
-    });
+/** Check `value` against `node`, adding a problem for each field of the wrong type to `problems`. */
+function check(value: unknown, node: SchemaNode, where: string, problems: string[]): void {
+  const resolved = node.$ref === undefined ? node : DEFS[node.$ref.slice('#/$defs/'.length)];
+  const kinds = [resolved.type ?? []].flat().filter((kind) => kind !== 'null');
+  if (!kinds.some((kind) => KINDS[kind].is(value))) {
+    problems.push(`${where} must be ${kinds.map((kind) => KINDS[kind].name).join(' or ')}, not ${describe(value)}`);
+  } else if (isMapping(value)) {
+    checkFields(value, resolved, `${where}.`, problems);
+  } else if (Array.isArray(value) && resolved.items) {
+    value.forEach((item, i) => check(item, resolved.items!, `${where}[${i}]`, problems));
   }
-  return problems;
+}
+
+/** Check each field `node` names in `mapping`, dropping the ones left empty. */
+function checkFields(mapping: Mapping, node: SchemaNode, prefix: string, problems: string[]): void {
+  for (const [key, field] of Object.entries(node.properties ?? {})) {
+    if (mapping[key] === null) {
+      delete mapping[key];
+    } else if (mapping[key] !== undefined) {
+      check(mapping[key], field, `${prefix}${key}`, problems);
+    }
+  }
 }

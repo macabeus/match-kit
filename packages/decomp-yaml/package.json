@@ -30,6 +30,9 @@
     "./schema.json": "./schema.json",
     "./package.json": "./package.json"
   },
+  "imports": {
+    "#schema": "./schema.json"
+  },
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch",

@@ -77,10 +77,10 @@ describe('parseDecompYaml', () => {
     );
     expect(error.problems).toEqual([
       'platform must be a string, not a number',
-      'tools must be a mapping, not a list',
       'versions[0].fullname must be a string, not a number',
       'versions[0].paths.elf must be a string, not a list',
       'versions[1] must be a mapping, not a string',
+      'tools must be a mapping, not a list',
     ]);
     expect(error.message.split('\n')).toEqual(error.problems.map((p) => `p/decomp.yaml: ${p}`));
   });

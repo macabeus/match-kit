@@ -138,6 +138,30 @@ describe('schema.json', () => {
     );
   });
 
+  // parseDecompYaml reads each field's type from schema.json; a keyword or type it does not read
+  // would make it accept what the schema refuses.
+  it('uses only the keywords and types parseDecompYaml reads', () => {
+    const READ = ['type', 'properties', 'items', '$ref', '$defs'];
+    const NOT_READ = ['$schema', '$id', 'title', 'description', 'examples', 'required', 'additionalProperties'];
+    const keywords = new Set<string>();
+    const types = new Set<string>();
+    const walk = (node: Record<string, unknown>) => {
+      for (const [keyword, value] of Object.entries(node)) {
+        keywords.add(keyword);
+        if (keyword === 'type') {
+          [value as string | string[]].flat().forEach((type) => types.add(type));
+        } else if (keyword === 'properties' || keyword === '$defs') {
+          Object.values(value as Record<string, Record<string, unknown>>).forEach(walk);
+        } else if (keyword === 'items') {
+          walk(value as Record<string, unknown>);
+        }
+      }
+    };
+    walk(SCHEMA);
+    expect([...keywords].filter((keyword) => !READ.includes(keyword) && !NOT_READ.includes(keyword))).toEqual([]);
+    expect([...types].sort()).toEqual(['array', 'null', 'object', 'string']);
+  });
+
   it('has every string field it names enforced by parseDecompYaml', () => {
     for (const [prefix, schema] of OBJECTS) {
       for (const [key, property] of Object.entries(schema.properties)) {
