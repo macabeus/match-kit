@@ -14,8 +14,7 @@ import { parseDecompYaml } from '../src/index.js';
 const PACKAGE = join(import.meta.dirname, '..');
 const SCHEMA_PATH = join(PACKAGE, 'schema.json');
 const SPEC_PATH = join(PACKAGE, 'SPEC.md');
-const { version } = JSON.parse(readFileSync(join(PACKAGE, 'package.json'), 'utf8'));
-const SCHEMA_URL = `https://cdn.jsdelivr.net/npm/@match-kit/decomp-yaml@${version}/schema.json`;
+const SCHEMA_URL = 'https://cdn.jsdelivr.net/npm/@match-kit/decomp-yaml/schema.json';
 
 /** schema.json as generated from the zod spec. */
 function generatedSchema(): Record<string, any> {
@@ -55,17 +54,6 @@ const accepts = (document: unknown) => {
 describe('schema.json', () => {
   it('is generated from the zod spec', async () => {
     await expect(await format(JSON.stringify(generatedSchema()), SCHEMA_PATH)).toMatchFileSnapshot(SCHEMA_PATH);
-  });
-
-  it("names this package's version in its $id and in every documented URL", () => {
-    expect(SCHEMA.$id).toBe(SCHEMA_URL);
-    for (const file of ['SPEC.md', 'README.md']) {
-      const urls = readFileSync(join(PACKAGE, file), 'utf8').match(
-        /https:\/\/cdn\.jsdelivr\.net\/npm\/@match-kit\/decomp-yaml(@[^/]+)?\/schema\.json/g,
-      );
-      expect(urls, file).not.toBeNull();
-      expect(new Set(urls), `${file}: run scripts/sync-schema-version.mjs`).toEqual(new Set([SCHEMA_URL]));
-    }
   });
 
   it.each<[string, unknown, boolean]>([

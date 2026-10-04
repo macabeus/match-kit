@@ -2,14 +2,14 @@
 
 A matching-decompilation project keeps the settings its tools share in one file, `decomp.yaml`, at the
 root of the project. The format is [decomp_settings](https://github.com/ethteck/decomp_settings). This
-document describes it as its official reader, decomp_settings 0.0.10 (Rust and Python), declares it.
+document describes its schema.
 
-[`schema.json`](schema.json) is the same specification as a JSON Schema (draft 2020-12). To check a
+[`schema.json`](schema.json) is the same specification as a JSON Schema. To check a
 file and get completion in an editor that uses the YAML language server (VS Code with the YAML
 extension, JetBrains IDEs, Neovim, Zed), start the file with:
 
 ```yaml
-# yaml-language-server: $schema=https://cdn.jsdelivr.net/npm/@match-kit/decomp-yaml@0.0.0/schema.json
+# yaml-language-server: $schema=https://cdn.jsdelivr.net/npm/@match-kit/decomp-yaml/schema.json
 ```
 
 ## Example

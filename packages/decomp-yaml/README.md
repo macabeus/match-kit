@@ -2,8 +2,7 @@
 
 Read a project's `decomp.yaml`, the [decomp_settings](https://github.com/ethteck/decomp_settings)
 format that matching-decompilation tools share, checked against its spec. Read your tool's block with
-your own [Standard Schema](https://standardschema.dev) (zod, valibot, ArkType, …). Runs on Node ≥ 24,
-Bun and browsers.
+your own [Standard Schema](https://standardschema.dev) (zod, valibot, ArkType, …).
 
 ```sh
 npm install @match-kit/decomp-yaml
@@ -26,9 +25,7 @@ const settings = toolBlock(loaded, 'mytool', MyTool); // { compiler?, jobs? }, o
 - `searchDecompYaml(from?)` reads the nearest decomp.yaml from `from` (default: the working directory)
   up to the root, trying `decomp.yaml` before `decomp.yml` in each directory, or returns `null`.
 - `loadDecompYaml(path)` reads the file at `path`, and a missing one throws.
-- `dir` is the file's directory. The config's relative paths are relative to it.
-- `@match-kit/decomp-yaml/files` needs Node or Bun. In a browser, parse the text you have:
-  `parseDecompYaml(text, path?)`.
+- `@match-kit/decomp-yaml/files` needs Node or Bun. In a browser, use `parseDecompYaml(text, path?)`.
 
 ## Your tool's block
 
@@ -46,22 +43,5 @@ and `z.object` drops them. The schema must validate synchronously.
 `@match-kit/decomp-yaml/schema.json`. To check a file in your editor, start it with:
 
 ```yaml
-# yaml-language-server: $schema=https://cdn.jsdelivr.net/npm/@match-kit/decomp-yaml@0.0.0/schema.json
+# yaml-language-server: $schema=https://cdn.jsdelivr.net/npm/@match-kit/decomp-yaml/schema.json
 ```
-
-## What is checked
-
-A decomp.yaml must meet the spec: its required fields, only the keys it names (any key inside
-`tools`), and every field of its type. A field left empty (`null`) reads as missing. The one difference from the
-official decomp_settings reader: that reader also takes a number or boolean where a string is expected,
-and this package refuses it.
-
-Every failure throws `DecompYamlError`, one line per problem, each prefixed with the file's path:
-
-```
-/home/me/game/decomp.yaml: versions[0].paths.map: Invalid input: expected string, received undefined
-/home/me/game/decomp.yaml: Unrecognized key: "github"
-/home/me/game/decomp.yaml: tools.mytool.jobs: Invalid input: expected number, received string
-```
-
-`error.path` is the file and `error.problems` the lines without it.
