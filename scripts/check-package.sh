@@ -36,10 +36,10 @@ import { OBJDIFF_VERSION, createScorer } from '@match-kit/scoring';
 import { sideBySide } from '@match-kit/scoring/display';
 import { releaseTarget, scoreFiles } from '@match-kit/scoring/files';
 import { toolBlock } from '@match-kit/decomp-yaml';
-import { loadDecompYaml } from '@match-kit/decomp-yaml/files';
+import { findDecompYaml, loadDecompYaml } from '@match-kit/decomp-yaml/files';
 import { z } from 'zod';
 
-const block = toolBlock(loadDecompYaml(), 'asmlift', z.object({ target: z.string() }));
+const block = toolBlock(loadDecompYaml(findDecompYaml()), 'asmlift', z.object({ target: z.string() }));
 if (block?.target !== 'agbcc') {
   throw new Error(`unexpected tool block: ${JSON.stringify(block)}`);
 }
@@ -71,10 +71,10 @@ import { type MatchScore, createScorer } from '@match-kit/scoring';
 import { differences } from '@match-kit/scoring/display';
 import { scoreFiles } from '@match-kit/scoring/files';
 import { type DecompConfig, toolBlock } from '@match-kit/decomp-yaml';
-import { loadDecompYaml } from '@match-kit/decomp-yaml/files';
+import { findDecompYaml, loadDecompYaml } from '@match-kit/decomp-yaml/files';
 import { z } from 'zod';
 
-const loaded = loadDecompYaml();
+const loaded = loadDecompYaml(findDecompYaml());
 const platform: string | undefined = (loaded?.config satisfies DecompConfig | undefined)?.platform;
 const target: string | undefined = toolBlock(loaded, 'asmlift', z.object({ target: z.string() }))?.target;
 const scorer = await createScorer();

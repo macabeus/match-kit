@@ -31,25 +31,25 @@ export function findDecompYaml(startDir = process.cwd()): string | null {
   }
 }
 
-/**
- * Read the decomp.yaml at `explicitPath`, or else the nearest one to `startDir`. `null` when no
- * explicit path is given and there is none; a missing explicit path throws.
- */
-export function loadDecompYaml(explicitPath?: string, startDir?: string): LoadedConfig | null {
-  const path = explicitPath === undefined ? findDecompYaml(startDir) : resolve(explicitPath);
+/** Read the decomp.yaml at `path`. A missing file throws. */
+export function loadDecompYaml(path: string): LoadedConfig;
+/** `null` (no decomp.yaml, as `findDecompYaml` reports it) reads as `null`. */
+export function loadDecompYaml(path: string | null): LoadedConfig | null;
+export function loadDecompYaml(path: string | null): LoadedConfig | null {
   if (path === null) {
     return null;
   }
+  const absolute = resolve(path);
   let text: string;
   try {
-    text = readFileSync(path, 'utf8');
+    text = readFileSync(absolute, 'utf8');
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
     throw new DecompYamlError(
-      path,
+      absolute,
       code === 'ENOENT' ? 'not found' : `cannot be read: ${error instanceof Error ? error.message : error}`,
       { cause: error },
     );
   }
-  return { path, dir: dirname(path), config: parseDecompYaml(text, path) };
+  return { path: absolute, dir: dirname(absolute), config: parseDecompYaml(text, absolute) };
 }

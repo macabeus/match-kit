@@ -13,20 +13,20 @@ npm install @match-kit/decomp-yaml
 
 ```ts
 import { toolBlock } from '@match-kit/decomp-yaml';
-import { loadDecompYaml } from '@match-kit/decomp-yaml/files';
+import { findDecompYaml, loadDecompYaml } from '@match-kit/decomp-yaml/files';
 import * as z from 'zod';
 
-const loaded = loadDecompYaml(); // { path, dir, config }, or null when there is none
+const loaded = loadDecompYaml(findDecompYaml()); // { path, dir, config }, or null when there is none
 loaded?.config.platform; // 'gba'
 
 const MyTool = z.strictObject({ compiler: z.string().optional(), jobs: z.number().int().optional() });
 const settings = toolBlock(loaded, 'mytool', MyTool); // { compiler?, jobs? }, or undefined
 ```
 
-- `loadDecompYaml(explicitPath?, startDir?)` reads `explicitPath`, or else the nearest file from
-  `startDir` (default: the working directory) up to the root, trying `decomp.yaml` before
-  `decomp.yml` in each directory. A missing explicit path throws.
-- `findDecompYaml(startDir?)` returns that nearest path without reading it.
+- `findDecompYaml(startDir?)` returns the nearest decomp.yaml from `startDir` (default: the working
+  directory) up to the root, trying `decomp.yaml` before `decomp.yml` in each directory, or `null`.
+- `loadDecompYaml(path)` reads the file at `path`, and a missing one throws. Given `null`, it returns
+  `null`, so a tool with a `--config` flag writes `loadDecompYaml(flags.config ?? findDecompYaml())`.
 - `dir` is the file's directory. The config's relative paths are relative to it.
 - `@match-kit/decomp-yaml/files` needs Node or Bun. In a browser, parse the text you have:
   `parseDecompYaml(text, path?)`.
