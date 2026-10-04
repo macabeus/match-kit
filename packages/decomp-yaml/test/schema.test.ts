@@ -54,6 +54,19 @@ const OBJECTS: [prefix: string, schema: ObjectSchema][] = [
 ];
 
 describe('schema.json', () => {
+  it("names this package's version in its $id and in every documented URL", () => {
+    const { version } = JSON.parse(readFileSync(join(PACKAGE, 'package.json'), 'utf8'));
+    const expected = `https://cdn.jsdelivr.net/npm/@match-kit/decomp-yaml@${version}/schema.json`;
+    expect(SCHEMA.$id).toBe(expected);
+    for (const file of ['SPEC.md', 'README.md']) {
+      const urls = readFileSync(join(PACKAGE, file), 'utf8').match(
+        /https:\/\/cdn\.jsdelivr\.net\/npm\/@match-kit\/decomp-yaml(@[^/]+)?\/schema\.json/g,
+      );
+      expect(urls, file).not.toBeNull();
+      expect(new Set(urls), `${file}: run scripts/sync-schema-version.mjs`).toEqual(new Set([expected]));
+    }
+  });
+
   it('accepts a file with every field the spec names', () => {
     expect(validate(SPEC_COMPLETE), JSON.stringify(validate.errors)).toBe(true);
   });

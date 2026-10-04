@@ -9,7 +9,7 @@ file and get completion in an editor that uses the YAML language server (VS Code
 extension, JetBrains IDEs, Neovim, Zed), start the file with:
 
 ```yaml
-# yaml-language-server: $schema=https://cdn.jsdelivr.net/npm/@match-kit/decomp-yaml/schema.json
+# yaml-language-server: $schema=https://cdn.jsdelivr.net/npm/@match-kit/decomp-yaml@0.0.0/schema.json
 ```
 
 ## Example

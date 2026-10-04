@@ -17,6 +17,7 @@
     "test:bun": "bun --bun vitest run --project node",
     "test:browser": "vitest run --project browser",
     "changeset": "changeset",
+    "release:version": "changeset version && node packages/decomp-yaml/scripts/sync-schema-version.mjs",
     "check-package": "sh scripts/check-package.sh"
   },
   "devDependencies": {

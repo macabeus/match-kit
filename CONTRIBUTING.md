@@ -39,8 +39,9 @@ merge a `link:` dependency: set it to the published exact version and run `pnpm 
 Each package is versioned on its own with [changesets](https://github.com/changesets/changesets).
 
 1. Every PR that changes a published package adds a changeset: `pnpm changeset`.
-2. To release, on an up-to-date `main`: `pnpm changeset version`, review the version bumps and
-   changelogs, commit, and push.
+2. To release, on an up-to-date `main`: `pnpm release:version`, review the version bumps and
+   changelogs, commit, and push. It runs `changeset version`, then points `@match-kit/decomp-yaml`'s
+   schema URLs at its new version.
 3. `pnpm build && pnpm changeset publish --otp <code>`, then `git push --tags`.
 
 Publishing needs the npm account's two-factor code, so a maintainer runs step 3.

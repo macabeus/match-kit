@@ -47,7 +47,7 @@ a typo, and `z.object` drops it. The schema must validate synchronously.
 `@match-kit/decomp-yaml/schema.json`. To check a file in your editor, start it with:
 
 ```yaml
-# yaml-language-server: $schema=https://cdn.jsdelivr.net/npm/@match-kit/decomp-yaml/schema.json
+# yaml-language-server: $schema=https://cdn.jsdelivr.net/npm/@match-kit/decomp-yaml@0.0.0/schema.json
 ```
 
 ## What is checked

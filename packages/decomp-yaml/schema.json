@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://cdn.jsdelivr.net/npm/@match-kit/decomp-yaml/schema.json",
+  "$id": "https://cdn.jsdelivr.net/npm/@match-kit/decomp-yaml@0.0.0/schema.json",
   "title": "decomp.yaml",
   "description": "A matching-decompilation project's settings, shared by the tools that work on it: the decomp_settings format (https://github.com/ethteck/decomp_settings), as its official reader 0.0.10 declares it.",
   "type": "object",
