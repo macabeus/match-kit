@@ -34,6 +34,12 @@ describe('parseDecompYaml', () => {
     });
   });
 
+  it('drops a field left empty, as if it were missing', () => {
+    expect(
+      parseDecompYaml('platform: gba\nrepo:\ntools: ~\nversions:\n  - name: us\n    sha1:\n    paths:\n      elf:\n'),
+    ).toEqual({ platform: 'gba', versions: [{ name: 'us', paths: {} }] });
+  });
+
   it('keeps keys the spec does not name', () => {
     expect(parseDecompYaml('platform: gc\nnotes: kept\nversions:\n  - name: us\n    region: ntsc\n')).toEqual({
       platform: 'gc',

@@ -27,8 +27,9 @@ const describe = (value: unknown): string =>
   value === null ? 'null' : Array.isArray(value) ? 'a list' : isMapping(value) ? 'a mapping' : `a ${typeof value}`;
 
 /**
- * Parse a decomp.yaml's text. A missing field is accepted; a field the spec names must have the
- * spec's type. `path` names the file in errors.
+ * Parse a decomp.yaml's text. A missing field is accepted, and so is a field left empty (`null`),
+ * which is dropped; a field the spec names must otherwise have the spec's type. `path` names the
+ * file in errors.
  */
 export function parseDecompYaml(text: string, path = 'decomp.yaml'): DecompConfig {
   let parsed: unknown;
@@ -51,30 +52,40 @@ export function parseDecompYaml(text: string, path = 'decomp.yaml'): DecompConfi
 
 function fieldProblems(config: Mapping): string[] {
   const problems: string[] = [];
-  const expect = (value: unknown, where: string, ok: boolean, kind: string) => {
-    if (value !== undefined && !ok) {
-      problems.push(`${where} must be ${kind}, not ${describe(value)}`);
+  /** Whether `mapping[key]` is present and has the right kind; a `null` is dropped as absent. */
+  const check = (mapping: Mapping, key: string, where: string, ok: (value: unknown) => boolean, kind: string) => {
+    const value = mapping[key];
+    if (value === null) {
+      delete mapping[key];
+      return false;
     }
+    if (value === undefined) {
+      return false;
+    }
+    if (!ok(value)) {
+      problems.push(`${where} must be ${kind}, not ${describe(value)}`);
+      return false;
+    }
+    return true;
   };
   const strings = (mapping: Mapping, keys: string[], prefix: string) => {
     for (const key of keys) {
-      expect(mapping[key], `${prefix}${key}`, typeof mapping[key] === 'string', 'a string');
+      check(mapping, key, `${prefix}${key}`, (value) => typeof value === 'string', 'a string');
     }
   };
 
   strings(config, CONFIG_STRINGS, '');
-  expect(config.tools, 'tools', isMapping(config.tools), 'a mapping');
-  expect(config.versions, 'versions', Array.isArray(config.versions), 'a list');
-  if (Array.isArray(config.versions)) {
-    config.versions.forEach((version: unknown, i) => {
+  check(config, 'tools', 'tools', isMapping, 'a mapping');
+  if (check(config, 'versions', 'versions', Array.isArray, 'a list')) {
+    (config.versions as unknown[]).forEach((version, i) => {
       const where = `versions[${i}]`;
-      expect(version, where, isMapping(version), 'a mapping');
-      if (isMapping(version)) {
-        strings(version, VERSION_STRINGS, `${where}.`);
-        expect(version.paths, `${where}.paths`, isMapping(version.paths), 'a mapping');
-        if (isMapping(version.paths)) {
-          strings(version.paths, PATH_STRINGS, `${where}.paths.`);
-        }
+      if (!isMapping(version)) {
+        problems.push(`${where} must be a mapping, not ${describe(version)}`);
+        return;
+      }
+      strings(version, VERSION_STRINGS, `${where}.`);
+      if (check(version, 'paths', `${where}.paths`, isMapping, 'a mapping')) {
+        strings(version.paths as Mapping, PATH_STRINGS, `${where}.paths.`);
       }
     });
   }

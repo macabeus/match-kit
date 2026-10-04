@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cdn.jsdelivr.net/npm/@match-kit/decomp-yaml/schema.json",
+  "title": "decomp.yaml",
+  "description": "A matching-decompilation project's settings, shared by the tools that work on it: the decomp_settings format (https://github.com/ethteck/decomp_settings), as its official reader 0.0.10 declares it.",
+  "type": "object",
+  "required": ["name", "platform", "versions"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "description": "The project's human-readable name.",
+      "type": "string",
+      "examples": ["Paper Mario"]
+    },
+    "repo": {
+      "description": "The project's repository URL.",
+      "type": ["string", "null"],
+      "examples": ["https://github.com/pmret/papermario"]
+    },
+    "website": {
+      "description": "The project's website.",
+      "type": ["string", "null"]
+    },
+    "discord": {
+      "description": "An invite link to the project's Discord server.",
+      "type": ["string", "null"]
+    },
+    "platform": {
+      "description": "The platform the project's game or program runs on.",
+      "type": "string",
+      "examples": ["n64", "gba", "gc", "ps2"]
+    },
+    "build_system": {
+      "description": "The build system the project uses.",
+      "type": ["string", "null"],
+      "examples": ["make", "ninja"]
+    },
+    "versions": {
+      "description": "Every version of the target the project decompiles, such as each region or revision.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/version" }
+    },
+    "tools": {
+      "description": "Settings for each tool, keyed by the tool's name. Each tool defines its own block.",
+      "type": ["object", "null"],
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "version": {
+      "description": "One version of the target.",
+      "type": "object",
+      "required": ["name", "fullname", "paths"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "A short identifier for the version, easy to type.",
+          "type": "string",
+          "examples": ["us10"]
+        },
+        "fullname": {
+          "description": "The version's human-readable name.",
+          "type": "string",
+          "examples": ["US 1.0"]
+        },
+        "sha1": {
+          "description": "The SHA-1 of the target binary, so tools can check they work on the right one.",
+          "type": ["string", "null"]
+        },
+        "paths": { "$ref": "#/$defs/paths" }
+      }
+    },
+    "paths": {
+      "description": "The files and directories tools need for this version, relative to the decomp.yaml's directory.",
+      "type": "object",
+      "required": ["target", "build_dir", "map", "compiled_target"],
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "description": "The original binary the project matches, often called the baserom.",
+          "type": "string",
+          "examples": ["config/us/baserom_decompressed.us.z64"]
+        },
+        "build_dir": {
+          "description": "The directory the build writes its artifacts to.",
+          "type": "string",
+          "examples": ["build/us/"]
+        },
+        "map": {
+          "description": "The map file the build writes.",
+          "type": "string",
+          "examples": ["build/us/drmario64.us.map"]
+        },
+        "compiled_target": {
+          "description": "The binary the project's build produces.",
+          "type": "string",
+          "examples": ["build/us/drmario64_uncompressed.us.z64"]
+        },
+        "elf": {
+          "description": "The intermediate ELF the build produces, if any.",
+          "type": ["string", "null"],
+          "examples": ["build/pokemonsnap.elf"]
+        },
+        "expected_dir": {
+          "description": "The directory of expected build output to compare against, often a copy of the build directory.",
+          "type": ["string", "null"],
+          "examples": ["expected/"]
+        },
+        "asm": {
+          "description": "The directory of disassembled assembly.",
+          "type": ["string", "null"],
+          "examples": ["asm/"]
+        },
+        "nonmatchings": {
+          "description": "The directory of functions or files that do not match the target yet.",
+          "type": ["string", "null"],
+          "examples": ["asm/nonmatchings"]
+        },
+        "compressed_target": {
+          "description": "The original binary before decompression, if the target is compressed.",
+          "type": ["string", "null"],
+          "examples": ["config/usa/rom_original.z64"]
+        },
+        "compressed_compiled_target": {
+          "description": "The compressed binary the build produces, if any.",
+          "type": ["string", "null"],
+          "examples": ["build/usa/compressed_rom.z64"]
+        }
+      }
+    }
+  }
+}

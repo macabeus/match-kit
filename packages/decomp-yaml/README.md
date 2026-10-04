@@ -40,6 +40,16 @@ for the tool.
 The schema decides what the block may hold: `z.strictObject` refuses a key it does not name, such as
 a typo, and `z.object` drops it. The schema must validate synchronously.
 
+## The format
+
+[SPEC.md](SPEC.md) specifies decomp.yaml as decomp_settings 0.0.10 declares it, and
+[`schema.json`](schema.json) is the same specification as a JSON Schema, also exported as
+`@match-kit/decomp-yaml/schema.json`. To check a file in your editor, start it with:
+
+```yaml
+# yaml-language-server: $schema=https://cdn.jsdelivr.net/npm/@match-kit/decomp-yaml/schema.json
+```
+
 ## What is checked
 
 - **Accepted:** every field may be missing, and keys the decomp_settings spec does not name are kept.

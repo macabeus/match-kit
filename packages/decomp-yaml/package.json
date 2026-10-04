@@ -14,7 +14,9 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "schema.json",
+    "SPEC.md"
   ],
   "exports": {
     ".": {
@@ -25,6 +27,7 @@
       "types": "./dist/files.d.ts",
       "default": "./dist/files.js"
     },
+    "./schema.json": "./schema.json",
     "./package.json": "./package.json"
   },
   "scripts": {

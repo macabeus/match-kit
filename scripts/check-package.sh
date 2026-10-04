@@ -17,6 +17,7 @@ pnpm build >/dev/null
 for package in packages/*/; do
   (cd "$package" && pnpm pack --pack-destination "$work" >/dev/null)
 done
+tar -tzf "$work"/match-kit-decomp-yaml-*.tgz | grep -q '^package/SPEC.md$' || { echo 'the decomp-yaml package has no SPEC.md'; exit 1; }
 
 consumer="$work/consumer"
 mkdir -p "$consumer/src"
@@ -40,6 +41,10 @@ import { z } from 'zod';
 const block = toolBlock(loadDecompYaml(), 'asmlift', z.object({ target: z.string() }));
 if (block?.target !== 'agbcc') {
   throw new Error(`unexpected tool block: ${JSON.stringify(block)}`);
+}
+const schema = JSON.parse(readFileSync(new URL(import.meta.resolve('@match-kit/decomp-yaml/schema.json')), 'utf8'));
+if (schema.title !== 'decomp.yaml') {
+  throw new Error('@match-kit/decomp-yaml/schema.json is not the decomp.yaml schema');
 }
 const fromFiles = scoreFiles('target.o', 'candidate-diff.o', 'add_one');
 const scorer = await createScorer();
