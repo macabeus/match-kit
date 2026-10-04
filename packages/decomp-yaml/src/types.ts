@@ -1,43 +1,15 @@
-/**
- * A version's paths, relative to the decomp.yaml's directory. The decomp_settings spec requires
- * `target`, `build_dir`, `map` and `compiled_target`; here every path is optional.
- */
-export interface VersionPaths {
-  target?: string;
-  build_dir?: string;
-  map?: string;
-  compiled_target?: string;
-  elf?: string;
-  expected_dir?: string;
-  asm?: string;
-  nonmatchings?: string;
-  compressed_target?: string;
-  compressed_compiled_target?: string;
-}
+import type * as z from 'zod';
+
+import type { DECOMP_YAML } from './config/spec.js';
+
+/** A decomp.yaml that meets the decomp_settings spec. */
+export type DecompConfig = z.output<typeof DECOMP_YAML>;
 
 /** One version of the project, such as `us10`. */
-export interface DecompVersion {
-  name?: string;
-  fullname?: string;
-  sha1?: string;
-  paths?: VersionPaths;
-}
+export type DecompVersion = DecompConfig['versions'][number];
 
-/**
- * A decomp.yaml, typed after the decomp_settings spec. Every field is optional, and keys the spec
- * does not name are kept in the object.
- */
-export interface DecompConfig {
-  name?: string;
-  repo?: string;
-  website?: string;
-  discord?: string;
-  platform?: string;
-  build_system?: string;
-  versions?: DecompVersion[];
-  /** Each tool's own block, keyed by the tool's name. Read one with `toolBlock`. */
-  tools?: Record<string, unknown>;
-}
+/** A version's paths, relative to the decomp.yaml's directory. */
+export type VersionPaths = DecompVersion['paths'];
 
 /** A decomp.yaml read from disk. */
 export interface LoadedConfig {

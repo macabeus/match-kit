@@ -53,12 +53,12 @@ left out or left empty (`null`). No key outside the tables is allowed, except in
 | `versions`     | list of versions | yes      | Every version of the target the project decompiles, such as each region or revision. |                                       |
 | `tools`        | mapping          |          | Settings for each tool, keyed by the tool's name. Each tool defines its own block.   |                                       |
 
-| Field                 | Type    | Required | Description                                                                    | Example  |
-| --------------------- | ------- | -------- | ------------------------------------------------------------------------------ | -------- |
-| `versions[].name`     | string  | yes      | A short identifier for the version, easy to type.                              | `us10`   |
-| `versions[].fullname` | string  | yes      | The version's human-readable name.                                             | `US 1.0` |
-| `versions[].sha1`     | string  |          | The SHA-1 of the target binary, so tools can check they work on the right one. |          |
-| `versions[].paths`    | mapping | yes      | undefined                                                                      |          |
+| Field                 | Type    | Required | Description                                                                                     | Example  |
+| --------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------- | -------- |
+| `versions[].name`     | string  | yes      | A short identifier for the version, easy to type.                                               | `us10`   |
+| `versions[].fullname` | string  | yes      | The version's human-readable name.                                                              | `US 1.0` |
+| `versions[].sha1`     | string  |          | The SHA-1 of the target binary, so tools can check they work on the right one.                  |          |
+| `versions[].paths`    | mapping | yes      | The files and directories tools need for this version, relative to the decomp.yaml's directory. |          |
 
 | Field                                         | Type   | Required | Description                                                                                     | Example                                  |
 | --------------------------------------------- | ------ | -------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------- |
@@ -82,7 +82,8 @@ tool documents its keys and checks them.
 
 ## What the official reader also accepts
 
-The schema follows the types decomp_settings declares. Its reader is more permissive in two places:
+The schema follows the types decomp_settings declares. Its reader is more permissive in two places,
+and @match-kit/decomp-yaml refuses both:
 
 - A number or boolean where a string is expected (`name: 123`) is read as its text.
 - `versions:` left empty is read as no versions.
@@ -100,6 +101,5 @@ decomp_settings 0.0.9 (May 2025) changed the format, and files written for 0.0.8
 
 ## How @match-kit/decomp-yaml reads it
 
-[@match-kit/decomp-yaml](README.md) reads every file this specification accepts, and more: no field
-is required, keys the specification does not name are kept, and it also finds `decomp.yml`. A field
-the specification names must still have its type.
+[@match-kit/decomp-yaml](README.md) accepts exactly the files this specification accepts. It also
+finds a file named `decomp.yml` when there is no `decomp.yaml`.

@@ -2,6 +2,7 @@ import type { StandardSchemaV1 } from '@standard-schema/spec';
 
 import type { LoadedConfig } from '../types.js';
 import { DecompYamlError } from './errors.js';
+import { issueLines } from './issues.js';
 
 /**
  * Read `tools.<tool>` through the tool's own schema: any Standard Schema, such as a zod, valibot or
@@ -23,19 +24,7 @@ export function toolBlock<Schema extends StandardSchemaV1>(
     throw new TypeError(`the schema for tools.${tool} validates asynchronously; toolBlock needs a synchronous schema`);
   }
   if (result.issues) {
-    throw new DecompYamlError(
-      loaded.path,
-      result.issues.map((issue) => `${issuePath(tool, issue.path)}: ${issue.message}`),
-    );
+    throw new DecompYamlError(loaded.path, issueLines(result.issues, `tools.${tool}`));
   }
   return result.value as StandardSchemaV1.InferOutput<Schema>;
-}
-
-function issuePath(tool: string, path: StandardSchemaV1.Issue['path']): string {
-  let out = `tools.${tool}`;
-  for (const segment of path ?? []) {
-    const key = typeof segment === 'object' ? segment.key : segment;
-    out += typeof key === 'number' ? `[${key}]` : `.${String(key)}`;
-  }
-  return out;
 }

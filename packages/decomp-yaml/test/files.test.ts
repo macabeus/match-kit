@@ -10,6 +10,9 @@ import { DecompYamlError } from '../src/index.js';
 const SCRATCH = mkdtempSync(join(tmpdir(), 'match-kit-decomp-yaml-'));
 afterAll(() => rmSync(SCRATCH, { recursive: true, force: true }));
 
+/** A decomp.yaml that meets the spec, for `platform`. */
+const yaml = (platform: string) => `name: Example\nplatform: ${platform}\nversions: []\n`;
+
 let dirs = 0;
 /** A fresh directory holding `files`, each path relative to it. */
 function project(files: Record<string, string>): string {
@@ -24,12 +27,12 @@ function project(files: Record<string, string>): string {
 
 describe('findDecompYaml', () => {
   it('finds a decomp.yaml in a parent directory', () => {
-    const root = project({ 'decomp.yaml': 'platform: gba\n', 'src/battle/.keep': '' });
+    const root = project({ 'decomp.yaml': yaml('gba'), 'src/battle/.keep': '' });
     expect(findDecompYaml(join(root, 'src', 'battle'))).toBe(join(root, 'decomp.yaml'));
   });
 
   it('finds decomp.yml when there is no decomp.yaml', () => {
-    const root = project({ 'decomp.yml': 'platform: gc\n' });
+    const root = project({ 'decomp.yml': yaml('gc') });
     expect(findDecompYaml(root)).toBe(join(root, 'decomp.yml'));
   });
 
@@ -55,20 +58,20 @@ describe('findDecompYaml', () => {
 
 describe('loadDecompYaml', () => {
   it('reads the nearest decomp.yaml with its path and directory', () => {
-    const root = project({ 'decomp.yaml': 'platform: gba\n', 'src/.keep': '' });
+    const root = project({ 'decomp.yaml': yaml('gba'), 'src/.keep': '' });
     expect(loadDecompYaml(undefined, join(root, 'src'))).toEqual({
       path: join(root, 'decomp.yaml'),
       dir: root,
-      config: { platform: 'gba' },
+      config: { name: 'Example', platform: 'gba', versions: [] },
     });
   });
 
   it('reads an explicit path without searching', () => {
-    const root = project({ 'decomp.yaml': 'platform: gba\n', 'configs/other.yaml': 'platform: n64\n' });
+    const root = project({ 'decomp.yaml': yaml('gba'), 'configs/other.yaml': yaml('n64') });
     expect(loadDecompYaml(join(root, 'configs', 'other.yaml'), root)).toEqual({
       path: join(root, 'configs', 'other.yaml'),
       dir: join(root, 'configs'),
-      config: { platform: 'n64' },
+      config: { name: 'Example', platform: 'n64', versions: [] },
     });
   });
 
@@ -87,9 +90,9 @@ describe('loadDecompYaml', () => {
   });
 
   it('throws with the file path when the file is not valid', () => {
-    const root = project({ 'decomp.yaml': 'versions: 3\n' });
+    const root = project({ 'decomp.yaml': 'name: Example\nplatform: gba\nversions: 3\n' });
     expect(() => loadDecompYaml(undefined, root)).toThrow(
-      `${join(root, 'decomp.yaml')}: versions must be a list, not a number`,
+      `${join(root, 'decomp.yaml')}: versions: Invalid input: expected array, received number`,
     );
   });
 });

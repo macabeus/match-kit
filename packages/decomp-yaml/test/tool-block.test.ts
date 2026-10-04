@@ -4,7 +4,12 @@ import { z } from 'zod';
 
 import { DecompYamlError, type LoadedConfig, parseDecompYaml, toolBlock } from '../src/index.js';
 
-const loaded = (text: string): LoadedConfig => ({ path: 'p/decomp.yaml', dir: 'p', config: parseDecompYaml(text) });
+/** A loaded decomp.yaml that meets the spec, with `text` after its required fields. */
+const loaded = (text: string): LoadedConfig => ({
+  path: 'p/decomp.yaml',
+  dir: 'p',
+  config: parseDecompYaml(`name: Example\nplatform: gba\nversions: []\n${text}`),
+});
 
 const TRANSMUTER = z.strictObject({
   compiler: z.string().optional(),
@@ -26,7 +31,7 @@ describe('toolBlock', () => {
 
   it.each([
     ['there is no config', null],
-    ['the config has no tools', loaded('platform: gba\n')],
+    ['the config has no tools', loaded('')],
     ['the config has no block for the tool', loaded('tools:\n  asmlift: {}\n')],
     ['the block is empty', loaded('tools:\n  transmuter:\n')],
     ['the tool is named like an Object method', loaded('tools: {}\n')],

@@ -1,7 +1,8 @@
 # @match-kit/decomp-yaml
 
 Read a project's `decomp.yaml`, the [decomp_settings](https://github.com/ethteck/decomp_settings)
-format that matching-decompilation tools share, and check your tool's block with your own
+format that matching-decompilation tools share, checked against its spec, and check your tool's block
+with your own
 [Standard Schema](https://standardschema.dev) (zod, valibot, ArkType, …). Runs on Node ≥ 24, Bun and
 browsers.
 
@@ -52,18 +53,17 @@ a typo, and `z.object` drops it. The schema must validate synchronously.
 
 ## What is checked
 
-- **Accepted:** every field may be missing, and keys the decomp_settings spec does not name are kept.
-  The official decomp_settings reader (0.0.10) is stricter: it requires `name`, `platform`, `versions`,
-  and per version `fullname` plus four paths (`target`, `build_dir`, `map`, `compiled_target`), and
-  refuses unknown keys. Files written for decomp_settings 0.0.8 (`github`, `baserom`, `build`) and files
-  holding only a tool's block fail it, and this package reads them.
-- **Refused:** a file that is not YAML, a top level that is not a mapping, and a field the spec names
-  with the wrong type (`platform: 64`, `versions: us`).
+A decomp.yaml must meet the spec: the required fields, no key the spec does not name outside `tools`,
+and every field of its type. A field left empty (`null`) reads as missing. The one difference from the
+official decomp_settings reader: that reader also takes a number or boolean where a string is expected,
+and this package refuses it. Files written for decomp_settings 0.0.8 (`github`, `baserom`, `build`)
+fail, as they fail the official reader.
 
 Every failure throws `DecompYamlError`, one line per problem, each prefixed with the file's path:
 
 ```
-/home/me/game/decomp.yaml: versions[0].paths.elf must be a string, not a list
+/home/me/game/decomp.yaml: versions[0].paths.map: Invalid input: expected string, received undefined
+/home/me/game/decomp.yaml: Unrecognized key: "github"
 /home/me/game/decomp.yaml: tools.mytool.jobs: Invalid input: expected number, received string
 ```
 

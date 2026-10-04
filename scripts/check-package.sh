@@ -23,7 +23,7 @@ consumer="$work/consumer"
 mkdir -p "$consumer/src"
 cd "$consumer"
 cp "$root/packages/scoring/test/fixtures/edge/target.o" "$root/packages/scoring/test/fixtures/edge/candidate-diff.o" .
-printf 'platform: gba\ntools:\n  asmlift:\n    target: agbcc\n' > decomp.yaml
+printf 'name: Example\nplatform: gba\nversions: []\ntools:\n  asmlift:\n    target: agbcc\n' > decomp.yaml
 cat > package.json <<'EOF'
 { "name": "consumer", "private": true, "type": "module" }
 EOF
@@ -99,7 +99,7 @@ import { parseDecompYaml } from '@match-kit/decomp-yaml';
 import { createScorer } from '@match-kit/scoring';
 
 (await createScorer()).dispose();
-console.log(parseDecompYaml('platform: gba\n').platform);
+console.log(parseDecompYaml('name: Example\nplatform: gba\nversions: []\n').platform);
 EOF
 cat > vite.config.mjs <<'EOF'
 export default { build: { target: 'es2022' }, optimizeDeps: { exclude: ['objdiff-wasm'] } };

@@ -1,31 +1,40 @@
-// `schema.json`: the decomp_settings spec as a JSON Schema, checked against the files the official
-// reader accepts and refuses, against this package's types and parser, and against SPEC.md.
+// schema.json and SPEC.md's field reference are generated from the zod spec (src/config/spec.ts);
+// `vitest -u` rewrites both. The schema must give the same verdict as parseDecompYaml.
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as prettier from 'prettier';
 import { describe, expect, it } from 'vitest';
 import YAML from 'yaml';
+import * as z from 'zod';
 
-import {
-  type DecompConfig,
-  type DecompVersion,
-  DecompYamlError,
-  type VersionPaths,
-  parseDecompYaml,
-} from '../src/index.js';
+import { DECOMP_YAML } from '../src/config/spec.js';
+import { parseDecompYaml } from '../src/index.js';
 
 const PACKAGE = join(import.meta.dirname, '..');
-const SCHEMA = JSON.parse(readFileSync(join(PACKAGE, 'schema.json'), 'utf8'));
+const SCHEMA_PATH = join(PACKAGE, 'schema.json');
+const SPEC_PATH = join(PACKAGE, 'SPEC.md');
+const { version } = JSON.parse(readFileSync(join(PACKAGE, 'package.json'), 'utf8'));
+const SCHEMA_URL = `https://cdn.jsdelivr.net/npm/@match-kit/decomp-yaml@${version}/schema.json`;
+
+/** schema.json as generated from the zod spec. */
+function generatedSchema(): Record<string, any> {
+  const { $schema, title, description, ...rest } = z.toJSONSchema(DECOMP_YAML, {
+    target: 'draft-2020-12',
+    io: 'input',
+  });
+  return { $schema, $id: SCHEMA_URL, title, description, ...rest };
+}
+
+const format = async (text: string, filepath: string) =>
+  prettier.format(text, { ...(await prettier.resolveConfig(filepath)), filepath });
+
+const SCHEMA = JSON.parse(readFileSync(SCHEMA_PATH, 'utf8'));
 const validate = new Ajv2020({ allErrors: true }).compile(SCHEMA);
 const fixture = (name: string) => readFileSync(join(import.meta.dirname, 'fixtures', name), 'utf8');
 
-const SPEC_COMPLETE = YAML.parse(fixture('spec-complete.yaml'));
-const MINIMAL = {
-  name: 'Example',
-  platform: 'n64',
-  versions: [{ name: 'us', fullname: 'US', paths: { target: 't', build_dir: 'b', map: 'm', compiled_target: 'c' } }],
-};
+const PATHS = { target: 't', build_dir: 'b', map: 'm', compiled_target: 'c' };
+const MINIMAL = { name: 'Example', platform: 'n64', versions: [{ name: 'us', fullname: 'US', paths: PATHS }] };
 
 /** `MINIMAL` with `edit` applied to a deep copy. */
 function minimal(edit: (config: Record<string, any>) => void): unknown {
@@ -34,170 +43,82 @@ function minimal(edit: (config: Record<string, any>) => void): unknown {
   return config;
 }
 
-interface Property {
-  type: string | string[];
-  description: string;
-  examples?: string[];
-  $ref?: string;
-  items?: { $ref: string };
-}
-interface ObjectSchema {
-  required?: string[];
-  properties: Record<string, Property>;
-}
-
-/** Each object the schema defines, with the path a field of it has in a decomp.yaml. */
-const OBJECTS: [prefix: string, schema: ObjectSchema][] = [
-  ['', SCHEMA],
-  ['versions[0].', SCHEMA.$defs.version],
-  ['versions[0].paths.', SCHEMA.$defs.paths],
-];
+const accepts = (document: unknown) => {
+  try {
+    parseDecompYaml(YAML.stringify(document));
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 describe('schema.json', () => {
+  it('is generated from the zod spec', async () => {
+    await expect(await format(JSON.stringify(generatedSchema()), SCHEMA_PATH)).toMatchFileSnapshot(SCHEMA_PATH);
+  });
+
   it("names this package's version in its $id and in every documented URL", () => {
-    const { version } = JSON.parse(readFileSync(join(PACKAGE, 'package.json'), 'utf8'));
-    const expected = `https://cdn.jsdelivr.net/npm/@match-kit/decomp-yaml@${version}/schema.json`;
-    expect(SCHEMA.$id).toBe(expected);
+    expect(SCHEMA.$id).toBe(SCHEMA_URL);
     for (const file of ['SPEC.md', 'README.md']) {
       const urls = readFileSync(join(PACKAGE, file), 'utf8').match(
         /https:\/\/cdn\.jsdelivr\.net\/npm\/@match-kit\/decomp-yaml(@[^/]+)?\/schema\.json/g,
       );
       expect(urls, file).not.toBeNull();
-      expect(new Set(urls), `${file}: run scripts/sync-schema-version.mjs`).toEqual(new Set([expected]));
+      expect(new Set(urls), `${file}: run scripts/sync-schema-version.mjs`).toEqual(new Set([SCHEMA_URL]));
     }
   });
 
-  it('accepts a file with every field the spec names', () => {
-    expect(validate(SPEC_COMPLETE), JSON.stringify(validate.errors)).toBe(true);
-  });
-
-  it('accepts a file with only the fields the spec requires', () => {
-    expect(validate(MINIMAL), JSON.stringify(validate.errors)).toBe(true);
-  });
-
-  it('accepts an optional field left empty', () => {
-    expect(validate(minimal((c) => ((c.repo = null), (c.tools = null), (c.versions[0].paths.elf = null))))).toBe(true);
-  });
-
-  it('accepts any block under tools', () => {
-    expect(validate(minimal((c) => (c.tools = { mytool: { anything: [1, 2] }, other: 3 })))).toBe(true);
-  });
-
-  it.each([
-    ['name', (c: Record<string, any>) => delete c.name],
-    ['platform', (c: Record<string, any>) => delete c.platform],
-    ['versions', (c: Record<string, any>) => delete c.versions],
-    ['versions[0].fullname', (c: Record<string, any>) => delete c.versions[0].fullname],
-    ['versions[0].paths', (c: Record<string, any>) => delete c.versions[0].paths],
-    ['versions[0].paths.target', (c: Record<string, any>) => delete c.versions[0].paths.target],
-    ['versions[0].paths.build_dir', (c: Record<string, any>) => delete c.versions[0].paths.build_dir],
-    ['versions[0].paths.map', (c: Record<string, any>) => delete c.versions[0].paths.map],
-    ['versions[0].paths.compiled_target', (c: Record<string, any>) => delete c.versions[0].paths.compiled_target],
-  ])('refuses a file without %s', (_, edit) => {
-    expect(validate(minimal(edit))).toBe(false);
-  });
-
-  it.each([
-    ['at the top level', (c: Record<string, any>) => (c.notes = 'x')],
-    ['in a version', (c: Record<string, any>) => (c.versions[0].region = 'x')],
-    ["in a version's paths", (c: Record<string, any>) => (c.versions[0].paths.baserom = 'x')],
-  ])('refuses a key the spec does not name %s', (_, edit) => {
-    expect(validate(minimal(edit))).toBe(false);
-  });
-
-  it('refuses a file written for decomp_settings 0.0.8', () => {
-    expect(validate(YAML.parse(fixture('decomp-settings-0.0.8.yaml')))).toBe(false);
-  });
-
-  it('names the same fields as DecompConfig, DecompVersion and VersionPaths', () => {
-    const config: Record<keyof DecompConfig, true> = {
-      name: true,
-      repo: true,
-      website: true,
-      discord: true,
-      platform: true,
-      build_system: true,
-      versions: true,
-      tools: true,
-    };
-    const version: Record<keyof DecompVersion, true> = { name: true, fullname: true, sha1: true, paths: true };
-    const paths: Record<keyof VersionPaths, true> = {
-      target: true,
-      build_dir: true,
-      map: true,
-      compiled_target: true,
-      elf: true,
-      expected_dir: true,
-      asm: true,
-      nonmatchings: true,
-      compressed_target: true,
-      compressed_compiled_target: true,
-    };
-    expect(OBJECTS.map(([, schema]) => Object.keys(schema.properties).sort())).toEqual(
-      [config, version, paths].map((fields) => Object.keys(fields).sort()),
-    );
-  });
-
-  // parseDecompYaml reads each field's type from schema.json; a keyword or type it does not read
-  // would make it accept what the schema refuses.
-  it('uses only the keywords and types parseDecompYaml reads', () => {
-    const READ = ['type', 'properties', 'items', '$ref', '$defs'];
-    const NOT_READ = ['$schema', '$id', 'title', 'description', 'examples', 'required', 'additionalProperties'];
-    const keywords = new Set<string>();
-    const types = new Set<string>();
-    const walk = (node: Record<string, unknown>) => {
-      for (const [keyword, value] of Object.entries(node)) {
-        keywords.add(keyword);
-        if (keyword === 'type') {
-          [value as string | string[]].flat().forEach((type) => types.add(type));
-        } else if (keyword === 'properties' || keyword === '$defs') {
-          Object.values(value as Record<string, Record<string, unknown>>).forEach(walk);
-        } else if (keyword === 'items') {
-          walk(value as Record<string, unknown>);
-        }
-      }
-    };
-    walk(SCHEMA);
-    expect([...keywords].filter((keyword) => !READ.includes(keyword) && !NOT_READ.includes(keyword))).toEqual([]);
-    expect([...types].sort()).toEqual(['array', 'null', 'object', 'string']);
-  });
-
-  it('has every string field it names enforced by parseDecompYaml', () => {
-    for (const [prefix, schema] of OBJECTS) {
-      for (const [key, property] of Object.entries(schema.properties)) {
-        if (!([property.type].flat() as string[]).includes('string')) {
-          continue;
-        }
-        const config = minimal((c) => {
-          const parent = prefix === '' ? c : prefix === 'versions[0].' ? c.versions[0] : c.versions[0].paths;
-          parent[key] = 64;
-        });
-        expect(() => parseDecompYaml(YAML.stringify(config)), `${prefix}${key}`).toThrow(
-          new DecompYamlError('decomp.yaml', `${prefix}${key} must be a string, not a number`),
-        );
-      }
-    }
+  it.each<[string, unknown, boolean]>([
+    ['a file with every field the spec names', YAML.parse(fixture('spec-complete.yaml')), true],
+    ['a file with only the required fields', MINIMAL, true],
+    ['no versions', minimal((c) => (c.versions = [])), true],
+    [
+      'optional fields left empty',
+      minimal((c) => ((c.repo = null), (c.tools = null), (c.versions[0].paths.elf = null))),
+      true,
+    ],
+    ['any block under tools', minimal((c) => (c.tools = { mytool: { anything: [1, 2] }, other: 3 })), true],
+    ['no name', minimal((c) => delete c.name), false],
+    ['no platform', minimal((c) => delete c.platform), false],
+    ['no versions key', minimal((c) => delete c.versions), false],
+    ['a version without fullname', minimal((c) => delete c.versions[0].fullname), false],
+    ['a version without paths', minimal((c) => delete c.versions[0].paths), false],
+    ['paths without target', minimal((c) => delete c.versions[0].paths.target), false],
+    ['paths without build_dir', minimal((c) => delete c.versions[0].paths.build_dir), false],
+    ['paths without map', minimal((c) => delete c.versions[0].paths.map), false],
+    ['paths without compiled_target', minimal((c) => delete c.versions[0].paths.compiled_target), false],
+    ['an unknown top-level key', minimal((c) => (c.notes = 'x')), false],
+    ['an unknown version key', minimal((c) => (c.versions[0].region = 'x')), false],
+    ['an unknown path key', minimal((c) => (c.versions[0].paths.baserom = 'x')), false],
+    ['a number for a string', minimal((c) => (c.platform = 64)), false],
+    ['a list for tools', minimal((c) => (c.tools = ['asmlift'])), false],
+    ['a file written for decomp_settings 0.0.8', YAML.parse(fixture('decomp-settings-0.0.8.yaml')), false],
+  ])('agrees with parseDecompYaml on %s', (_, document, valid) => {
+    expect(validate(document), JSON.stringify(validate.errors)).toBe(valid);
+    expect(accepts(document)).toBe(valid);
   });
 });
 
-const TYPE_NAMES: Record<string, string> = { string: 'string', object: 'mapping', array: 'list' };
+const TYPE_NAMES: Record<string, string> = { string: 'string', object: 'mapping', array: 'list of versions' };
 
-/** The field reference SPEC.md carries, built from the schema's descriptions. */
+/** The field reference SPEC.md carries, built from schema.json's descriptions. */
 function fieldReference(): string {
-  const tables = OBJECTS.map(([prefix, schema]) => {
-    const rows = Object.entries(schema.properties).map(([key, p]) => {
-      const type = p.$ref
-        ? 'mapping'
-        : p.items
-          ? 'list of versions'
-          : [p.type]
-              .flat()
-              .filter((t) => t !== 'null')
-              .map((t) => TYPE_NAMES[t])
-              .join(' or ');
-      const required = schema.required?.includes(key) ? 'yes' : '';
-      const example = p.examples ? `\`${p.examples[0]}\`` : '';
-      return `| \`${prefix.replaceAll('[0]', '[]')}${key}\` | ${type} | ${required} | ${p.description} | ${example} |`;
+  const objects: [string, Record<string, any>][] = [
+    ['', SCHEMA],
+    ['versions[].', SCHEMA.$defs.version],
+    ['versions[].paths.', SCHEMA.$defs.paths],
+  ];
+  const tables = objects.map(([prefix, object]) => {
+    const rows = Object.entries<Record<string, any>>(object.properties).map(([key, property]) => {
+      const target = property.$ref ? SCHEMA.$defs[property.$ref.split('/').at(-1)] : property;
+      const types = (property.anyOf ?? [target]).flatMap((branch: Record<string, any>) => [branch.type].flat());
+      const type = types
+        .filter((t: string) => t !== 'null')
+        .map((t: string) => TYPE_NAMES[t])
+        .join(' or ');
+      const required = object.required?.includes(key) ? 'yes' : '';
+      const example = target.examples ? `\`${target.examples[0]}\`` : '';
+      return `| \`${prefix}${key}\` | ${type} | ${required} | ${target.description} | ${example} |`;
     });
     return ['| Field | Type | Required | Description | Example |', '| --- | --- | --- | --- | --- |', ...rows].join(
       '\n',
@@ -206,7 +127,6 @@ function fieldReference(): string {
   return tables.join('\n\n');
 }
 
-const SPEC_PATH = join(PACKAGE, 'SPEC.md');
 const SPEC = readFileSync(SPEC_PATH, 'utf8');
 
 describe('SPEC.md', () => {
@@ -217,15 +137,11 @@ describe('SPEC.md', () => {
   });
 
   it("carries the schema's field reference (vitest -u rewrites it)", async () => {
-    const spec = SPEC;
     const START = '<!-- fields: generated from schema.json by test/schema.test.ts -->';
     const END = '<!-- fields: end -->';
-    const at = spec.indexOf(START);
-    const end = spec.indexOf(END);
+    const at = SPEC.indexOf(START);
     expect(at, 'SPEC.md has the field markers').toBeGreaterThan(-1);
-    const spliced = `${spec.slice(0, at + START.length)}\n\n${fieldReference()}\n\n${spec.slice(end)}`;
-    const options = await prettier.resolveConfig(SPEC_PATH);
-    const updated = await prettier.format(spliced, { ...options, filepath: SPEC_PATH });
-    await expect(updated).toMatchFileSnapshot(SPEC_PATH);
+    const spliced = `${SPEC.slice(0, at + START.length)}\n\n${fieldReference()}\n\n${SPEC.slice(SPEC.indexOf(END))}`;
+    await expect(await format(spliced, SPEC_PATH)).toMatchFileSnapshot(SPEC_PATH);
   });
 });

@@ -1,7 +1,7 @@
 {
   "name": "@match-kit/decomp-yaml",
   "version": "0.0.0",
-  "description": "Read a project's decomp.yaml (the decomp_settings format) and check each tool's block with a Standard Schema",
+  "description": "Read a project's decomp.yaml (the decomp_settings format), checked against the spec, and each tool's block with a Standard Schema",
   "license": "MIT",
   "type": "module",
   "repository": {
@@ -30,9 +30,6 @@
     "./schema.json": "./schema.json",
     "./package.json": "./package.json"
   },
-  "imports": {
-    "#schema": "./schema.json"
-  },
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch",
@@ -40,6 +37,7 @@
   },
   "dependencies": {
     "@standard-schema/spec": "1.1.0",
-    "yaml": "^2.9.1"
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
   }
 }
