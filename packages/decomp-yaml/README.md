@@ -56,8 +56,7 @@ a typo, and `z.object` drops it. The schema must validate synchronously.
 A decomp.yaml must meet the spec: the required fields, no key the spec does not name outside `tools`,
 and every field of its type. A field left empty (`null`) reads as missing. The one difference from the
 official decomp_settings reader: that reader also takes a number or boolean where a string is expected,
-and this package refuses it. Files written for decomp_settings 0.0.8 (`github`, `baserom`, `build`)
-fail, as they fail the official reader.
+and this package refuses it.
 
 Every failure throws `DecompYamlError`, one line per problem, each prefixed with the file's path:
 

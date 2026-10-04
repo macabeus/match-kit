@@ -90,15 +90,6 @@ and @match-kit/decomp-yaml refuses both:
 
 The reader also stops with a panic, not an error value, on the first problem it finds.
 
-## Changes from decomp_settings 0.0.8
-
-decomp_settings 0.0.9 (May 2025) changed the format, and files written for 0.0.8 no longer validate:
-
-- `github` became `repo`.
-- `paths` was a free-form mapping. It now names its keys, and `target`, `build_dir`, `map` and
-  `compiled_target` are required. Files written for 0.0.8 commonly used `baserom` where `target` now
-  goes, and `build` where `compiled_target` now goes.
-
 ## How @match-kit/decomp-yaml reads it
 
 [@match-kit/decomp-yaml](README.md) accepts exactly the files this specification accepts. It also

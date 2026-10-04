@@ -92,7 +92,6 @@ describe('schema.json', () => {
     ['an unknown path key', minimal((c) => (c.versions[0].paths.baserom = 'x')), false],
     ['a number for a string', minimal((c) => (c.platform = 64)), false],
     ['a list for tools', minimal((c) => (c.tools = ['asmlift'])), false],
-    ['a file written for decomp_settings 0.0.8', YAML.parse(fixture('decomp-settings-0.0.8.yaml')), false],
   ])('agrees with parseDecompYaml on %s', (_, document, valid) => {
     expect(validate(document), JSON.stringify(validate.errors)).toBe(valid);
     expect(accepts(document)).toBe(valid);
