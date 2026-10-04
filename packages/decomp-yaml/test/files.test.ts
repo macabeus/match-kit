@@ -1,10 +1,10 @@
-// `findDecompYaml` and `loadDecompYaml`: finding and reading a decomp.yaml on disk.
+// `loadDecompYaml` and `searchDecompYaml`: reading a decomp.yaml on disk.
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 
-import { findDecompYaml, loadDecompYaml } from '../src/files.js';
+import { loadDecompYaml, searchDecompYaml } from '../src/files.js';
 import { DecompYamlError } from '../src/index.js';
 
 const SCRATCH = mkdtempSync(join(tmpdir(), 'match-kit-decomp-yaml-'));
@@ -25,34 +25,38 @@ function project(files: Record<string, string>): string {
   return root;
 }
 
-describe('findDecompYaml', () => {
-  it('finds a decomp.yaml in a parent directory', () => {
+describe('searchDecompYaml', () => {
+  it('reads a decomp.yaml in a parent directory', () => {
     const root = project({ 'decomp.yaml': yaml('gba'), 'src/battle/.keep': '' });
-    expect(findDecompYaml(join(root, 'src', 'battle'))).toBe(join(root, 'decomp.yaml'));
+    expect(searchDecompYaml(join(root, 'src', 'battle'))).toEqual({
+      path: join(root, 'decomp.yaml'),
+      dir: root,
+      config: { name: 'Example', platform: 'gba', versions: [] },
+    });
   });
 
-  it('finds decomp.yml when there is no decomp.yaml', () => {
+  it('reads decomp.yml when there is no decomp.yaml', () => {
     const root = project({ 'decomp.yml': yaml('gc') });
-    expect(findDecompYaml(root)).toBe(join(root, 'decomp.yml'));
+    expect(searchDecompYaml(root)?.path).toBe(join(root, 'decomp.yml'));
   });
 
   it('prefers decomp.yaml to decomp.yml in the same directory', () => {
-    const root = project({ 'decomp.yaml': '', 'decomp.yml': '' });
-    expect(findDecompYaml(root)).toBe(join(root, 'decomp.yaml'));
+    const root = project({ 'decomp.yaml': yaml('gba'), 'decomp.yml': yaml('gc') });
+    expect(searchDecompYaml(root)?.path).toBe(join(root, 'decomp.yaml'));
   });
 
   it('prefers the nearest directory', () => {
-    const root = project({ 'decomp.yaml': '', 'sub/decomp.yml': '' });
-    expect(findDecompYaml(join(root, 'sub'))).toBe(join(root, 'sub', 'decomp.yml'));
+    const root = project({ 'decomp.yaml': yaml('gba'), 'sub/decomp.yml': yaml('gc') });
+    expect(searchDecompYaml(join(root, 'sub'))?.path).toBe(join(root, 'sub', 'decomp.yml'));
   });
 
-  it('does not take a directory named decomp.yaml', () => {
-    const root = project({ 'decomp.yaml/.keep': '', 'decomp.yml': '' });
-    expect(findDecompYaml(root)).toBe(join(root, 'decomp.yml'));
+  it('skips a directory named decomp.yaml', () => {
+    const root = project({ 'decomp.yaml/.keep': '', 'decomp.yml': yaml('gc') });
+    expect(searchDecompYaml(root)?.path).toBe(join(root, 'decomp.yml'));
   });
 
   it('returns null when no directory up to the root has one', () => {
-    expect(findDecompYaml('/')).toBeNull();
+    expect(searchDecompYaml('/')).toBeNull();
   });
 });
 
@@ -64,15 +68,6 @@ describe('loadDecompYaml', () => {
       dir: join(root, 'configs'),
       config: { name: 'Example', platform: 'n64', versions: [] },
     });
-  });
-
-  it('reads the decomp.yaml findDecompYaml finds', () => {
-    const root = project({ 'decomp.yaml': yaml('gba'), 'src/.keep': '' });
-    expect(loadDecompYaml(findDecompYaml(join(root, 'src')))?.path).toBe(join(root, 'decomp.yaml'));
-  });
-
-  it('returns null for null, as findDecompYaml reports no decomp.yaml', () => {
-    expect(loadDecompYaml(findDecompYaml('/'))).toBeNull();
   });
 
   it('throws when the file does not exist', () => {

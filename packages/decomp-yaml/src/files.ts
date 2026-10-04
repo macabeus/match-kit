@@ -10,12 +10,9 @@ const NAMES = ['decomp.yaml', 'decomp.yml'];
 
 const isFile = (path: string): boolean => statSync(path, { throwIfNoEntry: false })?.isFile() ?? false;
 
-/**
- * The nearest decomp.yaml: `startDir` (default: the working directory) and then each parent in
- * turn, trying `decomp.yaml` before `decomp.yml` in each. `null` when there is none up to the root.
- */
-export function findDecompYaml(startDir = process.cwd()): string | null {
-  let dir = resolve(startDir);
+/** The path of the nearest decomp.yaml: `from` and then each parent, `decomp.yaml` before `decomp.yml`. */
+function findDecompYaml(from: string): string | null {
+  let dir = resolve(from);
   for (;;) {
     for (const name of NAMES) {
       const path = join(dir, name);
@@ -32,13 +29,7 @@ export function findDecompYaml(startDir = process.cwd()): string | null {
 }
 
 /** Read the decomp.yaml at `path`. A missing file throws. */
-export function loadDecompYaml(path: string): LoadedConfig;
-/** `null` (no decomp.yaml, as `findDecompYaml` reports it) reads as `null`. */
-export function loadDecompYaml(path: string | null): LoadedConfig | null;
-export function loadDecompYaml(path: string | null): LoadedConfig | null {
-  if (path === null) {
-    return null;
-  }
+export function loadDecompYaml(path: string): LoadedConfig {
   const absolute = resolve(path);
   let text: string;
   try {
@@ -52,4 +43,13 @@ export function loadDecompYaml(path: string | null): LoadedConfig | null {
     );
   }
   return { path: absolute, dir: dirname(absolute), config: parseDecompYaml(text, absolute) };
+}
+
+/**
+ * Read the nearest decomp.yaml: in `from` (default: the working directory) or its closest parent
+ * that has one. `null` when no directory up to the root does.
+ */
+export function searchDecompYaml(from = process.cwd()): LoadedConfig | null {
+  const path = findDecompYaml(from);
+  return path === null ? null : loadDecompYaml(path);
 }

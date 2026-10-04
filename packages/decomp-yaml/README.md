@@ -13,20 +13,20 @@ npm install @match-kit/decomp-yaml
 
 ```ts
 import { toolBlock } from '@match-kit/decomp-yaml';
-import { findDecompYaml, loadDecompYaml } from '@match-kit/decomp-yaml/files';
+import { loadDecompYaml, searchDecompYaml } from '@match-kit/decomp-yaml/files';
 import * as z from 'zod';
 
-const loaded = loadDecompYaml(findDecompYaml()); // { path, dir, config }, or null when there is none
+const loaded = searchDecompYaml(); // { path, dir, config }, or null when there is none
 loaded?.config.platform; // 'gba'
 
 const MyTool = z.strictObject({ compiler: z.string().optional(), jobs: z.number().int().optional() });
 const settings = toolBlock(loaded, 'mytool', MyTool); // { compiler?, jobs? }, or undefined
 ```
 
-- `findDecompYaml(startDir?)` returns the nearest decomp.yaml from `startDir` (default: the working
-  directory) up to the root, trying `decomp.yaml` before `decomp.yml` in each directory, or `null`.
-- `loadDecompYaml(path)` reads the file at `path`, and a missing one throws. Given `null`, it returns
-  `null`, so a tool with a `--config` flag writes `loadDecompYaml(flags.config ?? findDecompYaml())`.
+- `searchDecompYaml(from?)` reads the nearest decomp.yaml from `from` (default: the working directory)
+  up to the root, trying `decomp.yaml` before `decomp.yml` in each directory, or returns `null`.
+- `loadDecompYaml(path)` reads the file at `path`, and a missing one throws. A tool with a `--config`
+  flag writes `flags.config ? loadDecompYaml(flags.config) : searchDecompYaml()`.
 - `dir` is the file's directory. The config's relative paths are relative to it.
 - `@match-kit/decomp-yaml/files` needs Node or Bun. In a browser, parse the text you have:
   `parseDecompYaml(text, path?)`.
