@@ -25,8 +25,7 @@ const settings = toolBlock(loaded, 'mytool', MyTool); // { compiler?, jobs? }, o
 
 - `searchDecompYaml(from?)` reads the nearest decomp.yaml from `from` (default: the working directory)
   up to the root, trying `decomp.yaml` before `decomp.yml` in each directory, or returns `null`.
-- `loadDecompYaml(path)` reads the file at `path`, and a missing one throws. A tool with a `--config`
-  flag writes `flags.config ? loadDecompYaml(flags.config) : searchDecompYaml()`.
+- `loadDecompYaml(path)` reads the file at `path`, and a missing one throws.
 - `dir` is the file's directory. The config's relative paths are relative to it.
 - `@match-kit/decomp-yaml/files` needs Node or Bun. In a browser, parse the text you have:
   `parseDecompYaml(text, path?)`.
