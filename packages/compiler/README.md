@@ -45,14 +45,20 @@ The command runs under `sh -ec`: a step that fails fails the compile, even when 
 
 ## Outcomes
 
-| `kind`         | Meaning                                                        | `isStable` |
-| -------------- | -------------------------------------------------------------- | ---------- |
-| `ok`           | exit 0 and an object at `object`                               | yes        |
-| `rejected`     | exit 1 to 127: the compiler refused the candidate              | yes        |
-| `no-object`    | exit 0 and no object                                           | yes        |
-| `killed`       | a signal ended the compile (exit 128 or more, or no exit code) | no         |
-| `aborted`      | the runner's `signal` aborted the compile                      | no         |
-| `spawn-failed` | the shell did not start                                        | no         |
+| `kind`         | Meaning                                                                             | `isStable` |
+| -------------- | ----------------------------------------------------------------------------------- | ---------- |
+| `ok`           | exit 0 and an object at `object`                                                    | yes        |
+| `rejected`     | the compiler exited with `exitCode`: it refused the candidate                       | yes        |
+| `no-object`    | exit 0 and no object                                                                | yes        |
+| `crashed`      | a program crashed with `signal` (SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGABRT)          | no         |
+| `killed`       | `signal` ended the compile from outside (SIGHUP, SIGINT, SIGQUIT, SIGKILL, SIGTERM) | no         |
+| `not-run`      | a program did not run: exit 126 or 127 from the shell, 125 from `docker run`        | no         |
+| `aborted`      | the runner's `signal` aborted the compile                                           | no         |
+| `spawn-failed` | the shell did not start                                                             | no         |
+
+The shell reports a child that signal n ended as exit 128 + n, which a program can also exit with on
+purpose, so only those ten signals are read off an exit status; any other status, such as 255 from
+`exit(-1)`, is the program's own and reads as `rejected`.
 
 A stable outcome is the compiler's own answer and is safe to cache; the others can differ on the next
 run. A failed outcome carries the `command` and the compiler's `output` (stderr, or stdout when stderr

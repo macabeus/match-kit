@@ -58,15 +58,36 @@ describe('Runner.compile', () => {
     expect(outcome).toMatchObject({ kind: 'no-object', command: 'true <scratch>/cand.c <scratch>/cand.o', output: '' });
   });
 
-  it('reports a compiler a signal killed as killed, not rejected', async () => {
-    // the shell reports its killed child as exit 128 + 9
-    const outcome = await compile("sh -c 'kill -9 $$'; cp {{inputPath}} {{outputPath}}");
-    expect(outcome).toMatchObject({ kind: 'killed', exitCode: 137 });
+  it('reports a program a signal ended from outside as killed, naming the signal', async () => {
+    // the shell reports a child that signal n ended as exit 128 + n
+    const outcome = await compile("sh -c 'kill -KILL $$'; cp {{inputPath}} {{outputPath}}");
+    expect(outcome).toMatchObject({ kind: 'killed', signal: 'SIGKILL' });
   });
 
-  it('reports a killed shell as killed with no exit code', async () => {
-    const outcome = await compile('kill -9 $$ # {{inputPath}} {{outputPath}}');
-    expect(outcome).toMatchObject({ kind: 'killed', exitCode: null });
+  it('reports a killed shell as killed, with the signal Node names', async () => {
+    const outcome = await compile('kill -TERM $$ # {{inputPath}} {{outputPath}}');
+    expect(outcome).toMatchObject({ kind: 'killed', signal: 'SIGTERM' });
+  });
+
+  it('reports a crash as crashed, not as killed or rejected', async () => {
+    const midway = await compile("sh -c 'kill -SEGV $$'; cp {{inputPath}} {{outputPath}}");
+    expect(midway).toMatchObject({ kind: 'crashed', signal: 'SIGSEGV' });
+    const last = await compile("sh -c 'kill -ABRT $$' # {{inputPath}} {{outputPath}}");
+    expect(last).toMatchObject({ kind: 'crashed', signal: 'SIGABRT' });
+  });
+
+  it('reads an exit above 128 that is no outside or crash signal as the program’s own', async () => {
+    const outcome = await compile("sh -c 'exit 255'; cp {{inputPath}} {{outputPath}}");
+    expect(outcome).toMatchObject({ kind: 'rejected', exitCode: 255 });
+  });
+
+  it('reports a program that did not run as not-run', async () => {
+    expect(await compile('no-such-compiler-match-kit {{inputPath}} {{outputPath}}')).toMatchObject({
+      kind: 'not-run',
+      exitCode: 127,
+    });
+    // a container runtime's own failure, such as `docker run` without a daemon
+    expect(await compile('exit 125 # {{inputPath}} {{outputPath}}')).toMatchObject({ kind: 'not-run', exitCode: 125 });
   });
 
   it('reports a shell that cannot start', async () => {
@@ -94,14 +115,18 @@ describe('isStable', () => {
         'cp {{inputPath}} {{outputPath}}',
         'false {{inputPath}} {{outputPath}}',
         'true {{inputPath}} {{outputPath}}',
+        "sh -c 'kill -SEGV $$'; true {{inputPath}} {{outputPath}}",
         'kill -9 $$ # {{inputPath}} {{outputPath}}',
+        'exit 127 # {{inputPath}} {{outputPath}}',
       ].map((template) => compile(template)),
     );
     expect(kinds.map((outcome) => [outcome.kind, isStable(outcome)])).toEqual([
       ['ok', true],
       ['rejected', true],
       ['no-object', true],
+      ['crashed', false],
       ['killed', false],
+      ['not-run', false],
     ]);
     expect(isStable({ kind: 'aborted', command: '', output: '' })).toBe(false);
     expect(isStable({ kind: 'spawn-failed', command: '', message: '' })).toBe(false);

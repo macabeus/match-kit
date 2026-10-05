@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { closeSync, openSync } from 'node:fs';
 
 /** How the shell ended. */
-export type Exit = { status: number | null; aborted: boolean } | { spawnError: Error };
+export type Exit = { status: number | null; signal: NodeJS.Signals | null; aborted: boolean } | { spawnError: Error };
 
 /**
  * Run `command` under `sh -ec`, so any failed step fails the compile, with stdout and stderr in files.
@@ -40,9 +40,9 @@ export async function run(
         }
         signal?.addEventListener('abort', abort, { once: true });
       });
-      child.once('close', (status) => {
+      child.once('close', (status, killedBy) => {
         signal?.removeEventListener('abort', abort);
-        resolve({ status, aborted });
+        resolve({ status, signal: killedBy, aborted });
       });
     });
   } finally {

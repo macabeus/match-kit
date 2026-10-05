@@ -28,12 +28,16 @@ export interface CompileOptions {
 export type Result =
   /** The command exited 0 and wrote its object. */
   | { kind: 'ok'; object: string }
-  /** The command exited with `exitCode`, below 128: the compiler refused the candidate. */
+  /** The command exited with `exitCode`: the compiler refused the candidate. */
   | { kind: 'rejected'; command: string; exitCode: number; output: string }
   /** The command exited 0 and wrote no object. */
   | { kind: 'no-object'; command: string; output: string }
-  /** A signal ended the compile: the shell exited 128 + the signal's number, or `exitCode` is null when it killed the shell. */
-  | { kind: 'killed'; command: string; exitCode: number | null; output: string }
+  /** A program crashed with `signal`: SIGSEGV, SIGBUS, SIGILL, SIGFPE or SIGABRT. */
+  | { kind: 'crashed'; command: string; signal: string; output: string }
+  /** `signal` ended the compile from outside, such as SIGKILL from an out-of-memory killer. */
+  | { kind: 'killed'; command: string; signal: string; output: string }
+  /** A program did not run: exit 126 or 127 from the shell, or 125 from a container runtime. */
+  | { kind: 'not-run'; command: string; exitCode: number; output: string }
   /** The runner's signal aborted the compile. */
   | { kind: 'aborted'; command: string; output: string }
   /** The shell did not start, such as when `cwd` is missing. */
