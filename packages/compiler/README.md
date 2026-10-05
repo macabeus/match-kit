@@ -62,7 +62,7 @@ purpose, so only those ten signals are read off an exit status; any other status
 
 A stable outcome is the compiler's own answer and is safe to cache; the others can differ on the next
 run. A failed outcome carries the `command` and the compiler's `output` (stderr, or stdout when stderr
-is empty), with the compile's directory written as `<scratch>`, so a failure reads the same on every
+is empty), with the compile's directory written as `<compile-dir>`, so a failure reads the same on every
 run.
 
 ## Options

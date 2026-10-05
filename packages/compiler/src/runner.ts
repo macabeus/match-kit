@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { type Paths, outcome } from './process/outcome.js';
+import { type Paths, outcome, scrub } from './process/outcome.js';
 import { run } from './process/run.js';
 import { checkTemplate, render } from './template/template.js';
 import type { CompileOptions, Outcome, Result, Runner, RunnerOptions } from './types.js';
@@ -71,7 +71,7 @@ class CompileRunner implements Runner {
       writeFileSync(input, source);
       const { cwd, signal, maxOutputBytes = Infinity } = this.#options;
       const result: Result = signal?.aborted
-        ? { kind: 'aborted', command: command.split(dir).join('<scratch>'), output: '' }
+        ? { kind: 'aborted', command: scrub(command, dir), output: '' }
         : outcome(await run(command, cwd, paths.stdout, paths.stderr, signal), command, paths, maxOutputBytes);
       if (result.kind !== 'ok') {
         remove();

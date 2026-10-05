@@ -36,9 +36,9 @@ describe('Runner.compile', () => {
     const outcome = await compile('echo "{{inputPath}}:1: error: boom" >&2; exit 3; cp {{inputPath}} {{outputPath}}');
     expect(outcome).toMatchObject({
       kind: 'rejected',
-      command: 'echo "<scratch>/cand.c:1: error: boom" >&2; exit 3; cp <scratch>/cand.c <scratch>/cand.o',
+      command: 'echo "<compile-dir>/cand.c:1: error: boom" >&2; exit 3; cp <compile-dir>/cand.c <compile-dir>/cand.o',
       exitCode: 3,
-      output: '<scratch>/cand.c:1: error: boom',
+      output: '<compile-dir>/cand.c:1: error: boom',
     });
   });
 
@@ -55,7 +55,11 @@ describe('Runner.compile', () => {
 
   it('reports an exit 0 that wrote no object', async () => {
     const outcome = await compile('true {{inputPath}} {{outputPath}}');
-    expect(outcome).toMatchObject({ kind: 'no-object', command: 'true <scratch>/cand.c <scratch>/cand.o', output: '' });
+    expect(outcome).toMatchObject({
+      kind: 'no-object',
+      command: 'true <compile-dir>/cand.c <compile-dir>/cand.o',
+      output: '',
+    });
   });
 
   it('reports a program a signal ended from outside as killed, naming the signal', async () => {

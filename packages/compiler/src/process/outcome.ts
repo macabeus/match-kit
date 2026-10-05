@@ -11,6 +11,9 @@ export interface Paths {
   stderr: string;
 }
 
+/** `text` with the compile's directory written as `<compile-dir>`. */
+export const scrub = (text: string, dir: string): string => text.split(dir).join('<compile-dir>');
+
 /** The file's text, cut to `maxBytes`. */
 function readOutput(path: string, maxBytes: number): string {
   const fd = openSync(path, 'r');
@@ -40,16 +43,19 @@ const NOT_RUN = [125, 126, 127];
 
 /** What the shell's exit means for the compile. */
 export function outcome(exit: Exit, command: string, paths: Paths, maxOutputBytes: number): Result {
-  const scrub = (text: string): string => text.split(paths.dir).join('<scratch>');
   if ('spawnError' in exit) {
-    return { kind: 'spawn-failed', command: scrub(command), message: scrub(exit.spawnError.message) };
+    return {
+      kind: 'spawn-failed',
+      command: scrub(command, paths.dir),
+      message: scrub(exit.spawnError.message, paths.dir),
+    };
   }
   const { status, aborted } = exit;
   if (status === 0 && !aborted && existsSync(paths.object)) {
     return { kind: 'ok', object: paths.object };
   }
-  const output = scrub((readOutput(paths.stderr, maxOutputBytes) || readOutput(paths.stdout, maxOutputBytes)).trim());
-  const failed = { command: scrub(command), output };
+  const output = (readOutput(paths.stderr, maxOutputBytes) || readOutput(paths.stdout, maxOutputBytes)).trim();
+  const failed = { command: scrub(command, paths.dir), output: scrub(output, paths.dir) };
   if (aborted) {
     return { kind: 'aborted', ...failed };
   }

@@ -20,7 +20,7 @@ export interface CompileOptions {
 }
 
 /**
- * What one compile came to. `command` and `output` read `<scratch>` for the compile's directory, so the
+ * What one compile came to. `command` and `output` read `<compile-dir>` for the compile's directory, so the
  * same failure reads the same on every run. `output` is the compiler's stderr, or its stdout when stderr
  * is empty, trimmed.
  */
