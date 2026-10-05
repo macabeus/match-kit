@@ -5,6 +5,7 @@ const NODE_ONLY = [
   '^packages/scoring/src/files\\.ts$',
   '^packages/scoring/src/engine/load-node-bun\\.ts$',
   '^packages/decomp-yaml/src/files\\.ts$',
+  '^packages/compiler/src/',
 ];
 
 /** @type {import('dependency-cruiser').IConfiguration} */
