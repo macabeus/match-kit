@@ -41,7 +41,7 @@ import { createRunner } from '@match-kit/compiler';
 import { z } from 'zod';
 
 await using runner = createRunner('cp {{inputPath}} {{outputPath}}');
-const compiled = [runner.scratch().compileSync('int x;', { ext: 'c' }), await runner.scratch().compile('int x;', { ext: 'c' })];
+const compiled = [await runner.scratch().compile('int x;', { ext: 'c' })];
 if (compiled.some((outcome) => outcome.kind !== 'ok' || readFileSync(outcome.object, 'utf8') !== 'int x;')) {
   throw new Error(`unexpected compile: ${JSON.stringify(compiled)}`);
 }

@@ -55,11 +55,6 @@ describe('RunnerOptions.signal', () => {
     await until(() => !alive(compiler));
   });
 
-  it('runs compileSync whatever the signal says', async () => {
-    await using runner = createRunner('cp {{inputPath}} {{outputPath}}', { signal: AbortSignal.abort() });
-    expect(runner.scratch().compileSync('int f;', { ext: 'c' }).kind).toBe('ok');
-  });
-
   it('runs a compile in its own process group only when there is a signal', async () => {
     const template = 'ps -o pgid= -p $$ > {{outputPath}} # {{inputPath}}';
     const group = async (runner: ReturnType<typeof createRunner>): Promise<string> => {

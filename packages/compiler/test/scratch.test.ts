@@ -16,7 +16,7 @@ describe('Scratch', () => {
   it('compiles each candidate in a fresh, empty directory and removes the previous one', async () => {
     await using runner = createRunner('test ! -e {{outputPath}} && cp {{inputPath}} {{outputPath}}');
     const scratch = runner.scratch();
-    const first = object(scratch.compileSync('int f;', { ext: 'c' }));
+    const first = object(await scratch.compile('int f;', { ext: 'c' }));
     const second = object(await scratch.compile('int g;', { ext: 'c' }));
     expect(dirname(second)).not.toBe(dirname(first));
     expect(existsSync(dirname(first))).toBe(false);
@@ -27,9 +27,9 @@ describe('Scratch', () => {
     await using runner = createRunner('sleep 0.2; cp {{inputPath}} {{outputPath}}');
     const scratch = runner.scratch();
     const first = scratch.compile('int f;', { ext: 'c' });
-    expect(() => scratch.compileSync('int g;', { ext: 'c' })).toThrow('this scratch is already compiling');
+    await expect(scratch.compile('int g;', { ext: 'c' })).rejects.toThrow('this scratch is already compiling');
     expect((await first).kind).toBe('ok');
-    expect(scratch.compileSync('int g;', { ext: 'c' }).kind).toBe('ok');
+    expect((await scratch.compile('int g;', { ext: 'c' })).kind).toBe('ok');
   });
 
   it('runs compiles in separate scratches at the same time', async () => {
@@ -41,12 +41,12 @@ describe('Scratch', () => {
     expect(performance.now() - started).toBeLessThan(800);
   });
 
-  it('removes its directory when disposed', () => {
+  it('removes its directory when disposed', async () => {
     const runner = createRunner('cp {{inputPath}} {{outputPath}}');
     let path: string;
     {
       using scratch = runner.scratch();
-      path = object(scratch.compileSync('int f;', { ext: 'c' }));
+      path = object(await scratch.compile('int f;', { ext: 'c' }));
     }
     expect(existsSync(dirname(path))).toBe(false);
   });
@@ -66,6 +66,6 @@ describe('Runner', () => {
     const scratch = runner.scratch();
     await runner.dispose();
     expect(() => runner.scratch()).toThrow('this runner is disposed');
-    expect(() => scratch.compileSync('int f;', { ext: 'c' })).toThrow('this runner is disposed');
+    await expect(scratch.compile('int f;', { ext: 'c' })).rejects.toThrow('this runner is disposed');
   });
 });

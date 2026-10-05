@@ -52,7 +52,6 @@ export interface Runner extends AsyncDisposable {
  */
 export interface Scratch extends Disposable {
   compile(source: string, options: CompileOptions): Promise<Outcome>;
-  compileSync(source: string, options: CompileOptions): Outcome;
   /** Removes the scratch's directory. */
   dispose(): void;
 }

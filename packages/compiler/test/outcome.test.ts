@@ -1,4 +1,4 @@
-// What a compile comes to, read the same way by `compileSync` and `compile`.
+// What a compile comes to.
 import { mkdtempSync, readFileSync, realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -20,14 +20,10 @@ function scratch(template: string, options: RunnerOptions) {
   return runner.scratch();
 }
 
-const runners = {
-  compileSync: (template: string, source = 'int x;\n', options: RunnerOptions = {}): Promise<Outcome> =>
-    Promise.resolve(scratch(template, options).compileSync(source, { ext: 'c' })),
-  compile: (template: string, source = 'int x;\n', options: RunnerOptions = {}): Promise<Outcome> =>
-    scratch(template, options).compile(source, { ext: 'c' }),
-};
+const compile = (template: string, source = 'int x;\n', options: RunnerOptions = {}): Promise<Outcome> =>
+  scratch(template, options).compile(source, { ext: 'c' });
 
-describe.each(Object.entries(runners))('%s', (_, compile) => {
+describe('Scratch.compile', () => {
   it('returns the object the command wrote', async () => {
     const outcome = await compile('cp {{inputPath}} {{outputPath}}', 'int f(void);\n');
     expect(outcome.kind).toBe('ok');
@@ -102,7 +98,7 @@ describe('isStable', () => {
         'false {{inputPath}} {{outputPath}}',
         'true {{inputPath}} {{outputPath}}',
         'kill -9 $$ # {{inputPath}} {{outputPath}}',
-      ].map((template) => runners.compile(template)),
+      ].map((template) => compile(template)),
     );
     expect(kinds.map((outcome) => [outcome.kind, isStable(outcome)])).toEqual([
       ['ok', true],

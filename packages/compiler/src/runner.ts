@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { type Paths, outcome } from './process/outcome.js';
-import { run, runSync } from './process/run.js';
+import { run } from './process/run.js';
 import { checkTemplate, render } from './template/template.js';
 import type { CompileOptions, Outcome, Runner, RunnerOptions, Scratch } from './types.js';
 
@@ -79,16 +79,6 @@ class CompileScratch implements Scratch {
         .then((exit) => outcome(exit, command, paths, maxOutputBytes))
         .finally(() => (this.#busy = false)),
     );
-  }
-
-  compileSync(source: string, options: CompileOptions): Outcome {
-    const { command, paths } = this.#stage(source, options);
-    const { cwd, maxOutputBytes = Infinity } = this.#runner.options;
-    try {
-      return outcome(runSync(command, cwd, paths.stdout, paths.stderr), command, paths, maxOutputBytes);
-    } finally {
-      this.#busy = false;
-    }
   }
 
   /** A fresh directory holding the source, and the command that compiles it. */

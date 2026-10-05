@@ -21,8 +21,6 @@ if (outcome.kind === 'ok') {
 }
 ```
 
-`compileSync` is the same compile, blocking.
-
 ## The template
 
 | Placeholder        | Becomes                                  |
