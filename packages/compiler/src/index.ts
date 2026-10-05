@@ -3,4 +3,4 @@
 export { isStable } from './process/outcome.js';
 export { createRunner } from './runner.js';
 export { TemplateError } from './template/template.js';
-export type { CompileOptions, Outcome, Runner, RunnerOptions, Scratch } from './types.js';
+export type { CompileOptions, Outcome, Runner, RunnerOptions } from './types.js';

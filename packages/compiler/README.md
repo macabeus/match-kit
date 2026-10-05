@@ -12,27 +12,34 @@ npm install @match-kit/compiler
 ```ts
 import { createRunner, isStable } from '@match-kit/compiler';
 
-await using runner = createRunner('tools/agbcc -O2 {{inputPath}} -o {{outputPath}}', { cwd: projectDir });
-const scratch = runner.scratch(); // one per worker
+await using runner = createRunner('tools/agbcc {{flags}} {{inputPath}} -o {{outputPath}}', {
+  cwd: projectDir,
+  flags: ['-O2', '-mthumb-interwork'],
+});
 
-const outcome = await scratch.compile(source, { ext: 'c', symbol: 'UpdatePlayer' });
+using outcome = await runner.compile(source, { ext: 'c', symbol: 'UpdatePlayer' });
 if (outcome.kind === 'ok') {
-  score(outcome.object); // lives until this scratch's next compile
+  score(outcome.object); // removed when `outcome` is disposed
 }
 ```
 
+Each compile runs in a fresh directory, so any number can run at once. Disposing an outcome removes
+its directory, and with it the object; a failed compile's directory is removed before it returns.
+Disposing the runner waits for the compiles in flight, then removes every directory still kept.
+
 ## The template
 
-| Placeholder        | Becomes                                  |
-| ------------------ | ---------------------------------------- |
-| `{{inputPath}}`    | the candidate source file (required)     |
-| `{{outputPath}}`   | the object the command writes (required) |
-| `{{symbol}}`       | the `symbol` compile option              |
-| `{{functionName}}` | the same value as `{{symbol}}`           |
+| Placeholder      | Becomes                                                            |
+| ---------------- | ------------------------------------------------------------------ |
+| `{{inputPath}}`  | the candidate source file (required)                               |
+| `{{outputPath}}` | the object the command writes (required)                           |
+| `{{symbol}}`     | the `symbol` compile option                                        |
+| `{{flags}}`      | the runner's `flags`, each one shell word, quoted where it must be |
 
-`createRunner` throws a `TemplateError` for a template without both paths or with any other
-`{{placeholder}}`. Values reach the shell as written, so the template owns the quoting, and a value
-the shell would read as more than one word throws.
+`createRunner` throws a `TemplateError` for a template without both paths, with any other
+`{{placeholder}}`, or with `{{flags}}` and `flags` that disagree. Paths and the symbol reach the shell
+as written, so the template owns their quoting, and a symbol the shell would read as more than one
+word throws.
 
 The command runs under `sh -ec`: a step that fails fails the compile, even when a later step succeeds.
 
@@ -49,18 +56,14 @@ The command runs under `sh -ec`: a step that fails fails the compile, even when 
 
 A stable outcome is the compiler's own answer and is safe to cache; the others can differ on the next
 run. A failed outcome carries the `command` and the compiler's `output` (stderr, or stdout when stderr
-is empty), with the scratch directory written as `<scratch>`, so a failure reads the same on every run.
+is empty), with the compile's directory written as `<scratch>`, so a failure reads the same on every
+run.
 
 ## Options
 
 - `cwd`: the directory the command runs in, such as the decomp.yaml's directory.
-- `signal`: an `AbortSignal` for the async compiles. Each one then runs in its own process group, and
-  an abort ends the whole group, the compiler under the shell included. Without a signal, compiles stay
+- `flags`: the compiler's flags, for `{{flags}}`.
+- `signal`: an `AbortSignal` for the compiles. Each one then runs in its own process group, and an
+  abort ends the whole group, the compiler under the shell included. Without a signal, compiles stay
   in the caller's process group, so a terminal's Ctrl-C reaches them.
 - `maxOutputBytes`: the most bytes of stdout, and of stderr, an outcome keeps. Default: all of it.
-
-## Scratches
-
-A scratch runs one compile at a time, and each compile gets a fresh directory, which removes the
-previous one. Give each worker, or each compile in flight, its own scratch. Disposing a scratch removes
-its directory; disposing the runner waits for the compiles in flight and then removes every scratch.

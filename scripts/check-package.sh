@@ -41,7 +41,7 @@ import { createRunner } from '@match-kit/compiler';
 import { z } from 'zod';
 
 await using runner = createRunner('cp {{inputPath}} {{outputPath}}');
-const compiled = [await runner.scratch().compile('int x;', { ext: 'c' })];
+const compiled = [await runner.compile('int x;', { ext: 'c' })];
 if (compiled.some((outcome) => outcome.kind !== 'ok' || readFileSync(outcome.object, 'utf8') !== 'int x;')) {
   throw new Error(`unexpected compile: ${JSON.stringify(compiled)}`);
 }
@@ -81,7 +81,7 @@ import { searchDecompYaml } from '@match-kit/decomp-yaml/files';
 import { type Outcome, createRunner, isStable } from '@match-kit/compiler';
 import { z } from 'zod';
 
-const outcome: Outcome = await createRunner('cc -c {{inputPath}} -o {{outputPath}}').scratch().compile('', { ext: 'c' });
+const outcome: Outcome = await createRunner('cc {{flags}} -c {{inputPath}} -o {{outputPath}}', { flags: ['-O2'] }).compile('', { ext: 'c' });
 const stable: boolean = isStable(outcome);
 const loaded = searchDecompYaml();
 const platform: string | undefined = (loaded?.config satisfies DecompConfig | undefined)?.platform;

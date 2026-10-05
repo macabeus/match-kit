@@ -37,7 +37,7 @@ describe('RunnerOptions.signal', () => {
   it('aborts a compile without running it when the signal has already fired', async () => {
     const ran = join(SCRATCH, 'ran');
     await using runner = createRunner(`touch ${ran}; cp {{inputPath}} {{outputPath}}`, { signal: AbortSignal.abort() });
-    expect(await runner.scratch().compile('int f;', { ext: 'c' })).toMatchObject({ kind: 'aborted' });
+    expect(await runner.compile('int f;', { ext: 'c' })).toMatchObject({ kind: 'aborted' });
     expect(existsSync(ran)).toBe(false);
   });
 
@@ -47,7 +47,7 @@ describe('RunnerOptions.signal', () => {
     await using runner = createRunner(`sleep 30 & echo $! > ${pidFile}; wait; cp {{inputPath}} {{outputPath}}`, {
       signal: abort.signal,
     });
-    const compile = runner.scratch().compile('int f;', { ext: 'c' });
+    const compile = runner.compile('int f;', { ext: 'c' });
     await until(() => existsSync(pidFile) && readFileSync(pidFile, 'utf8').endsWith('\n'));
     const compiler = Number(readFileSync(pidFile, 'utf8'));
     abort.abort();
@@ -58,7 +58,7 @@ describe('RunnerOptions.signal', () => {
   it('runs a compile in its own process group only when there is a signal', async () => {
     const template = 'ps -o pgid= -p $$ > {{outputPath}} # {{inputPath}}';
     const group = async (runner: ReturnType<typeof createRunner>): Promise<string> => {
-      const outcome = await runner.scratch().compile('', { ext: 'c' });
+      const outcome = await runner.compile('', { ext: 'c' });
       return outcome.kind === 'ok' ? readFileSync(outcome.object, 'utf8').trim() : outcome.kind;
     };
     await using plain = createRunner(template);

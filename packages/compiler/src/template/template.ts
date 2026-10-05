@@ -10,11 +10,25 @@ export class TemplateError extends Error {
   }
 }
 
-const KNOWN = ['inputPath', 'outputPath', 'functionName', 'symbol'];
+const KNOWN = ['inputPath', 'outputPath', 'symbol', 'flags'];
 const PLACEHOLDER = /\{\{(\w+)\}\}/g;
 
-/** What a template takes. Throws a `TemplateError` for a missing path or an unknown placeholder. */
-export function checkTemplate(template: string): { takesSymbol: boolean } {
+/** A word the shell reads back as itself without quotes. */
+const SHELL_BARE = /^[A-Za-z0-9_@%+=:,./-]+$/;
+
+/** `words` as shell words, quoted only where the shell needs it (`-pragma 'cats off'`). */
+function shellWords(words: readonly string[]): string {
+  return words.map((w) => (SHELL_BARE.test(w) ? w : `'${w.replaceAll("'", `'\\''`)}'`)).join(' ');
+}
+
+/**
+ * The command a runner compiles with: `template` with `{{flags}}` filled. Throws a `TemplateError` for a
+ * missing path, an unknown placeholder, or `flags` and `{{flags}}` that disagree.
+ */
+export function checkTemplate(
+  template: string,
+  flags: readonly string[] | undefined,
+): { command: string; takesSymbol: boolean } {
   const names = new Set([...template.matchAll(PLACEHOLDER)].map((m) => m[1]));
   const missing = ['inputPath', 'outputPath'].filter((name) => !names.has(name));
   if (missing.length > 0) {
@@ -27,11 +41,21 @@ export function checkTemplate(template: string): { takesSymbol: boolean } {
       `compile command has an unknown placeholder {{${unknown}}} (known: ${KNOWN.map((name) => `{{${name}}}`).join(', ')})`,
     );
   }
-  return { takesSymbol: names.has('symbol') || names.has('functionName') };
+  if (names.has('flags') && flags === undefined) {
+    throw new TemplateError(template, 'compile command takes {{flags}}, and no flags were given');
+  }
+  if (!names.has('flags') && flags !== undefined) {
+    throw new TemplateError(template, 'compile command has no {{flags}} to take the flags given');
+  }
+  return {
+    command: flags === undefined ? template : template.replaceAll('{{flags}}', shellWords(flags)),
+    takesSymbol: names.has('symbol'),
+  };
 }
 
-// A value reaches the shell as written, so the template owns its quoting (`-o "{{outputPath}}.tmp"`),
-// and every value must be inert to the shell. The symbol can come from a pasted assembly label.
+// A path or the symbol reaches the shell as written, so the template owns its quoting
+// (`-o "{{outputPath}}.tmp"`), and every such value must be inert to the shell. The symbol can come from
+// a pasted assembly label.
 const SHELL_SAFE = /^[A-Za-z0-9_./+-]+$/;
 const safe = (value: string, what: string): string => {
   if (!SHELL_SAFE.test(value)) {
@@ -40,14 +64,13 @@ const safe = (value: string, what: string): string => {
   return value;
 };
 
-/** The command for one compile. */
-export function render(template: string, values: { inputPath: string; outputPath: string; symbol?: string }): string {
-  let command = template
+/** The shell command for one compile. */
+export function render(command: string, values: { inputPath: string; outputPath: string; symbol?: string }): string {
+  let rendered = command
     .replaceAll('{{inputPath}}', safe(values.inputPath, '{{inputPath}}'))
     .replaceAll('{{outputPath}}', safe(values.outputPath, '{{outputPath}}'));
   if (values.symbol !== undefined) {
-    const symbol = safe(values.symbol, 'the symbol name');
-    command = command.replaceAll('{{symbol}}', symbol).replaceAll('{{functionName}}', symbol);
+    rendered = rendered.replaceAll('{{symbol}}', safe(values.symbol, 'the symbol name'));
   }
-  return command;
+  return rendered;
 }

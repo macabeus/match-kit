@@ -1,6 +1,6 @@
 import { closeSync, existsSync, fstatSync, openSync, readSync } from 'node:fs';
 
-import type { Outcome } from '../types.js';
+import type { Result } from '../types.js';
 import type { Exit } from './run.js';
 
 export interface Paths {
@@ -25,7 +25,7 @@ function readOutput(path: string, maxBytes: number): string {
 }
 
 /** What the shell's exit means for the compile. */
-export function outcome(exit: Exit, command: string, paths: Paths, maxOutputBytes: number): Outcome {
+export function outcome(exit: Exit, command: string, paths: Paths, maxOutputBytes: number): Result {
   const scrub = (text: string): string => text.split(paths.dir).join('<scratch>');
   if ('spawnError' in exit) {
     return { kind: 'spawn-failed', command: scrub(command), message: scrub(exit.spawnError.message) };
@@ -50,6 +50,6 @@ export function outcome(exit: Exit, command: string, paths: Paths, maxOutputByte
 }
 
 /** Whether the outcome is the compiler's own answer, the same on every run, and so safe to cache. */
-export function isStable(outcome: Outcome): boolean {
+export function isStable(outcome: Result): boolean {
   return outcome.kind === 'ok' || outcome.kind === 'rejected' || outcome.kind === 'no-object';
 }

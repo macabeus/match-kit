@@ -13,17 +13,14 @@ afterAll(async () => {
   rmSync(SCRATCH, { recursive: true, force: true });
 });
 
-/** A scratch whose objects live until the suite ends. */
-function scratch(template: string, options: RunnerOptions) {
+/** One compile, its object kept until the suite ends. */
+const compile = (template: string, source = 'int x;\n', options: RunnerOptions = {}): Promise<Outcome> => {
   const runner = createRunner(template, options);
   RUNNERS.push(runner);
-  return runner.scratch();
-}
+  return runner.compile(source, { ext: 'c' });
+};
 
-const compile = (template: string, source = 'int x;\n', options: RunnerOptions = {}): Promise<Outcome> =>
-  scratch(template, options).compile(source, { ext: 'c' });
-
-describe('Scratch.compile', () => {
+describe('Runner.compile', () => {
   it('returns the object the command wrote', async () => {
     const outcome = await compile('cp {{inputPath}} {{outputPath}}', 'int f(void);\n');
     expect(outcome.kind).toBe('ok');
@@ -37,7 +34,7 @@ describe('Scratch.compile', () => {
 
   it('rejects with the exit code and the compiler stderr', async () => {
     const outcome = await compile('echo "{{inputPath}}:1: error: boom" >&2; exit 3; cp {{inputPath}} {{outputPath}}');
-    expect(outcome).toEqual({
+    expect(outcome).toMatchObject({
       kind: 'rejected',
       command: 'echo "<scratch>/cand.c:1: error: boom" >&2; exit 3; cp <scratch>/cand.c <scratch>/cand.o',
       exitCode: 3,
@@ -58,7 +55,7 @@ describe('Scratch.compile', () => {
 
   it('reports an exit 0 that wrote no object', async () => {
     const outcome = await compile('true {{inputPath}} {{outputPath}}');
-    expect(outcome).toEqual({ kind: 'no-object', command: 'true <scratch>/cand.c <scratch>/cand.o', output: '' });
+    expect(outcome).toMatchObject({ kind: 'no-object', command: 'true <scratch>/cand.c <scratch>/cand.o', output: '' });
   });
 
   it('reports a compiler a signal killed as killed, not rejected', async () => {
