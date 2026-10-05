@@ -5,8 +5,8 @@ import { closeSync, openSync } from 'node:fs';
 export type Exit = { status: number | null; signal: NodeJS.Signals | null; aborted: boolean } | { spawnError: Error };
 
 /**
- * Run `command` under `sh -ec`, so any failed step fails the compile, with stdout and stderr in files.
- * With a `signal`, the shell leads its own process group, and an abort ends the group.
+ * Run `command` under `sh -ec`, so any failed step fails the compile, writing its stdout and stderr to
+ * files. With a `signal`, the shell leads its own process group, and an abort ends the group.
  */
 export async function run(
   command: string,

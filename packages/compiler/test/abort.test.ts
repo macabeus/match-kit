@@ -1,4 +1,4 @@
-// Cancelling async compiles with the runner's AbortSignal.
+// Cancelling compiles with the runner's AbortSignal.
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

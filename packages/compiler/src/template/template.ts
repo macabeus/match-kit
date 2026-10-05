@@ -1,4 +1,4 @@
-/** A compile command template the runner cannot run. */
+/** A compile command template with a missing path, an unknown placeholder, or `{{flags}}` and `flags` that disagree. */
 export class TemplateError extends Error {
   /** The template the error is about. */
   readonly template: string;
@@ -21,10 +21,7 @@ function shellWords(words: readonly string[]): string {
   return words.map((w) => (SHELL_BARE.test(w) ? w : `'${w.replaceAll("'", `'\\''`)}'`)).join(' ');
 }
 
-/**
- * The command a runner compiles with: `template` with `{{flags}}` filled. Throws a `TemplateError` for a
- * missing path, an unknown placeholder, or `flags` and `{{flags}}` that disagree.
- */
+/** The command a runner compiles with: `template` with `{{flags}}` filled. */
 export function checkTemplate(
   template: string,
   flags: readonly string[] | undefined,

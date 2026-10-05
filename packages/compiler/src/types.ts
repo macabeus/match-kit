@@ -4,9 +4,8 @@ export interface RunnerOptions {
   /** The compiler's flags, which fill `{{flags}}` as shell words, quoted where the shell needs it. */
   flags?: readonly string[];
   /**
-   * Cancels the compiles: each one runs in its own process group, and an abort sends SIGTERM to the
-   * whole group. Without a signal, a compile stays in the caller's process group, so a terminal's
-   * Ctrl-C reaches the compiler too.
+   * Cancels the compiles: each runs in its own process group, and an abort sends SIGTERM to the group.
+   * Without a signal, compiles stay in the caller's process group, which a terminal's Ctrl-C reaches.
    */
   signal?: AbortSignal;
   /** The most bytes of stdout, and of stderr, an outcome keeps. Default: all of it. */

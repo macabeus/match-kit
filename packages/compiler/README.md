@@ -36,7 +36,7 @@ Disposing the runner waits for the compiles in flight, then removes every direct
 | `{{symbol}}`     | the `symbol` compile option                                        |
 | `{{flags}}`      | the runner's `flags`, each one shell word, quoted where it must be |
 
-`createRunner` throws a `TemplateError` for a template without both paths, with any other
+`createRunner` throws a `TemplateError` for a template missing a path, with any other
 `{{placeholder}}`, or with `{{flags}}` and `flags` that disagree. Paths and the symbol reach the shell
 as written, so the template owns their quoting, and a symbol the shell would read as more than one
 word throws.
@@ -52,7 +52,7 @@ The command runs under `sh -ec`: a step that fails fails the compile, even when 
 | `no-object`    | exit 0 and no object                                                                | yes        |
 | `crashed`      | a program crashed with `signal` (SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGABRT)          | no         |
 | `killed`       | `signal` ended the compile from outside (SIGHUP, SIGINT, SIGQUIT, SIGKILL, SIGTERM) | no         |
-| `not-run`      | a program did not run: exit 126 or 127 from the shell, 125 from `docker run`        | no         |
+| `not-run`      | a program did not run: exit 126 or 127 from the shell, 125 from a container runtime | no         |
 | `aborted`      | the runner's `signal` aborted the compile                                           | no         |
 | `spawn-failed` | the shell did not start                                                             | no         |
 
@@ -69,7 +69,7 @@ run.
 
 - `cwd`: the directory the command runs in, such as the decomp.yaml's directory.
 - `flags`: the compiler's flags, for `{{flags}}`.
-- `signal`: an `AbortSignal` for the compiles. Each one then runs in its own process group, and an
-  abort ends the whole group, the compiler under the shell included. Without a signal, compiles stay
-  in the caller's process group, so a terminal's Ctrl-C reaches them.
+- `signal`: an `AbortSignal` for the compiles. Each then runs in its own process group, and an abort
+  ends the whole group, the compiler under the shell included. Without a signal, compiles stay in the
+  caller's process group, which a terminal's Ctrl-C reaches.
 - `maxOutputBytes`: the most bytes of stdout, and of stderr, an outcome keeps. Default: all of it.
