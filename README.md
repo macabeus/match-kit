@@ -8,15 +8,15 @@ both need, implemented once so the two tools never score the same pair of object
 | ------------------------------------------------ | -------------------------------------------------------------------------- |
 | [`@match-kit/scoring`](packages/scoring)         | Score a compiled candidate against a target object with the objdiff engine |
 | [`@match-kit/decomp-yaml`](packages/decomp-yaml) | Read a project's `decomp.yaml` and check a tool's block with its schema    |
-
-Planned next: `@match-kit/compiler` (run a project's compile command template).
+| [`@match-kit/compiler`](packages/compiler)       | Run a project's compile command template and tell its failures apart       |
 
 ## Rules every package follows
 
 - **Runs on Node ≥ 24, Bun and browsers with `DisposableStack`.** No `Bun.*` API. A module that needs Node is a separate,
-  Node-only entry point, and `pnpm check-deps` fails if a browser-safe module reaches one.
+  Node-only entry point, and `pnpm check-deps` fails if a browser-safe module reaches one. `@match-kit/compiler` runs
+  processes, so all of it is Node-only.
 - **Fails closed.** An error throws; it never becomes a plausible-looking result.
-- **Tested without compilers.** Tests read committed fixtures, so CI needs nothing but `node_modules`.
+- **Tested without compilers.** Tests read committed fixtures or run plain `sh` commands, so CI needs nothing but `node_modules`.
 
 ## Development
 

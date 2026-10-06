@@ -2,8 +2,8 @@
 # The published packages, checked as a consumer gets them. The tests and the typecheck resolve
 # `#engine` to src/, so only this checks dist/ and the `exports` and `imports` maps. It packs every
 # package, installs the tarballs into a throwaway project, and:
-#   - imports every entry, scores a pair and reads a decomp.yaml on Node (and on Bun, when present),
-#     and checks that decomp-yaml ships schema.json and SPEC.md;
+#   - imports every entry, scores a pair, reads a decomp.yaml and compiles a candidate on Node (and on
+#     Bun, when present), and checks that decomp-yaml ships schema.json and SPEC.md;
 #   - typechecks a consumer under `node16` and `bundler` resolution, with no custom conditions;
 #   - bundles the browser entries with Vite and checks the bundle reaches no Node built-in.
 #
@@ -37,8 +37,14 @@ import { sideBySide } from '@match-kit/scoring/display';
 import { releaseTarget, scoreFiles } from '@match-kit/scoring/files';
 import { toolBlock } from '@match-kit/decomp-yaml';
 import { searchDecompYaml } from '@match-kit/decomp-yaml/files';
+import { createRunner } from '@match-kit/compiler';
 import { z } from 'zod';
 
+await using runner = createRunner('cp {{inputPath}} {{outputPath}}');
+const compiled = [await runner.compile('int x;', { ext: 'c' })];
+if (compiled.some((outcome) => outcome.kind !== 'ok' || readFileSync(outcome.object, 'utf8') !== 'int x;')) {
+  throw new Error(`unexpected compile: ${JSON.stringify(compiled)}`);
+}
 const block = toolBlock(searchDecompYaml(), 'asmlift', z.object({ target: z.string() }));
 if (block?.target !== 'agbcc') {
   throw new Error(`unexpected tool block: ${JSON.stringify(block)}`);
@@ -72,8 +78,11 @@ import { differences } from '@match-kit/scoring/display';
 import { scoreFiles } from '@match-kit/scoring/files';
 import { type DecompConfig, toolBlock } from '@match-kit/decomp-yaml';
 import { searchDecompYaml } from '@match-kit/decomp-yaml/files';
+import { type Outcome, createRunner, isStable } from '@match-kit/compiler';
 import { z } from 'zod';
 
+const outcome: Outcome = await createRunner('cc {{flags}} -c {{inputPath}} -o {{outputPath}}', { flags: ['-O2'] }).compile('', { ext: 'c' });
+const stable: boolean = isStable(outcome);
 const loaded = searchDecompYaml();
 const platform: string | undefined = (loaded?.config satisfies DecompConfig | undefined)?.platform;
 const target: string | undefined = toolBlock(loaded, 'asmlift', z.object({ target: z.string() }))?.target;
@@ -82,7 +91,7 @@ const score: MatchScore = scoreFiles('target.o', 'candidate-diff.o', 'add_one');
 const kinds: string[] = differences(scorer.inspect(scorer.parseTarget(new Uint8Array()), new Uint8Array(), 'f')).map(
   (d) => d.kind,
 );
-export { score, kinds, platform, target };
+export { score, kinds, platform, target, stable };
 EOF
 for resolution in node16 bundler; do
   module=$([ "$resolution" = node16 ] && echo node16 || echo esnext)
