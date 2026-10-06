@@ -1,6 +1,6 @@
 {
   "name": "@match-kit/compiler",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Run a project's compile command template: one candidate source in, one object out, every failure named",
   "license": "MIT",
   "type": "module",
