@@ -7,7 +7,7 @@ import { prngSequence } from './prng.js';
 import { LABELS } from './resolver.js';
 
 export const GOLDEN = {
-  thumb: 'f78b50e079a0a80bba272c4a30a69386cad8310812e2d0098132ec07b7aa0eb8',
+  thumb: '73687b460f0508d9ddda2ea47d66f0d6d03b8473fb133cb88f8823994a3f4282',
   bl: 'ab6b3e28c3f3a049c726523192f4c82904591a21bbc6149668d65a589659828f',
   arm: '5a276fc8bfd1b58c77e2b7c2d9f982537834d497cc4305f82dbf37b8b650a50c',
 } as const;

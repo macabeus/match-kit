@@ -1,21 +1,24 @@
-// decode(mode, word, addr): the table lookup. Thumb goes through a 65,536-entry
-// index from halfword to row, built at module load; a bl prefix followed by a bl suffix (the high
-// halfword of `word`) decodes as one 4-byte instruction. ARM goes through 4,096 buckets keyed on bits
-// 27..20 and 7..4, each listing the rows those bits allow, in table order. Decode never throws: every
-// word matches a row, because each table ends with a catch-all row, resolved once at module load.
+// decode(mode, word, addr): the table lookup. Thumb goes through a 65,536-entry index from halfword to row; a bl
+// prefix followed by a bl suffix (the high halfword of `word`) decodes as one 4-byte instruction. ARM goes
+// through 4,096 buckets keyed on bits 27..20 and 7..4, each listing the rows those bits allow, in table order.
+// Each index is built on the first decode of its mode. Decode never throws: every word matches a row, because
+// each table ends with a catch-all row.
 import type { Addr, Mode } from './address.js';
 import { IsaInvariantError } from './errors.js';
 import { flowOf } from './flow.js';
+import { once } from './lazy.js';
+import { COND_AL } from './names.js';
 import { ROWS, rowOf } from './tables/registry.js';
 import type { Row } from './tables/row.js';
 import { THUMB_BL } from './tables/thumb.js';
-import type { Fields, Insn } from './types.js';
+import type { Fields, Insn, Operands } from './types.js';
 
 function matches(row: Row, word: number): boolean {
   return (word & row.spec.mask) >>> 0 === row.spec.match;
 }
 
-const THUMB16: readonly Row[] = ROWS.thumb.filter((r) => r.spec.size === 2);
+/** The 16-bit Thumb rows: every Thumb row but the bl pair. */
+const thumb16 = once((): readonly Row[] => ROWS.thumb.filter((r) => r.spec.size === 2));
 
 /** The last row of a table: its catch-all, which every word not matched earlier decodes to. */
 function catchAll(rows: readonly Row[], table: string): Row {
@@ -26,17 +29,15 @@ function catchAll(rows: readonly Row[], table: string): Row {
   return last;
 }
 
-const THUMB_LAST: Row = catchAll(THUMB16, 'Thumb');
-const ARM_LAST: Row = catchAll(ROWS.arm, 'ARM');
-
 /**
- * Halfword to index into THUMB16: the first row that matches it. Every process that decodes builds it, so the loop
- * reads the rows' masks and matches from typed arrays rather than calling `matches` through findIndex 65,536 times.
+ * Halfword to index into the 16-bit Thumb rows: the first row that matches it. Built on the first Thumb decode;
+ * the loop reads the rows' masks and matches from typed arrays rather than calling `matches` 65,536 times over.
  */
-const THUMB_INDEX: Uint16Array = (() => {
-  const n = THUMB16.length;
-  const masks = Uint32Array.from(THUMB16, (r) => r.spec.mask);
-  const values = Uint32Array.from(THUMB16, (r) => r.spec.match);
+const thumbIndex = once((): Uint16Array => {
+  const rows = thumb16();
+  const n = rows.length;
+  const masks = Uint32Array.from(rows, (r) => r.spec.mask);
+  const values = Uint32Array.from(rows, (r) => r.spec.match);
   const index = new Uint16Array(0x10000);
   for (let hw = 0; hw < 0x10000; hw++) {
     let at = 0;
@@ -46,14 +47,15 @@ const THUMB_INDEX: Uint16Array = (() => {
     index[hw] = at < n ? at : n - 1;
   }
   return index;
-})();
+});
 
 /** The bucket key of an ARM word: bits 27..20, then bits 7..4. */
 function armKey(word: number): number {
   return ((word >>> 16) & 0xff0) | ((word >>> 4) & 0xf);
 }
 
-const ARM_BUCKETS: readonly (readonly Row[])[] = (() => {
+/** For each key, the ARM rows those bits allow, in table order. Built on the first ARM decode. */
+const armBuckets = once((): readonly (readonly Row[])[] => {
   const keys = ROWS.arm.map((r) => armKey(r.spec.match));
   const keyMasks = ROWS.arm.map((r) => armKey(r.spec.mask));
   const buckets: Row[][] = [];
@@ -67,7 +69,7 @@ const ARM_BUCKETS: readonly (readonly Row[])[] = (() => {
     buckets.push(bucket);
   }
   return buckets;
-})();
+});
 
 /** The raw field values of `word` under a row. */
 export function fieldsOf(row: Row, word: number): Fields {
@@ -79,13 +81,13 @@ export function fieldsOf(row: Row, word: number): Fields {
 }
 
 function armRow(word: number): Row {
-  const bucket = ARM_BUCKETS[armKey(word)] ?? [];
+  const bucket = armBuckets()[armKey(word)] ?? [];
   for (const r of bucket) {
     if (matches(r, word)) {
       return r;
     }
   }
-  return ARM_LAST;
+  return catchAll(ROWS.arm, 'ARM');
 }
 
 /** Whether a Thumb halfword is the prefix of a bl pair (its high offset). */
@@ -118,7 +120,8 @@ function thumbRow(word: number): Row {
   if (isThumbBlPrefix(hw) && isThumbBlSuffix(word >>> 16)) {
     return THUMB_BL;
   }
-  return THUMB16[THUMB_INDEX[hw] ?? THUMB16.length - 1] ?? THUMB_LAST;
+  const rows = thumb16();
+  return rows[thumbIndex()[hw] as number] ?? catchAll(rows, 'Thumb');
 }
 
 /** The row `word` decodes to in `mode` (Thumb: the low halfword, paired with the high one for bl). */
@@ -142,7 +145,7 @@ export function decode(mode: Mode, word: number, addr: Addr): Insn {
     word: bytes,
     specId: row.spec.id,
     fields,
-    flow: flowOf(row.spec.flow, mode, row.toOps(fields, addr), addr),
+    flow: flowOf(row.spec.flow, mode, row.toOperands(fields, addr), addr),
   };
 }
 
@@ -155,8 +158,10 @@ export function thumbWordAt(read16: (addr: Addr) => number | undefined, addr: Ad
   return (((read16(addr) ?? 0) & 0xffff) | (((read16(addr + 2) ?? 0) & 0xffff) << 16)) >>> 0;
 }
 
-/** The condition field's value that means 'always' (al). */
-const COND_AL = 0xe;
+/** What the instruction's text says, as numbers: its registers, immediates and the addresses it names. */
+export function operandsOf(insn: Insn): Operands {
+  return rowOf(insn.specId).toOperands(insn.fields, insn.addr);
+}
 
 /**
  * Whether `insn` executes only under a condition, read from its row's 'cond' field: a value other than

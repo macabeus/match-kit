@@ -2,7 +2,7 @@
 // `#value` with the smallest even left rotation that brings the value into 8 bits (tc-arm.c,
 // encode_arm_immediate), so any other encoding of the same value needs the explicit `#imm8, rot` text.
 import { rol32, ror32 } from '../bits.js';
-import type { Fields } from '../types.js';
+import type { Operands } from '../types.js';
 
 /** The value of a 12-bit rotated-immediate field. */
 export function decodeArmImmediate(field: number): number {
@@ -29,7 +29,7 @@ export function isCanonicalArmImmediate(field: number): boolean {
 }
 
 /** The `{const}` operand values of a 12-bit field: its value, rotation, and whether the text must spell the rotation. */
-export function constOperands(field: number): Fields {
+export function constOperands(field: number): Operands {
   return {
     imm: decodeArmImmediate(field),
     rot: ((field >>> 8) & 0xf) * 2,
@@ -38,12 +38,12 @@ export function constOperands(field: number): Fields {
 }
 
 /** The 12-bit field of `{const}` operand values: GNU as's choice for `#v`, the given rotation for `#imm8, rot`. */
-export function constField(o: Fields): number | undefined {
-  const value = o['imm'] ?? 0;
-  if (o['explicit'] !== 1) {
+export function constField(o: Operands): number | undefined {
+  const value = o.imm ?? 0;
+  if (o.explicit !== 1) {
     return encodeArmImmediate(value);
   }
-  const rot = o['rot'] ?? 0;
+  const rot = o.rot ?? 0;
   const imm8 = rol32(value, rot);
   return imm8 > 0xff || rot % 2 !== 0 || rot > 30 ? undefined : ((rot / 2) << 8) | imm8;
 }

@@ -1,28 +1,47 @@
-// The row builder of the isa tables. A row is an InsnSpec (the public, plain part: mask, match,
-// fields, syntax, flow, asPriority, stack, raw) plus the internal codec between its field bits and
-// the operand values its syntax names, and its compiled syntax forms (the printed one first, then
-// parse-only aliases). The tables (thumb-table.ts, arm-*.ts) are lists of rows built here.
-import type { Addr, Mode } from '../address.js';
-import { insnUnit } from '../address.js';
-import { compileForm } from '../text/template.js';
-import type { CompiledForm } from '../text/template.js';
-import type { Field, FieldKind, Fields, FlowKind, InsnSpec, RawReason, RegisterSpec, SpecId } from '../types.js';
+// The row builder of the tables. A row is an InsnSpec (the public, plain part: mask, match, fields, syntax, flow
+// class, asPriority, stack, raw) plus what only this package reads: the codec between the row's field bits and
+// the operands its syntax names, its compiled syntax forms (the printed one first, then parse-only aliases) and
+// the registers it writes. The tables (thumb.ts, arm-*.ts) are lists of rows built here.
+import { type Addr, type Mode, insnUnit } from '../address.js';
+import { type CompiledForm, compileForm } from '../text/template.js';
+import {
+  type Field,
+  type FieldKind,
+  type Fields,
+  type FlowClass,
+  type InsnSpec,
+  OPERAND_NAMES,
+  type OperandName,
+  type Operands,
+  type RawReason,
+  type RegisterSpec,
+  type SpecId,
+} from '../types.js';
 
-/** Field bits to operand values (registers, immediates in bytes, label addresses). */
-export type ToOperands = (f: Fields, addr: Addr) => Fields;
-/** Operand values to field bits, or undefined when this row cannot encode them at `addr`. */
-export type FromOperands = (o: Fields, addr: Addr) => Fields | undefined;
+/** Field bits to operands (registers, immediates in bytes, label addresses). */
+export type ToOperands = (f: Fields, addr: Addr) => Operands;
+/** Operands to field bits, or undefined when this row cannot encode them at `addr`. */
+export type FromOperands = (o: Operands, addr: Addr) => Fields | undefined;
 
 export interface Row {
   readonly spec: InsnSpec;
-  /** forms[0] is the printed syntax (spec.syntax); the rest are parse-only aliases. */
+  /** forms[0] is the printed syntax (spec.syntax); the rest are parse-only aliases. Compiled on first use. */
   readonly forms: readonly CompiledForm[];
-  readonly toOps: ToOperands;
-  readonly fromOps: FromOperands;
+  readonly toOperands: ToOperands;
+  readonly fromOperands: FromOperands;
   /** Fields whose text GNU as rejects (an error, not a warning): assemble gives nothing for them. */
-  readonly refuse: (f: Fields) => boolean;
+  readonly rejects: (f: Fields) => boolean;
   /** False for rows that always print raw (undefined spaces, lone bl halves): never parsed. */
   readonly printable: boolean;
+  /** The registers the instruction writes, over its operands; absent when it writes none. */
+  readonly registers?: (o: Operands) => RegisterSpec;
+}
+
+/** Fields whose text GNU as rejects as an error. */
+export interface Rejection {
+  /** Why those fields print raw. `raw`'s own reasons come first. */
+  readonly reason: RawReason;
+  readonly when: (f: Fields) => boolean;
 }
 
 export interface RowOptions {
@@ -32,34 +51,47 @@ export interface RowOptions {
   readonly fields?: readonly Field[];
   readonly syntax: string;
   readonly aliases?: readonly string[];
-  readonly flow?: FlowKind;
+  readonly flow?: FlowClass;
   readonly asPriority?: number;
   readonly stack?: (f: Fields) => number;
+  /** The encoding reason GNU as will not reproduce these fields from their text, or null when it will. */
   readonly raw?: (f: Fields) => RawReason | null;
-  readonly registers?: RegisterSpec;
+  /**
+   * Fields whose text GNU as refuses outright. One statement for two effects: they print raw for `reason`, and
+   * `assemble` gives nothing for a text that would encode to them.
+   */
+  readonly rejected?: Rejection;
   /** The row always prints raw for this reason. */
   readonly rawOnly?: RawReason;
-  readonly toOps?: ToOperands;
-  readonly fromOps?: FromOperands;
-  readonly refuse?: (f: Fields) => boolean;
+  /** The registers it writes: a fixed description, or one that depends on the operands (writeback). */
+  readonly registers?: RegisterSpec | ((o: Operands) => RegisterSpec);
+  readonly toOperands?: ToOperands;
+  readonly fromOperands?: FromOperands;
 }
 
-/** The default codec: each field is the operand of the same name, times its scale. */
-function defaultToOps(fields: readonly Field[]): ToOperands {
+const OPERAND_NAME_SET: ReadonlySet<string> = new Set(OPERAND_NAMES);
+
+function isOperandName(name: string): name is OperandName {
+  return OPERAND_NAME_SET.has(name);
+}
+
+/** The default codec: each field named as an operand is that operand, times its scale. */
+function defaultToOperands(fields: readonly Field[]): ToOperands {
+  const named = fields.filter((field) => isOperandName(field.name));
   return (f) => {
-    const out: Record<string, number> = {};
-    for (const field of fields) {
-      out[field.name] = (f[field.name] ?? 0) * (field.scale ?? 1);
+    const out: Partial<Record<OperandName, number>> = {};
+    for (const field of named) {
+      out[field.name as OperandName] = (f[field.name] ?? 0) * (field.scale ?? 1);
     }
     return out;
   };
 }
 
-function defaultFromOps(fields: readonly Field[]): FromOperands {
+function defaultFromOperands(fields: readonly Field[]): FromOperands {
   return (o) => {
     const out: Record<string, number> = {};
     for (const field of fields) {
-      const value = o[field.name];
+      const value = isOperandName(field.name) ? o[field.name] : undefined;
       if (value === undefined) {
         return undefined;
       }
@@ -69,11 +101,24 @@ function defaultFromOps(fields: readonly Field[]): FromOperands {
   };
 }
 
+/** `raw`, then the rejection's reason. */
+function rawOf(options: RowOptions): InsnSpec['raw'] {
+  const { raw, rejected, rawOnly } = options;
+  if (rawOnly !== undefined) {
+    return () => rawOnly;
+  }
+  if (rejected === undefined) {
+    return raw;
+  }
+  return (f) => raw?.(f) ?? (rejected.when(f) ? rejected.reason : null);
+}
+
 /** Builds one row. */
 export function row(id: SpecId, mode: Mode, options: RowOptions): Row {
   const fields = options.fields ?? [];
-  const rawOnly = options.rawOnly;
-  const raw = rawOnly === undefined ? options.raw : (): RawReason => rawOnly;
+  const printable = options.rawOnly === undefined;
+  const raw = rawOf(options);
+  const registers = options.registers;
   const spec: InsnSpec = {
     id,
     mode,
@@ -82,62 +127,67 @@ export function row(id: SpecId, mode: Mode, options: RowOptions): Row {
     match: options.match >>> 0,
     fields,
     syntax: options.syntax,
-    flow: options.flow ?? (rawOnly === undefined ? 'next' : 'invalid'),
+    flow: options.flow ?? (printable ? 'next' : 'invalid'),
     asPriority: options.asPriority ?? 0,
     ...(options.stack === undefined ? {} : { stack: options.stack }),
     ...(raw === undefined ? {} : { raw }),
-    ...(options.registers === undefined ? {} : { registers: options.registers }),
   };
+  const templates = [options.syntax, ...(options.aliases ?? [])];
+  let forms: readonly CompiledForm[] | undefined;
   return {
     spec,
-    forms: [options.syntax, ...(options.aliases ?? [])].map(compileForm),
-    toOps: options.toOps ?? defaultToOps(fields),
-    fromOps: options.fromOps ?? defaultFromOps(fields),
-    refuse: options.refuse ?? ((): boolean => false),
-    printable: rawOnly === undefined,
+    get forms() {
+      forms ??= templates.map(compileForm);
+      return forms;
+    },
+    toOperands: options.toOperands ?? defaultToOperands(fields),
+    fromOperands: options.fromOperands ?? defaultFromOperands(fields),
+    rejects: options.rejected?.when ?? ((): boolean => false),
+    printable,
+    ...(registers === undefined ? {} : { registers: typeof registers === 'function' ? registers : () => registers }),
   };
 }
 
-function field(name: string, lo: number, width: number, kind: FieldKind, scale?: number): Field {
+function makeField(name: string, lo: number, width: number, kind: FieldKind, scale?: number): Field {
   return scale === undefined ? { name, lo, width, kind } : { name, lo, width, kind, scale };
 }
 
 /** A register field (3 bits by default). */
 export function reg(name: string, lo: number, width = 3): Field {
-  return field(name, lo, width, 'reg');
+  return makeField(name, lo, width, 'reg');
 }
 
 /** An unsigned immediate field whose operand is the value times `scale`. */
 export function imm(name: string, lo: number, width: number, scale?: number): Field {
-  return field(name, lo, width, 'imm', scale);
+  return makeField(name, lo, width, 'imm', scale);
 }
 
 /** A one-bit flag. */
 export function flag(name: string, lo: number): Field {
-  return field(name, lo, 1, 'imm');
+  return makeField(name, lo, 1, 'imm');
 }
 
 /** The condition field: bits 31..28 in ARM, 11..8 in the Thumb conditional branch. */
 export function cond(lo = 28): Field {
-  return field('cond', lo, 4, 'cond');
+  return makeField('cond', lo, 4, 'cond');
 }
 
 export function reglist(name: string, lo: number, width: number): Field {
-  return field(name, lo, width, 'reglist');
+  return makeField(name, lo, width, 'reglist');
 }
 
 export function shiftType(name: string, lo: number): Field {
-  return field(name, lo, 2, 'shift');
+  return makeField(name, lo, 2, 'shift');
 }
 
 export function rotImm(name: string): Field {
-  return field(name, 0, 12, 'rot-imm');
+  return makeField(name, 0, 12, 'rot-imm');
 }
 
 export function pcRel(name: string, lo: number, width: number, scale: number): Field {
-  return field(name, lo, width, 'pc-rel', scale);
+  return makeField(name, lo, width, 'pc-rel', scale);
 }
 
 export function blOff(name: string, lo: number): Field {
-  return field(name, lo, 11, 'bl-off');
+  return makeField(name, lo, 11, 'bl-off');
 }

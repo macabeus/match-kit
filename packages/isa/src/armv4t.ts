@@ -9,9 +9,11 @@ export type {
   FieldKind,
   Fields,
   Flow,
-  FlowKind,
+  FlowClass,
   Insn,
   InsnSpec,
+  OperandName,
+  Operands,
   ParsedCandidate,
   ParsedInsn,
   RawReason,
@@ -20,18 +22,20 @@ export type {
   SpecId,
   SymbolResolver,
 } from './armv4t/types.js';
-export { RAW_REASONS } from './armv4t/types.js';
+export { OPERAND_NAMES, RAW_REASONS } from './armv4t/types.js';
+export { COND_AL, LR, PC, SP } from './armv4t/names.js';
 export { insnUnit } from './armv4t/address.js';
 export { IsaInvariantError } from './armv4t/errors.js';
 
 // Bytes to instructions, and back.
-export { decode, isConditional, thumbWordAt } from './armv4t/decode.js';
+export { decode, isConditional, operandsOf, thumbWordAt } from './armv4t/decode.js';
 export { encode } from './armv4t/encode.js';
 
 // Instructions to text, and back.
 export { format, formatDecoding, formatRaw } from './armv4t/text/format.js';
 export { parse } from './armv4t/text/parse.js';
-export { assemble } from './armv4t/assemble.js';
+export { assemble, assembleText, describeAssembleFailure } from './armv4t/assemble.js';
+export type { AssembleFailure, AssembleResult } from './armv4t/assemble.js';
 export { printing, rawReason, roundTrips } from './armv4t/printing-rule.js';
 export type { Printing } from './armv4t/printing-rule.js';
 export { CONDITIONS } from './armv4t/text/operand-text.js';

@@ -1,12 +1,12 @@
 // The remaining ARM (ARMv4T) rows: the never condition, branches, swi, multiplies, bx, the status
 // register moves, and the coprocessor and undefined spaces (the tables describe a core with no
 // coprocessor, such as the ARM7TDMI, where every coprocessor instruction traps as undefined).
-import { fieldValue as v } from '../bits.js';
-import type { Fields } from '../types.js';
+import { LR, PC } from '../names.js';
+import type { Operands } from '../types.js';
+import { bits, operand } from './access.js';
 import { constField, constOperands } from './arm-immediate.js';
 import { branchOffset, branchTarget, pcOf } from './pc-relative.js';
-import { cond, flag, imm, pcRel, reg, rotImm, row } from './row.js';
-import type { Row } from './row.js';
+import { type Row, cond, flag, imm, pcRel, reg, rotImm, row } from './row.js';
 
 /** Condition 0b1111 is UNPREDICTABLE on the ARMv4T (ARMv5 reuses it for unconditional forms). */
 export const ARM_NV: Row = row('arm.nv', 'arm', {
@@ -23,10 +23,12 @@ function branchRow(link: boolean): Row {
     fields: [cond(), pcRel('off', 0, 24, 4)],
     syntax: `${link ? 'bl' : 'b'}{c} {target}`,
     flow: link ? 'bl' : 'branch',
-    toOps: (f, a) => ({ cond: v(f, 'cond'), target: branchTarget(pcOf(a, 'arm'), v(f, 'off'), 24, 4) }),
-    fromOps: (o, a) => {
-      const off = branchOffset(pcOf(a, 'arm'), v(o, 'target'), 24, 4);
-      return off === undefined ? undefined : { cond: v(o, 'cond'), off };
+    // What the callee does to other registers is a calling convention's, not the instruction's.
+    ...(link ? { registers: { fixed: 1 << LR } } : {}),
+    toOperands: (f, a) => ({ cond: bits(f, 'cond'), target: branchTarget(pcOf(a, 'arm'), bits(f, 'off'), 24, 4) }),
+    fromOperands: (o, a) => {
+      const off = branchOffset(pcOf(a, 'arm'), operand(o, 'target'), 24, 4);
+      return off === undefined ? undefined : { cond: operand(o, 'cond'), off };
     },
   });
 }
@@ -82,24 +84,25 @@ function mulRow(name: 'mul' | 'mla', accumulate: boolean): Row {
       reg('rm', 0, 4),
     ],
     syntax: accumulate ? 'mla{s}{c} {rd}, {rm}, {rs}, {rn}' : 'mul{s}{c} {rd}, {rm}, {rs}',
+    registers: { writes: ['rd'] },
     ...(accumulate
       ? {}
       : {
-          fromOps: (o: Fields) => ({
-            cond: v(o, 'cond'),
-            s: v(o, 's'),
-            rd: v(o, 'rd'),
+          fromOperands: (o: Operands) => ({
+            cond: operand(o, 'cond'),
+            s: operand(o, 's'),
+            rd: operand(o, 'rd'),
             sbz: 0,
-            rs: v(o, 'rs'),
-            rm: v(o, 'rm'),
+            rs: operand(o, 'rs'),
+            rm: operand(o, 'rm'),
           }),
         }),
     raw: (f) => {
-      if (!accumulate && v(f, 'sbz') !== 0) {
+      if (!accumulate && bits(f, 'sbz') !== 0) {
         return 'sbz-set';
       }
-      const regs = [v(f, 'rd'), v(f, 'rs'), v(f, 'rm'), ...(accumulate ? [v(f, 'rn')] : [])];
-      return regs.includes(15) || v(f, 'rd') === v(f, 'rm') ? 'unpredictable' : null;
+      const regs = [bits(f, 'rd'), bits(f, 'rs'), bits(f, 'rm'), ...(accumulate ? [bits(f, 'rn')] : [])];
+      return regs.includes(PC) || bits(f, 'rd') === bits(f, 'rm') ? 'unpredictable' : null;
     },
   });
 }
@@ -112,11 +115,12 @@ const longMulRows: Row[] = LONG.map((name, i) =>
     match: 0x0080_0000 | (i << 21) | 0x90,
     fields: [cond(), flag('s', 20), reg('rdhi', 16, 4), reg('rdlo', 12, 4), reg('rs', 8, 4), reg('rm', 0, 4)],
     syntax: `${name}{s}{c} {rdlo}, {rdhi}, {rm}, {rs}`,
+    registers: { writes: ['rdlo', 'rdhi'] },
     raw: (f) => {
-      const hi = v(f, 'rdhi');
-      const lo = v(f, 'rdlo');
-      const rm = v(f, 'rm');
-      return [hi, lo, rm, v(f, 'rs')].includes(15) || hi === lo || hi === rm || lo === rm ? 'unpredictable' : null;
+      const hi = bits(f, 'rdhi');
+      const lo = bits(f, 'rdlo');
+      const rm = bits(f, 'rm');
+      return [hi, lo, rm, bits(f, 'rs')].includes(PC) || hi === lo || hi === rm || lo === rm ? 'unpredictable' : null;
     },
   }),
 );
@@ -168,8 +172,8 @@ export const ARM_MISC_ROWS: readonly Row[] = [
     match: 0x010f_0000,
     fields: [cond(), flag('r', 22), reg('rd', 12, 4)],
     syntax: 'mrs{c} {rd}, {psr}',
-    raw: (f) => (v(f, 'rd') === 15 ? 'unpredictable' : null),
-    refuse: (f) => v(f, 'rd') === 15,
+    registers: { writes: ['rd'] },
+    rejected: { reason: 'unpredictable', when: (f) => bits(f, 'rd') === PC },
   }),
   sbo('mrs_sbo', 0x0fb0_00f0, 0x0100_0000, 'mrs{c} {rd}, {psr}'),
   row('arm.msr_reg', 'arm', {
@@ -177,7 +181,7 @@ export const ARM_MISC_ROWS: readonly Row[] = [
     match: 0x0120_f000,
     fields: [cond(), flag('r', 22), imm('mask', 16, 4), reg('rm', 0, 4)],
     syntax: 'msr{c} {psrf}, {rm}',
-    raw: (f) => (v(f, 'mask') === 0 || v(f, 'rm') === 15 ? 'unpredictable' : null),
+    raw: (f) => (bits(f, 'mask') === 0 || bits(f, 'rm') === PC ? 'unpredictable' : null),
   }),
   sbo('msr_reg_sbo', 0x0fb0_00f0, 0x0120_0000, 'msr{c} {psr}, {rm}'),
   row('arm.msr_imm', 'arm', {
@@ -185,15 +189,21 @@ export const ARM_MISC_ROWS: readonly Row[] = [
     match: 0x0320_f000,
     fields: [cond(), flag('r', 22), imm('mask', 16, 4), rotImm('imm12')],
     syntax: 'msr{c} {psrf}, {const}',
-    toOps: (f) => ({ cond: v(f, 'cond'), r: v(f, 'r'), mask: v(f, 'mask'), ...constOperands(v(f, 'imm12')) }),
-    fromOps: (o) => {
+    toOperands: (f) => ({
+      cond: bits(f, 'cond'),
+      r: bits(f, 'r'),
+      mask: bits(f, 'mask'),
+      ...constOperands(bits(f, 'imm12')),
+    }),
+    fromOperands: (o) => {
       const field = constField(o);
-      return field === undefined ? undefined : { cond: v(o, 'cond'), r: v(o, 'r'), mask: v(o, 'mask'), imm12: field };
+      return field === undefined
+        ? undefined
+        : { cond: operand(o, 'cond'), r: operand(o, 'r'), mask: operand(o, 'mask'), imm12: field };
     },
+    raw: (f) => (bits(f, 'mask') === 0 ? 'unpredictable' : null),
     // as takes no explicit `#imm8, rot` for msr, so a non-canonical rotation has no text.
-    raw: (f) =>
-      v(f, 'mask') === 0 ? 'unpredictable' : constOperands(v(f, 'imm12'))['explicit'] === 1 ? 'as-alias' : null,
-    refuse: (f) => constOperands(v(f, 'imm12'))['explicit'] === 1,
+    rejected: { reason: 'as-alias', when: (f) => constOperands(bits(f, 'imm12')).explicit === 1 },
   }),
   row('arm.msr_imm_sbo', 'arm', {
     mask: 0x0fb0_0000,

@@ -86,7 +86,7 @@ function checkPrinting(insn: Insn, counts: Record<RawReason, number>): void {
 }
 
 function zero(): Record<RawReason, number> {
-  return { undefined: 0, unpredictable: 0, 'sbz-set': 0, 'as-alias': 0, 'no-roundtrip': 0 };
+  return { undefined: 0, unpredictable: 0, 'sbz-set': 0, 'as-alias': 0, 'bl-half': 0, 'no-roundtrip': 0 };
 }
 
 test('every Thumb halfword at both alignments round-trips or has a raw reason', () => {

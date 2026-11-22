@@ -1,12 +1,16 @@
 // The ARM (ARMv4T) memory rows: word and byte loads and stores (with the user-mode T forms and the
 // pc-relative pool load), halfword and signed transfers, the block transfers and swp. Loads into pc
-// get rows of their own (flow pop-pc), so the flow class is a table fact.
-import { popcount, fieldValue as v, wrap32 } from '../bits.js';
-import type { Fields, RawReason } from '../types.js';
+// get rows of their own (flow class load-pc), so the flow class is a table fact.
+import { popcount, wrap32 } from '../bits.js';
+import { PC, SP } from '../names.js';
+import type { Fields, OperandName, Operands, RawReason, RegisterSpec } from '../types.js';
+import { bits, operand } from './access.js';
 import { shiftFields, shiftOperands } from './arm-shift.js';
 import { pcOf } from './pc-relative.js';
-import { cond, flag, imm, reg, reglist, row, shiftType } from './row.js';
-import type { Row } from './row.js';
+import { type Row, cond, flag, imm, reg, reglist, row, shiftType } from './row.js';
+
+/** Whether an addressing mode writes its base back: post-indexed, or pre-indexed with `!`. */
+const writesBack = (o: Operands): boolean => o.p === 0 || o.w === 1;
 
 // ---------------------------------------------------------------------------------------------------
 // Word and byte transfers: cond 01 I P U B W L Rn Rd offset.
@@ -33,20 +37,33 @@ const TRANSFERS: readonly Transfer[] = [false, true].flatMap((user) =>
 /** Writeback, the base and the index registers: what ARMv4T leaves UNPREDICTABLE. */
 function transferRaw(t: Transfer, regOffset: boolean) {
   return (f: Fields): RawReason | null => {
-    const writeback = t.user || v(f, 'p') === 0 || v(f, 'w') === 1;
-    const rn = v(f, 'rn');
-    if (writeback && (rn === 15 || rn === v(f, 'rd'))) {
+    const writeback = t.user || bits(f, 'p') === 0 || bits(f, 'w') === 1;
+    const rn = bits(f, 'rn');
+    if (writeback && (rn === PC || rn === bits(f, 'rd'))) {
       return 'unpredictable';
     }
-    if (regOffset && (v(f, 'rm') === 15 || (writeback && v(f, 'rm') === rn))) {
+    if (regOffset && (bits(f, 'rm') === PC || (writeback && bits(f, 'rm') === rn))) {
       return 'unpredictable';
     }
     // A byte transfer of pc, and ldrt/strt of pc, are UNPREDICTABLE (as: "r15 not allowed here").
-    if (v(f, 'rd') === 15 && (t.byte || t.user)) {
+    if (bits(f, 'rd') === PC && (t.byte || t.user)) {
       return 'unpredictable';
     }
     return null;
   };
+}
+
+/**
+ * A load writes rd, and a word load is followed to its address registers; a transfer that writes its base back
+ * (always, for the user-mode forms) writes rn too.
+ */
+function transferRegisters(t: Transfer, regOffset: boolean, o: Operands): RegisterSpec {
+  const writes: OperandName[] = [
+    ...(t.load ? (['rd'] as const) : []),
+    ...(t.user || writesBack(o) ? (['rn'] as const) : []),
+  ];
+  const address: readonly OperandName[] = regOffset ? ['rn', 'rm'] : ['rn'];
+  return t.load && !t.byte ? { writes, from: address } : { writes };
 }
 
 function transferRow(t: Transfer, regOffset: boolean, pcDest: boolean): Row {
@@ -62,43 +79,46 @@ function transferRow(t: Transfer, regOffset: boolean, pcDest: boolean): Row {
     match,
     fields,
     syntax: `${t.name}{c} {rd}, ${regOffset ? '{amode_reg}' : '{amode}'}`,
-    flow: pcDest ? 'pop-pc' : 'next',
-    toOps: (f) => ({
-      cond: v(f, 'cond'),
-      rd: v(f, 'rd'),
-      rn: v(f, 'rn'),
-      u: v(f, 'u'),
-      p: t.user ? 0 : v(f, 'p'),
-      w: t.user ? 0 : v(f, 'w'),
-      ...(regOffset ? { rm: v(f, 'rm'), ...shiftOperands(v(f, 'stype'), v(f, 'samt')) } : { imm: v(f, 'imm') }),
+    flow: pcDest ? 'load-pc' : 'next',
+    registers: (o) => transferRegisters(t, regOffset, o),
+    toOperands: (f) => ({
+      cond: bits(f, 'cond'),
+      rd: bits(f, 'rd'),
+      rn: bits(f, 'rn'),
+      u: bits(f, 'u'),
+      p: t.user ? 0 : bits(f, 'p'),
+      w: t.user ? 0 : bits(f, 'w'),
+      ...(regOffset
+        ? { rm: bits(f, 'rm'), ...shiftOperands(bits(f, 'stype'), bits(f, 'samt')) }
+        : { imm: bits(f, 'imm') }),
     }),
-    fromOps: (o) => {
+    fromOperands: (o) => {
       const base = {
-        cond: v(o, 'cond'),
-        rd: v(o, 'rd'),
-        rn: v(o, 'rn'),
-        u: v(o, 'u'),
-        ...(t.user ? {} : { p: v(o, 'p'), w: v(o, 'w') }),
+        cond: operand(o, 'cond'),
+        rd: operand(o, 'rd'),
+        rn: operand(o, 'rn'),
+        u: operand(o, 'u'),
+        ...(t.user ? {} : { p: operand(o, 'p'), w: operand(o, 'w') }),
       };
       // as refuses `ldr/str pc, [pc, #imm]` unless imm is a multiple of 4 ("ldr to register 15 must
       // be 4-byte aligned"); the label form of ldr has no such check and is the pool row's.
       if (!regOffset) {
-        return v(o, 'rd') === 15 && v(o, 'rn') === 15 && v(o, 'imm') % 4 !== 0
+        return o.rd === PC && o.rn === PC && operand(o, 'imm') % 4 !== 0
           ? undefined
-          : { ...base, imm: v(o, 'imm') };
+          : { ...base, imm: operand(o, 'imm') };
       }
-      const shift = shiftFields(v(o, 'shift'), v(o, 'amount'));
-      return shift === undefined ? undefined : { ...base, rm: v(o, 'rm'), ...shift };
+      const shift = shiftFields(operand(o, 'shift'), operand(o, 'amount'));
+      return shift === undefined ? undefined : { ...base, rm: operand(o, 'rm'), ...shift };
     },
     raw: transferRaw(t, regOffset),
     // as: "r15 not allowed here" for a byte transfer of pc and for ldrt/ldrbt/strbt of pc (strt pc is accepted).
-    refuse: (f) => v(f, 'rd') === 15 && (t.byte || (t.user && t.load)),
+    rejected: { reason: 'unpredictable', when: (f) => bits(f, 'rd') === PC && (t.byte || (t.user && t.load)) },
     stack: (f) => {
-      const writeback = t.user || v(f, 'p') === 0 || v(f, 'w') === 1;
-      if (regOffset || !writeback || v(f, 'rn') !== 13) {
+      const writeback = t.user || bits(f, 'p') === 0 || bits(f, 'w') === 1;
+      if (regOffset || !writeback || bits(f, 'rn') !== SP) {
         return 0;
       }
-      return (v(f, 'u') === 1 ? 1 : -1) * v(f, 'imm');
+      return (bits(f, 'u') === 1 ? 1 : -1) * bits(f, 'imm');
     },
   });
 }
@@ -109,18 +129,19 @@ const LDR_POOL: Row = row('arm.ldr_pc', 'arm', {
   match: 0x051f_0000,
   fields: [cond(), flag('u', 23), reg('rd', 12, 4), imm('imm', 0, 12)],
   syntax: 'ldr{c} {rd}, {target}',
-  flow: 'pc-load',
-  toOps: (f, a) => ({
-    cond: v(f, 'cond'),
-    rd: v(f, 'rd'),
-    target: wrap32(pcOf(a, 'arm') + (v(f, 'u') === 1 ? 1 : -1) * v(f, 'imm')),
+  flow: 'pool-load',
+  registers: { writes: ['rd'] },
+  toOperands: (f, a) => ({
+    cond: bits(f, 'cond'),
+    rd: bits(f, 'rd'),
+    target: wrap32(pcOf(a, 'arm') + (bits(f, 'u') === 1 ? 1 : -1) * bits(f, 'imm')),
   }),
-  fromOps: (o, a) => {
-    const offset = v(o, 'target') - pcOf(a, 'arm');
-    return { cond: v(o, 'cond'), rd: v(o, 'rd'), u: offset < 0 ? 0 : 1, imm: Math.abs(offset) };
+  fromOperands: (o, a) => {
+    const offset = operand(o, 'target') - pcOf(a, 'arm');
+    return { cond: operand(o, 'cond'), rd: operand(o, 'rd'), u: offset < 0 ? 0 : 1, imm: Math.abs(offset) };
   },
   // A label at pc + 8 assembles with U = 1, so `[pc, #-0]` has no label form.
-  raw: (f) => (v(f, 'u') === 0 && v(f, 'imm') === 0 ? 'as-alias' : null),
+  raw: (f) => (bits(f, 'u') === 0 && bits(f, 'imm') === 0 ? 'as-alias' : null),
 });
 
 const userTransfers = TRANSFERS.filter((t) => t.user);
@@ -157,43 +178,51 @@ function halfRow(name: string, l: number, s: number, h: number, regOffset: boole
     match: (regOffset ? 0 : 1 << 22) | (l << 20) | 0x90 | (s << 6) | (h << 5),
     fields: [cond(), flag('p', 24), flag('u', 23), flag('w', 21), reg('rn', 16, 4), reg('rd', 12, 4), ...offsetFields],
     syntax: `${name}{c} {rd}, ${regOffset ? '{hamode_reg}' : '{amode}'}`,
-    toOps: (f) => ({
-      cond: v(f, 'cond'),
-      rd: v(f, 'rd'),
-      rn: v(f, 'rn'),
-      p: v(f, 'p'),
-      u: v(f, 'u'),
-      w: v(f, 'w'),
-      ...(regOffset ? { rm: v(f, 'rm') } : { imm: (v(f, 'immh') << 4) | v(f, 'imml') }),
+    registers: (o) => ({
+      writes: [...(l === 1 ? (['rd'] as const) : []), ...(writesBack(o) ? (['rn'] as const) : [])],
     }),
-    fromOps: (o) => {
-      const base = { cond: v(o, 'cond'), rd: v(o, 'rd'), rn: v(o, 'rn'), p: v(o, 'p'), u: v(o, 'u'), w: v(o, 'w') };
+    toOperands: (f) => ({
+      cond: bits(f, 'cond'),
+      rd: bits(f, 'rd'),
+      rn: bits(f, 'rn'),
+      p: bits(f, 'p'),
+      u: bits(f, 'u'),
+      w: bits(f, 'w'),
+      ...(regOffset ? { rm: bits(f, 'rm') } : { imm: (bits(f, 'immh') << 4) | bits(f, 'imml') }),
+    }),
+    fromOperands: (o) => {
+      const base = {
+        cond: operand(o, 'cond'),
+        rd: operand(o, 'rd'),
+        rn: operand(o, 'rn'),
+        p: operand(o, 'p'),
+        u: operand(o, 'u'),
+        w: operand(o, 'w'),
+      };
       if (regOffset) {
-        return { ...base, sbz: 0, rm: v(o, 'rm') };
+        return { ...base, sbz: 0, rm: operand(o, 'rm') };
       }
-      const value = v(o, 'imm');
+      const value = operand(o, 'imm');
       return value > 0xff ? undefined : { ...base, immh: value >> 4, imml: value & 15 };
     },
-    refuse: (f) => v(f, 'rd') === 15,
     raw: (f) => {
-      if (regOffset && v(f, 'sbz') !== 0) {
+      if (regOffset && bits(f, 'sbz') !== 0) {
         return 'sbz-set';
       }
-      if (v(f, 'p') === 0 && v(f, 'w') === 1) {
+      if (bits(f, 'p') === 0 && bits(f, 'w') === 1) {
         return 'unpredictable';
       }
-      const writeback = v(f, 'p') === 0 || v(f, 'w') === 1;
-      if (v(f, 'rd') === 15) {
+      const writeback = bits(f, 'p') === 0 || bits(f, 'w') === 1;
+      if (writeback && (bits(f, 'rn') === PC || bits(f, 'rn') === bits(f, 'rd'))) {
         return 'unpredictable';
       }
-      if (writeback && (v(f, 'rn') === 15 || v(f, 'rn') === v(f, 'rd'))) {
-        return 'unpredictable';
-      }
-      if (regOffset && v(f, 'rm') === 15) {
+      if (regOffset && bits(f, 'rm') === PC) {
         return 'unpredictable';
       }
       return null;
     },
+    // A halfword or signed transfer of pc is UNPREDICTABLE, and as refuses it.
+    rejected: { reason: 'unpredictable', when: (f) => bits(f, 'rd') === PC },
   });
 }
 
@@ -227,25 +256,27 @@ function blockRow(name: 'ldm' | 'stm', loadsPc: boolean): Row {
       reglist('list', 0, 16),
     ],
     syntax: `${name}{am}{c} {rn}{wb}, {list}{caret}`,
-    flow: loadsPc ? 'pop-pc' : 'next',
+    flow: loadsPc ? 'load-pc' : 'next',
+    registers: (o) => ({ ...(load ? { list: 'list' as const } : {}), writes: o.w === 1 ? ['rn'] : [] }),
     raw: (f) => {
-      const list = v(f, 'list');
-      const rn = v(f, 'rn');
+      const list = bits(f, 'list');
+      const rn = bits(f, 'rn');
       const base = 1 << rn;
-      const w = v(f, 'w') === 1;
-      if (list === 0 || rn === 15) {
+      const w = bits(f, 'w') === 1;
+      if (list === 0 || rn === PC) {
         return 'unpredictable';
       }
       if (w && (list & base) !== 0 && (load || (list & (base - 1)) !== 0)) {
         return 'unpredictable';
       }
       // ^ without pc in a load means the user-bank registers, which forbids writeback.
-      if (v(f, 'user') === 1 && w && !loadsPc) {
+      if (bits(f, 'user') === 1 && w && !loadsPc) {
         return 'unpredictable';
       }
       return null;
     },
-    stack: (f) => (v(f, 'rn') === 13 && v(f, 'w') === 1 ? (v(f, 'u') === 1 ? 4 : -4) * popcount(v(f, 'list')) : 0),
+    stack: (f) =>
+      bits(f, 'rn') === SP && bits(f, 'w') === 1 ? (bits(f, 'u') === 1 ? 4 : -4) * popcount(bits(f, 'list')) : 0,
   });
 }
 
@@ -261,18 +292,24 @@ function swpRow(byte: boolean): Row {
     match: byte ? 0x0140_0090 : 0x0100_0090,
     fields: [cond(), reg('rn', 16, 4), reg('rd', 12, 4), imm('sbz', 8, 4), reg('rm', 0, 4)],
     syntax: `${name}{c} {rd}, {rm}, [{rn}]`,
-    fromOps: (o) => ({ cond: v(o, 'cond'), rn: v(o, 'rn'), rd: v(o, 'rd'), sbz: 0, rm: v(o, 'rm') }),
-    // as: "Rn must not overlap other operands".
-    refuse: (f) => v(f, 'rn') === v(f, 'rd') || v(f, 'rn') === v(f, 'rm'),
+    registers: { writes: ['rd'] },
+    fromOperands: (o) => ({
+      cond: operand(o, 'cond'),
+      rn: operand(o, 'rn'),
+      rd: operand(o, 'rd'),
+      sbz: 0,
+      rm: operand(o, 'rm'),
+    }),
     raw: (f) => {
-      if (v(f, 'sbz') !== 0) {
+      if (bits(f, 'sbz') !== 0) {
         return 'sbz-set';
       }
-      const rn = v(f, 'rn');
-      if ([rn, v(f, 'rd'), v(f, 'rm')].includes(15) || rn === v(f, 'rd') || rn === v(f, 'rm')) {
-        return 'unpredictable';
-      }
-      return null;
+      return [bits(f, 'rn'), bits(f, 'rd'), bits(f, 'rm')].includes(PC) ? 'unpredictable' : null;
+    },
+    // as: "Rn must not overlap other operands".
+    rejected: {
+      reason: 'unpredictable',
+      when: (f) => bits(f, 'rn') === bits(f, 'rd') || bits(f, 'rn') === bits(f, 'rm'),
     },
   });
 }

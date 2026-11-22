@@ -19,29 +19,103 @@ export interface Field {
   readonly scale?: number;
 }
 
-/** Field values by field name (raw bits), or operand values by operand name. */
+/** The raw bits of an encoding, by the names of its row's fields. */
 export type Fields = Readonly<Record<string, number>>;
 
-/** The control-flow class of a row; `decode` turns it into a `Flow` with targets. */
-export type FlowKind =
+/** Every operand a syntax template can name. */
+export const OPERAND_NAMES = [
+  // registers
+  'rd',
+  'rn',
+  'rm',
+  'rs',
+  'rdlo',
+  'rdhi',
+  // an immediate in bytes or bits as written, an address, a register mask
+  'imm',
+  'target',
+  'list',
+  // the mnemonic's suffixes: condition, set flags
+  'cond',
+  's',
+  // addressing: pre-indexed, add, writeback, user bank
+  'p',
+  'u',
+  'w',
+  'user',
+  // a shift (0..3 lsl lsr asr ror, 4 rrx) and its amount
+  'shift',
+  'amount',
+  // a rotated immediate: its rotation, and whether the text must spell it
+  'rot',
+  'explicit',
+  // status registers: spsr, and the field mask
+  'r',
+  'mask',
+] as const;
+export type OperandName = (typeof OPERAND_NAMES)[number];
+
+/** What an instruction's text says, as numbers: register numbers, immediates, label addresses. */
+export type Operands = Readonly<Partial<Record<OperandName, number>>>;
+
+/**
+ * The control-flow class of a row: what is known from the table alone, before the operands. `decode` turns it
+ * into a `Flow`, which needs them: a `bx` is a return, a mode switch or an indirect jump by its register.
+ *
+ * | class         | Flow                                                                    |
+ * | ------------- | ----------------------------------------------------------------------- |
+ * | `next`        | `next`                                                                  |
+ * | `branch`      | `branch` (ARM: conditional unless the condition is al)                  |
+ * | `cond-branch` | `branch`, conditional                                                   |
+ * | `bl`          | `bl`                                                                    |
+ * | `bx`          | `return` (bx lr), `mode-switch` (Thumb bx pc) or `indirect`             |
+ * | `load-pc`     | `return` (the base is sp) or `indirect`                                 |
+ * | `mov-pc`      | `return` (mov pc, lr) or `indirect`                                     |
+ * | `add-pc`      | `indirect`                                                              |
+ * | `pool-load`   | `pool-load`                                                             |
+ * | `adr`         | `adr`                                                                   |
+ * | `swi`         | `swi`                                                                   |
+ * | `bl-prefix`   | `next` (the first half of a bl alone: it only sets lr)                  |
+ * | `bl-suffix`   | `indirect` through lr (the second half alone)                           |
+ * | `invalid`     | `invalid`                                                               |
+ */
+export type FlowClass =
   | 'next'
   | 'branch'
   | 'cond-branch'
   | 'bl'
   | 'bx'
-  | 'pop-pc'
+  | 'load-pc'
   | 'mov-pc'
   | 'add-pc'
-  | 'pc-load'
+  | 'pool-load'
   | 'adr'
   | 'swi'
+  | 'bl-prefix'
+  | 'bl-suffix'
   | 'invalid';
 
-/** Why an instruction prints as `.inst`: encoding reasons only. */
-export type RawReason = 'undefined' | 'unpredictable' | 'sbz-set' | 'as-alias' | 'no-roundtrip';
+/**
+ * Why an instruction prints as `.inst`: encoding reasons only.
+ *
+ * - `undefined`: no ARMv4T instruction has this encoding.
+ * - `unpredictable`: the architecture leaves the behaviour open, and GNU as refuses or changes the text.
+ * - `sbz-set`: a should-be-zero bit is set, which no text expresses.
+ * - `as-alias`: GNU as assembles this text to another encoding of the same instruction.
+ * - `bl-half`: one half of a Thumb `bl` without the other. It is a defined instruction, with no text of its own.
+ * - `no-roundtrip`: the text did not assemble back to these bytes (an address without a label, for example).
+ */
+export type RawReason = 'undefined' | 'unpredictable' | 'sbz-set' | 'as-alias' | 'bl-half' | 'no-roundtrip';
 
 /** Every RawReason, in the order reports list them. */
-export const RAW_REASONS: readonly RawReason[] = ['undefined', 'unpredictable', 'sbz-set', 'as-alias', 'no-roundtrip'];
+export const RAW_REASONS: readonly RawReason[] = [
+  'undefined',
+  'unpredictable',
+  'sbz-set',
+  'as-alias',
+  'bl-half',
+  'no-roundtrip',
+];
 
 /**
  * What an instruction writes to the core registers, as row data over its operand names: `writes` names
@@ -52,10 +126,10 @@ export const RAW_REASONS: readonly RawReason[] = ['undefined', 'unpredictable', 
  * its Flow.
  */
 export interface RegisterSpec {
-  readonly writes?: readonly string[];
-  readonly list?: string;
+  readonly writes?: readonly OperandName[];
+  readonly list?: OperandName;
   readonly fixed?: number;
-  readonly from?: readonly string[];
+  readonly from?: readonly OperandName[];
 }
 
 /** The register effect of one decoded instruction: a bit per register written (bit 15 is pc), and the registers the written value comes from. */
@@ -75,15 +149,13 @@ export interface InsnSpec {
   readonly fields: readonly Field[];
   /** GNU as unified syntax with operand placeholders: 'ldr {rd}, {target}'. */
   readonly syntax: string;
-  readonly flow: FlowKind;
+  readonly flow: FlowClass;
   /** GNU as's choice when two rows parse one text: the lowest value wins. */
   readonly asPriority: number;
   /** The sp delta in bytes (push, pop, add sp, ...); 0 when the instruction leaves sp alone. */
   readonly stack?: (f: Fields) => number;
   /** The encoding reason `as` will not reproduce these fields, or null when it will. */
   readonly raw?: (f: Fields) => RawReason | null;
-  /** The registers it writes (Thumb rows; absent: none). */
-  readonly registers?: RegisterSpec;
 }
 
 export type Flow =
@@ -91,8 +163,15 @@ export type Flow =
   | { readonly kind: 'branch'; readonly target: Addr; readonly conditional: boolean }
   | { readonly kind: 'bl'; readonly target: Addr }
   | { readonly kind: 'return'; readonly via: 'bx-lr' | 'pop-pc' | 'mov-pc-lr' }
-  /** `reg` is the jump register (bx, mov-pc, add-pc) or the base pc is loaded through (load-pc). */
-  | { readonly kind: 'indirect'; readonly reg: number; readonly via: 'bx' | 'mov-pc' | 'add-pc' | 'load-pc' }
+  /**
+   * `reg` is the jump register (bx, mov-pc, add-pc), the base pc is loaded through (load-pc), or lr for the
+   * second half of a Thumb bl standing alone (bl-suffix), which jumps to lr plus its offset.
+   */
+  | {
+      readonly kind: 'indirect';
+      readonly reg: number;
+      readonly via: 'bx' | 'mov-pc' | 'add-pc' | 'load-pc' | 'bl-suffix';
+    }
   /** A literal-pool load; `rd` 15 (ARM `ldr pc, [pc, #imm]`) transfers control to the loaded word. */
   | { readonly kind: 'pool-load'; readonly pool: Addr; readonly rd: number }
   | { readonly kind: 'adr'; readonly target: Addr }
@@ -122,8 +201,7 @@ export interface SymbolResolver {
 /** One row that accepts a parsed text, with the operand values that row reads from it. */
 export interface ParsedCandidate {
   readonly specId: SpecId;
-  /** Operand values (registers, immediates, label addresses) by operand name. */
-  readonly operands: Fields;
+  readonly operands: Operands;
 }
 
 /** One instruction text read back by `parse`: every row that accepts it, each with its own reading. */

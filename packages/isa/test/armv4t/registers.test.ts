@@ -1,9 +1,9 @@
-// registerEffect: the registers a Thumb instruction writes and the ones its value is followed back to, read
-// from the row's RegisterSpec.
+// registerEffect: the registers an instruction writes and the ones its value is followed back to.
 import assert from 'node:assert/strict';
 import { test } from 'vitest';
 
 import { IsaInvariantError, ROWS, decode, effectOf, registerEffect, thumbWordAt } from '../../src/armv4t.js';
+import { prngSequence } from './prng.js';
 import { assembleSnippet } from './snippet.js';
 
 const F = 0x0800_0200;
@@ -55,19 +55,16 @@ test('constants, other arithmetic and byte loads write without being followed; s
   ]);
 });
 
-test('pop, ldmia, stmia, a call and a BIOS call write their registers', () => {
-  assert.deepEqual(effects('pop {r4, r5}; pop {r4, pc}; ldmia r1!, {r2, r3}; stmia r0!, {r1}; bl _08000400; swi #6'), [
+test('pop, ldmia and stmia write their registers', () => {
+  assert.deepEqual(effects('pop {r4, r5}; pop {r4, pc}; ldmia r1!, {r2, r3}; stmia r0!, {r1}'), [
     { writes: 0b11_0000, from: [] },
     { writes: (1 << 4) | (1 << 15), from: [] },
     { writes: 0b1110, from: [] },
     { writes: 1, from: [] },
-    { writes: 0b0101_0000_0000_1111, from: [] },
-    { writes: 0b1111, from: [] },
   ]);
 });
 
-test('every Thumb row that writes a general register as data says so in the table: no row writes rd without a RegisterSpec', () => {
-  const declared = ROWS.thumb.filter((r) => r.spec.registers !== undefined).map((r) => r.spec.id);
+test('every Thumb row with an rd field that is not a store says what it writes', () => {
   const writesRd = ROWS.thumb.filter(
     (r) =>
       r.spec.fields.some((f) => f.name === 'rd') &&
@@ -75,38 +72,105 @@ test('every Thumb row that writes a general register as data says so in the tabl
       r.spec.id !== 'thumb.str_sp',
   );
   for (const r of writesRd) {
-    assert.ok(declared.includes(r.spec.id), `${r.spec.id} has an rd field but no RegisterSpec`);
+    assert.ok(r.registers !== undefined, `${r.spec.id} has an rd field but says nothing of what it writes`);
   }
-  assert.equal(declared.length, 44, 'the 38 rows that write rd, pop, pop {.., pc}, ldmia, stmia, bl and swi');
 });
 
-test("every name a row's RegisterSpec uses (writes, list, from) is one of that row's operands", () => {
-  let checked = 0;
-  for (const row of [...ROWS.thumb, ...ROWS.arm]) {
-    const spec = row.spec.registers;
-    if (spec === undefined) {
-      continue;
-    }
-    const fields = Object.fromEntries(row.spec.fields.map((f) => [f.name, 0]));
-    const ops = Object.keys(row.toOps(fields, F));
-    for (const name of [
-      ...(spec.writes ?? []),
-      ...(spec.list === undefined ? [] : [spec.list]),
-      ...(spec.from ?? []),
-    ]) {
-      assert.ok(ops.includes(name), `${row.spec.id}: '${name}' is not one of its operands (${ops.join(', ')})`);
-      checked += 1;
-    }
+test('no row names an operand it lacks: every Thumb halfword, bl pair and a seeded ARM sample has an effect', () => {
+  for (let hw = 0; hw < 0x10000; hw++) {
+    registerEffect(decode('thumb', hw, F));
   }
-  assert.ok(checked > 44, `${checked} names checked`);
+  for (const word of prngSequence(0x5eed, 1 << 16)) {
+    registerEffect(decode('arm', word, F));
+    registerEffect(decode('thumb', (word | 0xf800_f000) >>> 0, F));
+  }
 });
 
-test('an operand name the row lacks throws IsaInvariantError instead of reading as r0', () => {
+test('a call writes lr and nothing else: what a callee clobbers is a calling convention, not the instruction', () => {
+  assert.deepEqual(effects('bl _08000400; swi #6'), [
+    { writes: 1 << 14, from: [] },
+    { writes: 0, from: [] },
+  ]);
+  assert.deepEqual(registerEffect(decode('arm', 0xeb00_0000, F)), { writes: 1 << 14, from: [] });
+  // Half a bl is an instruction too: each half writes lr.
+  assert.deepEqual(registerEffect(decode('thumb', 0xf000, F)), { writes: 1 << 14, from: [] });
+  assert.deepEqual(registerEffect(decode('thumb', 0xf800, F)), { writes: 1 << 14, from: [] });
+});
+
+function armEffects(text: string): Array<{ writes: number; from: readonly number[] }> {
+  const bytes = assembleSnippet('arm', text, F);
+  const out: Array<{ writes: number; from: readonly number[] }> = [];
+  for (let at = 0; at < bytes.length; at += 4) {
+    const word = new DataView(bytes.buffer, bytes.byteOffset + at, 4).getUint32(0, true);
+    out.push({ ...registerEffect(decode('arm', word, F + at)) });
+  }
+  return out;
+}
+
+test('ARM data processing writes rd, followed to its sources for a move and a sum of registers', () => {
+  assert.deepEqual(
+    armEffects(
+      'mov r0, r1; mov r0, r1, lsl #2; mov r0, #1; add r2, r3, #4; add r2, r3, r4; add r2, r3, r4, lsl #1; sub r5, r6, r7; cmp r0, r1; adr r8, _08000300',
+    ),
+    [
+      { writes: 1 << 0, from: [1] },
+      { writes: 1 << 0, from: [] },
+      { writes: 1 << 0, from: [] },
+      { writes: 1 << 2, from: [3] },
+      { writes: 1 << 2, from: [3, 4] },
+      { writes: 1 << 2, from: [] },
+      { writes: 1 << 5, from: [] },
+      { writes: 0, from: [] },
+      { writes: 1 << 8, from: [] },
+    ],
+  );
+});
+
+test('ARM transfers write rd for a load and the base when it is written back', () => {
+  assert.deepEqual(
+    armEffects(
+      'ldr r0, [r1, #4]; ldr r0, [r1, r2]; ldrb r0, [r1]; ldr r0, [r1], #4; ldr r0, [r1, #4]!; str r0, [r1, #4]; str r0, [r1, #-4]!; ldrh r3, [r4]; strh r3, [r4], #2',
+    ),
+    [
+      { writes: 1 << 0, from: [1] },
+      { writes: 1 << 0, from: [1, 2] },
+      { writes: 1 << 0, from: [] },
+      { writes: 0b11, from: [1] },
+      { writes: 0b11, from: [1] },
+      { writes: 0, from: [] },
+      { writes: 1 << 1, from: [] },
+      { writes: 1 << 3, from: [] },
+      { writes: 1 << 4, from: [] },
+    ],
+  );
+});
+
+test('ARM block transfers, multiplies, swp and mrs write their registers', () => {
+  assert.deepEqual(
+    armEffects(
+      'ldmia sp!, {r4, r5, pc}; ldmia r0, {r1, r2}; stmdb sp!, {r4, lr}; stmia r0, {r1}; mul r0, r1, r2; umull r0, r1, r2, r3; swp r0, r1, [r2]; mrs r0, cpsr; msr cpsr_fc, r0; bx lr',
+    ),
+    [
+      { writes: (1 << 4) | (1 << 5) | (1 << 15) | (1 << 13), from: [] },
+      { writes: 0b110, from: [] },
+      { writes: 1 << 13, from: [] },
+      { writes: 0, from: [] },
+      { writes: 1 << 0, from: [] },
+      { writes: 0b11, from: [] },
+      { writes: 1 << 0, from: [] },
+      { writes: 1 << 0, from: [] },
+      { writes: 0, from: [] },
+      { writes: 0, from: [] },
+    ],
+  );
+});
+
+test('an operand the row lacks throws IsaInvariantError instead of reading as r0', () => {
   assert.deepEqual(effectOf({ writes: ['rd'], from: ['rs'] }, { rd: 1, rs: 2 }, 'thumb.test'), {
     writes: 2,
     from: [2],
   });
-  assert.throws(() => effectOf({ writes: ['Rd'] }, { rd: 1 }, 'thumb.test'), IsaInvariantError);
-  assert.throws(() => effectOf({ list: 'regs' }, { rlist: 3 }, 'thumb.test'), /names 'regs'/);
+  assert.throws(() => effectOf({ writes: ['rd'] }, { rn: 1 }, 'thumb.test'), IsaInvariantError);
+  assert.throws(() => effectOf({ list: 'list' }, { rd: 3 }, 'thumb.test'), /names 'list'/);
   assert.throws(() => effectOf({ from: ['rn'] }, { rd: 0 }, 'thumb.test'), IsaInvariantError);
 });

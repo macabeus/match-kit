@@ -5,13 +5,13 @@ import type { Addr } from '../address.js';
 import { hex } from '../hex.js';
 import { rowOf } from '../tables/registry.js';
 import type { Row } from '../tables/row.js';
-import type { Fields, Insn, SymbolResolver } from '../types.js';
+import type { Insn, Operands, SymbolResolver } from '../types.js';
 import { renderForm } from './template.js';
 
 /** The printed text of `row` for operand values `ops` at `addr`; undefined when a label is missing. */
 export function formatOperands(
   row: Row,
-  ops: Fields,
+  ops: Operands,
   addr: Addr,
   labelFor: (target: Addr) => string | undefined,
 ): string | undefined {
@@ -28,7 +28,7 @@ export function format(insn: Insn, resolver: SymbolResolver): string | undefined
   if (!row.printable || (row.spec.raw?.(insn.fields) ?? null) !== null) {
     return undefined;
   }
-  return formatOperands(row, row.toOps(insn.fields, insn.addr), insn.addr, (target) =>
+  return formatOperands(row, row.toOperands(insn.fields, insn.addr), insn.addr, (target) =>
     resolver.labelFor(target, insn.addr),
   );
 }
@@ -44,7 +44,7 @@ export function formatDecoding(insn: Insn, resolver: Pick<SymbolResolver, 'label
   if (!row.printable) {
     return undefined;
   }
-  return formatOperands(row, row.toOps(insn.fields, insn.addr), insn.addr, (target) =>
+  return formatOperands(row, row.toOperands(insn.fields, insn.addr), insn.addr, (target) =>
     resolver.labelFor(target, insn.addr),
   );
 }
@@ -53,7 +53,7 @@ export function formatDecoding(insn: Insn, resolver: Pick<SymbolResolver, 'label
 export function formatRaw(insn: Insn): string {
   const row = rowOf(insn.specId);
   const decoding =
-    formatOperands(row, row.toOps(insn.fields, insn.addr), insn.addr, (target) => `0x${hex(target)}`) ??
+    formatOperands(row, row.toOperands(insn.fields, insn.addr), insn.addr, (target) => `0x${hex(target)}`) ??
     row.spec.syntax;
   const reason = row.spec.raw?.(insn.fields) ?? null;
   const comment = reason === null || !row.printable ? decoding : `${decoding} (${reason})`;

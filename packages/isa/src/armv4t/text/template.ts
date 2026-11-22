@@ -13,9 +13,11 @@
 //   forms (rn p u w rm); {psr} cpsr/spsr (r); {psrf} 'cpsr_fc' (r mask).
 // A placeholder may appear twice in a parse-only alias; both occurrences must then read one value.
 import type { Addr } from '../address.js';
-import { fieldValue as get, rol32, ror32 } from '../bits.js';
+import { rol32, ror32 } from '../bits.js';
 import { IsaInvariantError } from '../errors.js';
-import type { Fields } from '../types.js';
+import { COND_AL } from '../names.js';
+import { operand } from '../tables/access.js';
+import type { OperandName, Operands } from '../types.js';
 import {
   CONDITIONS,
   SHIFTS,
@@ -41,24 +43,24 @@ export interface ReadContext {
   address(name: string): Addr | undefined;
 }
 
-type Ops = Record<string, number>;
+type Ops = Partial<Record<OperandName, number>>;
 /** The named groups of an operand pattern's match. */
 type Groups = Readonly<Record<string, string | undefined>>;
 
 interface OperandKind {
   /** A sticky pattern matching the operand text at the reading position; its captures are named groups. */
   readonly re: RegExp;
-  render(ops: Fields, key: string, cx: RenderContext): string | undefined;
-  read(groups: Groups, key: string, cx: ReadContext, out: Ops): boolean;
+  render(ops: Operands, cx: RenderContext): string | undefined;
+  read(groups: Groups, cx: ReadContext, out: Ops): boolean;
 }
 
 interface MnemonicKind {
-  readonly values: readonly (readonly [string, Fields])[];
-  render(ops: Fields): string;
+  readonly values: readonly (readonly [string, Operands])[];
+  render(ops: Operands): string;
 }
 
 /** Records `value` under `key`; false when the key already holds a different value. */
-function put(out: Ops, key: string, value: number | undefined): boolean {
+function put(out: Ops, key: OperandName, value: number | undefined): boolean {
   if (value === undefined || !Number.isFinite(value)) {
     return false;
   }
@@ -107,19 +109,20 @@ function readShift(groups: Groups, prefix: string, out: Ops): boolean {
   return put(out, 'shift', SHIFTS.indexOf(name)) && put(out, 'amount', parseNum(groups[`${prefix}Amount`] ?? ''));
 }
 
-function sign(ops: Fields): string {
-  return get(ops, 'u') === 1 ? '' : '-';
+function sign(ops: Operands): string {
+  return operand(ops, 'u') === 1 ? '' : '-';
 }
 
 /** The `u` operand of a sign group: '-' subtracts. */
 const up = (signText: string | undefined): number => (signText === '-' ? 0 : 1);
 const flagOf = (text: string | undefined): number => (text === undefined ? 0 : 1);
 
-function register(): OperandKind {
+/** A register placeholder, named after the operand it reads and writes. */
+function register(name: OperandName): OperandKind {
   return {
     re: pattern(registerGroup('reg')),
-    render: (ops, key) => regName(get(ops, key)),
-    read: (g, key, _cx, out) => put(out, key, regNumber(g['reg'] ?? '')),
+    render: (ops) => regName(operand(ops, name)),
+    read: (g, _cx, out) => put(out, name, regNumber(g['reg'] ?? '')),
   };
 }
 
@@ -141,64 +144,64 @@ function readAddressing(g: Groups, postIndexed: boolean, signText: string | unde
 }
 
 const OPERANDS: Readonly<Record<string, OperandKind>> = {
-  rd: register(),
-  rn: register(),
-  rm: register(),
-  rs: register(),
-  rdlo: register(),
-  rdhi: register(),
+  rd: register('rd'),
+  rn: register('rn'),
+  rm: register('rm'),
+  rs: register('rs'),
+  rdlo: register('rdlo'),
+  rdhi: register('rdhi'),
   imm: {
     re: pattern(`#${numberGroup('value')}`),
-    render: (ops) => `#${num(get(ops, 'imm'))}`,
-    read: (g, _key, _cx, out) => put(out, 'imm', parseNum(g['value'] ?? '')),
+    render: (ops) => `#${num(operand(ops, 'imm'))}`,
+    read: (g, _cx, out) => put(out, 'imm', parseNum(g['value'] ?? '')),
   },
   off: {
     re: pattern(`(?:, #${numberGroup('value')})?`),
-    render: (ops) => (get(ops, 'imm') === 0 ? '' : `, #${num(get(ops, 'imm'))}`),
-    read: (g, _key, _cx, out) => put(out, 'imm', g['value'] === undefined ? 0 : parseNum(g['value'])),
+    render: (ops) => (operand(ops, 'imm') === 0 ? '' : `, #${num(operand(ops, 'imm'))}`),
+    read: (g, _cx, out) => put(out, 'imm', g['value'] === undefined ? 0 : parseNum(g['value'])),
   },
   target: {
     re: pattern('(?<label>[A-Za-z_.$][A-Za-z0-9_.$]*)'),
-    render: (ops, _key, cx) => cx.label(get(ops, 'target')),
-    read: (g, _key, cx, out) => put(out, 'target', cx.address(g['label'] ?? '')),
+    render: (ops, cx) => cx.label(operand(ops, 'target')),
+    read: (g, cx, out) => put(out, 'target', cx.address(g['label'] ?? '')),
   },
   list: {
     re: pattern('\\{(?<registers>[^}]*)\\}'),
-    render: (ops) => regList(get(ops, 'list')),
-    read: (g, _key, _cx, out) => put(out, 'list', parseRegList(g['registers'] ?? '')),
+    render: (ops) => regList(operand(ops, 'list')),
+    read: (g, _cx, out) => put(out, 'list', parseRegList(g['registers'] ?? '')),
   },
   wb: {
     re: pattern('(?<wb>!)?'),
-    render: (ops) => (get(ops, 'w') === 1 ? '!' : ''),
-    read: (g, _key, _cx, out) => put(out, 'w', flagOf(g['wb'])),
+    render: (ops) => (operand(ops, 'w') === 1 ? '!' : ''),
+    read: (g, _cx, out) => put(out, 'w', flagOf(g['wb'])),
   },
   caret: {
     re: pattern('(?<caret>\\^)?'),
-    render: (ops) => (get(ops, 'user') === 1 ? '^' : ''),
-    read: (g, _key, _cx, out) => put(out, 'user', flagOf(g['caret'])),
+    render: (ops) => (operand(ops, 'user') === 1 ? '^' : ''),
+    read: (g, _cx, out) => put(out, 'user', flagOf(g['caret'])),
   },
   shift: {
     re: pattern(immediateShift('by')),
-    render: (ops) => shiftText(get(ops, 'shift'), get(ops, 'amount')),
-    read: (g, _key, _cx, out) => readShift(g, 'by', out),
+    render: (ops) => shiftText(operand(ops, 'shift'), operand(ops, 'amount')),
+    read: (g, _cx, out) => readShift(g, 'by', out),
   },
   rshift: {
     re: pattern(`, (?<shift>${SHIFT_NAME}) ${registerGroup('rs')}`),
-    render: (ops) => `, ${SHIFTS[get(ops, 'shift')] ?? 'lsl'} ${regName(get(ops, 'rs'))}`,
-    read: (g, _key, _cx, out) =>
+    render: (ops) => `, ${SHIFTS[operand(ops, 'shift')] ?? 'lsl'} ${regName(operand(ops, 'rs'))}`,
+    read: (g, _cx, out) =>
       put(out, 'shift', SHIFTS.indexOf(g['shift'] ?? '')) && put(out, 'rs', regNumber(g['rs'] ?? '')),
   },
   const: {
     re: pattern(`#${numberGroup('value')}(?:, (?<rotation>[0-9]+))?`),
     render: (ops) => {
-      const imm = get(ops, 'imm');
-      if (get(ops, 'explicit') !== 1) {
+      const imm = operand(ops, 'imm');
+      if (operand(ops, 'explicit') !== 1) {
         return `#${num(imm)}`;
       }
-      const rot = get(ops, 'rot');
+      const rot = operand(ops, 'rot');
       return `#${num(rol32(imm, rot))}, ${rot}`;
     },
-    read: (g, _key, _cx, out) => {
+    read: (g, _cx, out) => {
       const value = parseNum(g['value'] ?? '');
       if (value === undefined || value > 0xffff_ffff) {
         return false;
@@ -217,18 +220,18 @@ const OPERANDS: Readonly<Record<string, OperandKind>> = {
   amode: {
     re: addressing(`#(?<postSign>-?)${numberGroup('postOffset')}`, `(?:, #(?<preSign>-?)${numberGroup('preOffset')})?`),
     render: (ops) => {
-      const rn = regName(get(ops, 'rn'));
-      const imm = get(ops, 'imm');
-      if (get(ops, 'p') === 0) {
+      const rn = regName(operand(ops, 'rn'));
+      const imm = operand(ops, 'imm');
+      if (operand(ops, 'p') === 0) {
         return `[${rn}], #${sign(ops)}${num(imm)}`;
       }
-      const w = get(ops, 'w') === 1;
-      if (imm === 0 && get(ops, 'u') === 1 && !w) {
+      const w = operand(ops, 'w') === 1;
+      if (imm === 0 && operand(ops, 'u') === 1 && !w) {
         return `[${rn}]`;
       }
       return `[${rn}, #${sign(ops)}${num(imm)}]${w ? '!' : ''}`;
     },
-    read: (g, _key, _cx, out) => {
+    read: (g, _cx, out) => {
       if (g['postOffset'] !== undefined) {
         return readAddressing(g, true, g['postSign'], out) && put(out, 'imm', parseNum(g['postOffset']));
       }
@@ -245,14 +248,14 @@ const OPERANDS: Readonly<Record<string, OperandKind>> = {
       `, (?<preSign>-?)${registerGroup('preRm')}${immediateShift('pre')}`,
     ),
     render: (ops) => {
-      const rn = regName(get(ops, 'rn'));
-      const index = `${sign(ops)}${regName(get(ops, 'rm'))}${shiftText(get(ops, 'shift'), get(ops, 'amount'))}`;
-      if (get(ops, 'p') === 0) {
+      const rn = regName(operand(ops, 'rn'));
+      const index = `${sign(ops)}${regName(operand(ops, 'rm'))}${shiftText(operand(ops, 'shift'), operand(ops, 'amount'))}`;
+      if (operand(ops, 'p') === 0) {
         return `[${rn}], ${index}`;
       }
-      return `[${rn}, ${index}]${get(ops, 'w') === 1 ? '!' : ''}`;
+      return `[${rn}, ${index}]${operand(ops, 'w') === 1 ? '!' : ''}`;
     },
-    read: (g, _key, _cx, out) => {
+    read: (g, _cx, out) => {
       const post = g['postRm'] !== undefined;
       const side = post ? 'post' : 'pre';
       return (
@@ -266,14 +269,14 @@ const OPERANDS: Readonly<Record<string, OperandKind>> = {
   hamode_reg: {
     re: addressing(`(?<postSign>-?)${registerGroup('postRm')}`, `, (?<preSign>-?)${registerGroup('preRm')}`),
     render: (ops) => {
-      const rn = regName(get(ops, 'rn'));
-      const index = `${sign(ops)}${regName(get(ops, 'rm'))}`;
-      if (get(ops, 'p') === 0) {
+      const rn = regName(operand(ops, 'rn'));
+      const index = `${sign(ops)}${regName(operand(ops, 'rm'))}`;
+      if (operand(ops, 'p') === 0) {
         return `[${rn}], ${index}`;
       }
-      return `[${rn}, ${index}]${get(ops, 'w') === 1 ? '!' : ''}`;
+      return `[${rn}, ${index}]${operand(ops, 'w') === 1 ? '!' : ''}`;
     },
-    read: (g, _key, _cx, out) => {
+    read: (g, _cx, out) => {
       const post = g['postRm'] !== undefined;
       const side = post ? 'post' : 'pre';
       return readAddressing(g, post, g[`${side}Sign`], out) && put(out, 'rm', regNumber(g[`${side}Rm`] ?? ''));
@@ -281,13 +284,13 @@ const OPERANDS: Readonly<Record<string, OperandKind>> = {
   },
   psr: {
     re: pattern('(?<psr>cpsr|spsr)'),
-    render: (ops) => (get(ops, 'r') === 1 ? 'spsr' : 'cpsr'),
-    read: (g, _key, _cx, out) => put(out, 'r', g['psr'] === 'spsr' ? 1 : 0),
+    render: (ops) => (operand(ops, 'r') === 1 ? 'spsr' : 'cpsr'),
+    read: (g, _cx, out) => put(out, 'r', g['psr'] === 'spsr' ? 1 : 0),
   },
   psrf: {
     re: pattern('(?<psr>cpsr|spsr)_(?<fields>[fsxc]+)'),
-    render: (ops) => `${get(ops, 'r') === 1 ? 'spsr' : 'cpsr'}_${psrFields(get(ops, 'mask'))}`,
-    read: (g, _key, _cx, out) =>
+    render: (ops) => `${operand(ops, 'r') === 1 ? 'spsr' : 'cpsr'}_${psrFields(operand(ops, 'mask'))}`,
+    read: (g, _cx, out) =>
       put(out, 'r', g['psr'] === 'spsr' ? 1 : 0) && put(out, 'mask', parsePsrFields(g['fields'] ?? '')),
   },
 };
@@ -295,14 +298,14 @@ const OPERANDS: Readonly<Record<string, OperandKind>> = {
 const MNEMONIC_PARTS: Readonly<Record<string, MnemonicKind>> = {
   c: {
     values: CONDITIONS.map((suffix, cond) => [suffix, { cond }] as const),
-    render: (ops) => CONDITIONS[ops['cond'] ?? 14] ?? '',
+    render: (ops) => CONDITIONS[ops.cond ?? COND_AL] ?? '',
   },
   s: {
     values: [
       ['', { s: 0 }],
       ['s', { s: 1 }],
     ],
-    render: (ops) => (ops['s'] === 1 ? 's' : ''),
+    render: (ops) => (ops.s === 1 ? 's' : ''),
   },
   am: {
     values: [
@@ -311,20 +314,20 @@ const MNEMONIC_PARTS: Readonly<Record<string, MnemonicKind>> = {
       ['da', { p: 0, u: 0 }],
       ['db', { p: 1, u: 0 }],
     ],
-    render: (ops) => `${get(ops, 'u') === 1 ? 'i' : 'd'}${get(ops, 'p') === 1 ? 'b' : 'a'}`,
+    render: (ops) => `${operand(ops, 'u') === 1 ? 'i' : 'd'}${operand(ops, 'p') === 1 ? 'b' : 'a'}`,
   },
 };
 
 type Part =
   | { readonly kind: 'text'; readonly text: string }
   | { readonly kind: 'mnemonic'; readonly part: MnemonicKind }
-  | { readonly kind: 'operand'; readonly operand: OperandKind; readonly key: string };
+  | { readonly kind: 'operand'; readonly operand: OperandKind };
 
 /** A compiled template: how to render it and how to read it back. */
 export interface CompiledForm {
   readonly template: string;
   /** Every concrete mnemonic the template spells, with the operand values its suffixes stand for. */
-  readonly mnemonics: readonly (readonly [string, Fields])[];
+  readonly mnemonics: readonly (readonly [string, Operands])[];
   readonly parts: readonly Part[];
   /** The index of the first operand part (after the mnemonic and its space). */
   readonly operandsFrom: number;
@@ -355,7 +358,7 @@ export function compileForm(template: string): CompiledForm {
   const tail = space < 0 ? '' : template.slice(space + 1);
   const parts: Part[] = [];
 
-  let mnemonics: (readonly [string, Fields])[] = [['', {}]];
+  let mnemonics: (readonly [string, Operands])[] = [['', {}]];
   for (const [text, isPlaceholder] of tokens(head)) {
     if (!isPlaceholder) {
       parts.push({ kind: 'text', text });
@@ -385,13 +388,13 @@ export function compileForm(template: string): CompiledForm {
     if (operand === undefined) {
       throw new IsaInvariantError(`template '${template}': unknown operand placeholder {${text}}`);
     }
-    parts.push({ kind: 'operand', operand, key: text });
+    parts.push({ kind: 'operand', operand });
   }
   return { template, mnemonics, parts, operandsFrom };
 }
 
 /** The text of a form for these operand values; undefined when an address operand has no label. */
-export function renderForm(form: CompiledForm, ops: Fields, cx: RenderContext): string | undefined {
+export function renderForm(form: CompiledForm, ops: Operands, cx: RenderContext): string | undefined {
   let out = '';
   for (const part of form.parts) {
     if (part.kind === 'text') {
@@ -399,7 +402,7 @@ export function renderForm(form: CompiledForm, ops: Fields, cx: RenderContext): 
     } else if (part.kind === 'mnemonic') {
       out += part.part.render(ops);
     } else {
-      const text = part.operand.render(ops, part.key, cx);
+      const text = part.operand.render(ops, cx);
       if (text === undefined) {
         return undefined;
       }
@@ -412,10 +415,10 @@ export function renderForm(form: CompiledForm, ops: Fields, cx: RenderContext): 
 /** The operand values of `operandText` read through `form`, merged onto the mnemonic's values. */
 export function readForm(
   form: CompiledForm,
-  mnemonicOps: Fields,
+  mnemonicOps: Operands,
   operandText: string,
   cx: ReadContext,
-): Fields | undefined {
+): Operands | undefined {
   const out: Ops = { ...mnemonicOps };
   let at = 0;
   for (let i = form.operandsFrom; i < form.parts.length; i++) {
@@ -432,7 +435,7 @@ export function readForm(
     }
     part.operand.re.lastIndex = at;
     const m = part.operand.re.exec(operandText);
-    if (m === null || !part.operand.read(m.groups ?? {}, part.key, cx, out)) {
+    if (m === null || !part.operand.read(m.groups ?? {}, cx, out)) {
       return undefined;
     }
     at += m[0].length;
