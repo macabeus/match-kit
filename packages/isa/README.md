@@ -51,13 +51,17 @@ Every address operand is named through `labelFor`: the printer never invents a n
 `format` prints a mnemonic only when that text assembles back to the instruction's bytes. Otherwise
 `rawReason` says why:
 
-| Reason          | Meaning                                                                |
-| --------------- | ---------------------------------------------------------------------- |
-| `undefined`     | no ARMv4T instruction has this encoding (coprocessor instructions too) |
-| `unpredictable` | the architecture leaves the behaviour open, and `as` refuses the text  |
-| `sbz-set`       | a should-be-zero bit is set, which no text expresses                   |
-| `as-alias`      | `as` assembles this text to another encoding of the same instruction   |
-| `no-roundtrip`  | the text did not assemble back (an address has no label, for example)  |
+| Reason          | Meaning                                                               |
+| --------------- | --------------------------------------------------------------------- |
+| `undefined`     | no ARMv4T instruction has this encoding                               |
+| `unpredictable` | the architecture leaves the behaviour open, and `as` refuses the text |
+| `sbz-set`       | a should-be-zero bit is set, which no text expresses                  |
+| `as-alias`      | `as` assembles this text to another encoding of the same instruction  |
+| `no-roundtrip`  | the text did not assemble back (an address has no label, for example) |
+
+Coprocessor instructions (`cdp`, `mrc`, `mcr`, `ldc`, `stc`) are not printed as mnemonics: the tables
+describe a core with no coprocessor, such as the ARM7TDMI, where they trap as undefined. They print as
+`.inst`, with the reason `undefined`.
 
 ### The tables
 
