@@ -16,6 +16,7 @@
     "test": "vitest run --project node",
     "test:bun": "bun --bun vitest run --project node",
     "test:browser": "vitest run --project browser",
+    "test:gnu-as": "REQUIRE_GNU_AS=1 vitest run --project node packages/isa/test/armv4t/gnu-as.test.ts",
     "changeset": "changeset",
     "check-package": "sh scripts/check-package.sh"
   },

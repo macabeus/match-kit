@@ -18,6 +18,7 @@ both need, implemented once so the two tools never score the same pair of object
   processes, so all of it is Node-only.
 - **Fails closed.** An error throws; it never becomes a plausible-looking result.
 - **Tested without compilers.** Tests read committed fixtures or run plain `sh` commands, so CI needs nothing but `node_modules`.
+  The one exception is `pnpm test:gnu-as`, which assembles `@match-kit/isa`'s text with GNU as and is skipped where binutils is absent.
 
 ## Development
 

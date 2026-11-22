@@ -65,6 +65,20 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:browser
 
+  isa-gnu-as:
+    # @match-kit/isa's printed text, assembled with GNU as: the one check that needs a toolchain.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: sudo apt-get update && sudo apt-get install -y binutils-arm-none-eabi
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:gnu-as
+
   package:
     # The packed package as a consumer installs it: dist/, the exports and imports maps, types.
     runs-on: ubuntu-latest
