@@ -12,6 +12,7 @@ import {
   thumbMayReachPcRelative,
   thumbWordAt,
 } from '../../src/armv4t.js';
+import { check } from './check.js';
 
 const A = 0x0800_0200;
 
@@ -44,16 +45,16 @@ test('the Thumb prefilters admit every halfword whose decode names an address al
   for (let hw = 0; hw < 0x10000; hw++) {
     const kind = decode('thumb', hw, 0x0800_0000).flow.kind;
     if (kind === 'branch' || kind === 'pool-load' || kind === 'adr') {
-      assert.ok(thumbMayName(hw), hw.toString(16));
+      check(thumbMayName(hw), () => hw.toString(16));
     }
     if (kind === 'branch') {
-      assert.ok(thumbMayBranchShort(hw), hw.toString(16));
+      check(thumbMayBranchShort(hw), () => hw.toString(16));
     }
     if (kind === 'pool-load' || kind === 'adr') {
-      assert.ok(thumbMayReachPcRelative(hw), hw.toString(16));
+      check(thumbMayReachPcRelative(hw), () => hw.toString(16));
     }
     if (thumbMayName(hw)) {
-      assert.ok(!isThumbBlPrefix(hw) && !isThumbBlSuffix(hw), hw.toString(16));
+      check(!isThumbBlPrefix(hw) && !isThumbBlSuffix(hw), () => hw.toString(16));
     }
   }
   assert.strictEqual(decode('thumb', (0xf800 << 16) | 0xf000, 0x0800_0000).flow.kind, 'bl');

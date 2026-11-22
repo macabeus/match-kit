@@ -19,6 +19,7 @@ import {
   rowOrder,
   specsOf,
 } from '../../src/armv4t.js';
+import { check } from './check.js';
 import { prngSequence } from './prng.js';
 import { LABELS } from './resolver.js';
 
@@ -68,18 +69,17 @@ test('decode(encode(spec, fields)) gives back the spec and fields, or a row list
 
 function checkPrinting(insn: Insn, counts: Record<RawReason, number>): void {
   const reason = rawReason(insn, LABELS);
-  const where = `${insn.mode} 0x${insn.word.toString(16)} at 0x${insn.addr.toString(16)}`;
+  const where = (): string => `${insn.mode} 0x${insn.word.toString(16)} at 0x${insn.addr.toString(16)}`;
   if (reason === null) {
     const text = format(insn, LABELS);
-    assert.ok(text !== undefined, `${where}: printable but no text`);
-    assert.ok(parse(text, insn.mode, insn.addr, LABELS) !== undefined, `${where}: parse('${text}')`);
-    assert.ok(roundTrips(insn, LABELS), `${where}: '${text}' does not round-trip`);
+    check(text !== undefined, () => `${where()}: printable but no text`);
+    check(parse(text, insn.mode, insn.addr, LABELS) !== undefined, () => `${where()}: parse('${text}')`);
+    check(roundTrips(insn, LABELS), () => `${where()}: '${text}' does not round-trip`);
   } else {
-    assert.ok(RAW_REASONS.includes(reason), `${where}: reason ${reason}`);
-    assert.match(
-      formatRaw(insn),
-      insn.mode === 'arm' ? /^\.inst 0x[0-9A-F]{8} @ / : /^\.inst\.[nw] 0x[0-9A-F]{4,8} @ /,
-    );
+    check(RAW_REASONS.includes(reason), () => `${where()}: reason ${reason}`);
+    const raw = formatRaw(insn);
+    const shape = insn.mode === 'arm' ? /^\.inst 0x[0-9A-F]{8} @ / : /^\.inst\.[nw] 0x[0-9A-F]{4,8} @ /;
+    check(shape.test(raw), () => `${where()}: '${raw}'`);
     counts[reason]++;
   }
 }
