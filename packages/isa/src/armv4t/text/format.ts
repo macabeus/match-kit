@@ -1,12 +1,12 @@
 // format(insn, resolver): the instruction as GNU as unified syntax, every address operand through
 // resolver.labelFor (the printer never invents a name). formatRaw(insn): the `.inst` fallback of the
 // printing rule (roundtrip.ts), with the decoding in a comment that names addresses numerically.
-import type { Addr } from './address.js';
-import { hex } from './hex.js';
-import type { Row } from './row.js';
-import { rowOf } from './rows.js';
+import type { Addr } from '../address.js';
+import { hex } from '../hex.js';
+import { rowOf } from '../tables/registry.js';
+import type { Row } from '../tables/row.js';
+import type { Fields, Insn, SymbolResolver } from '../types.js';
 import { renderForm } from './template.js';
-import type { Fields, Insn, SymbolResolver } from './types.js';
 
 /** The printed text of `row` for operand values `ops` at `addr`; undefined when a label is missing. */
 export function formatOperands(

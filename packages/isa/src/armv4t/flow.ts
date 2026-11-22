@@ -12,7 +12,7 @@
 //   branch   unconditional in Thumb; conditional in ARM when the condition is not al.
 import type { Addr, Mode } from './address.js';
 import { align4, fieldValue as op } from './bits.js';
-import { pcOf } from './pc-relative.js';
+import { pcOf } from './tables/pc-relative.js';
 import type { Fields, Flow, FlowKind } from './types.js';
 
 function indirectReg(ops: Fields): number {

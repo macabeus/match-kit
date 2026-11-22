@@ -1,12 +1,12 @@
 // The ARM (ARMv4T) memory rows: word and byte loads and stores (with the user-mode T forms and the
 // pc-relative pool load), halfword and signed transfers, the block transfers and swp. Loads into pc
 // get rows of their own (flow pop-pc), so the flow class is a table fact.
+import { popcount, fieldValue as v, wrap32 } from '../bits.js';
+import type { Fields, RawReason } from '../types.js';
 import { shiftFields, shiftOperands } from './arm-shift.js';
-import { popcount, fieldValue as v, wrap32 } from './bits.js';
 import { pcOf } from './pc-relative.js';
 import { cond, flag, imm, reg, reglist, row, shiftType } from './row.js';
 import type { Row } from './row.js';
-import type { Fields, RawReason } from './types.js';
 
 // ---------------------------------------------------------------------------------------------------
 // Word and byte transfers: cond 01 I P U B W L Rn Rd offset.

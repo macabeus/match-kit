@@ -12,9 +12,10 @@
 //   {amode_reg} '[rn, -rm, lsl #n]!' forms (rn p u w rm shift amount); {hamode_reg} '[rn, -rm]!'
 //   forms (rn p u w rm); {psr} cpsr/spsr (r); {psrf} 'cpsr_fc' (r mask).
 // A placeholder may appear twice in a parse-only alias; both occurrences must then read one value.
-import type { Addr } from './address.js';
-import { fieldValue as get, rol32, ror32 } from './bits.js';
-import { IsaInvariantError } from './errors.js';
+import type { Addr } from '../address.js';
+import { fieldValue as get, rol32, ror32 } from '../bits.js';
+import { IsaInvariantError } from '../errors.js';
+import type { Fields } from '../types.js';
 import {
   CONDITIONS,
   SHIFTS,
@@ -27,7 +28,6 @@ import {
   regName,
   regNumber,
 } from './operand-text.js';
-import type { Fields } from './types.js';
 
 export interface RenderContext {
   readonly addr: Addr;

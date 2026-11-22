@@ -29,21 +29,21 @@ export { decode, isConditional, thumbWordAt } from './armv4t/decode.js';
 export { encode } from './armv4t/encode.js';
 
 // Instructions to text, and back.
-export { format, formatDecoding, formatRaw } from './armv4t/format.js';
-export { parse } from './armv4t/parse.js';
+export { format, formatDecoding, formatRaw } from './armv4t/text/format.js';
+export { parse } from './armv4t/text/parse.js';
 export { assemble } from './armv4t/assemble.js';
-export { printing, rawReason, roundTrips } from './armv4t/roundtrip.js';
-export type { Printing } from './armv4t/roundtrip.js';
-export { CONDITIONS } from './armv4t/operand-text.js';
+export { printing, rawReason, roundTrips } from './armv4t/printing-rule.js';
+export type { Printing } from './armv4t/printing-rule.js';
+export { CONDITIONS } from './armv4t/text/operand-text.js';
 
 // What an instruction does.
 export { effectOf, registerEffect } from './armv4t/registers.js';
-export { pcOf, thumbPoolBase } from './armv4t/pc-relative.js';
+export { pcOf, thumbPoolBase } from './armv4t/tables/pc-relative.js';
 export { popcount } from './armv4t/bits.js';
 
 // The tables, for a caller that reads rows instead of decoding: a scanner's prefilters, a table check.
-export { ROWS, rowOf, rowOrder, specOf, specsOf } from './armv4t/rows.js';
-export type { Row } from './armv4t/row.js';
+export { ROWS, rowOf, rowOrder, specOf, specsOf } from './armv4t/tables/registry.js';
+export type { Row } from './armv4t/tables/row.js';
 export {
   fieldsOf,
   isThumbBlPrefix,

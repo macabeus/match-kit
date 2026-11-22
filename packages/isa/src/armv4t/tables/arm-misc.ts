@@ -1,12 +1,12 @@
 // The remaining ARM (ARMv4T) rows: the never condition, branches, swi, multiplies, bx, the status
 // register moves, and the coprocessor and undefined spaces (the tables describe a core with no
 // coprocessor, such as the ARM7TDMI, where every coprocessor instruction traps as undefined).
+import { fieldValue as v } from '../bits.js';
+import type { Fields } from '../types.js';
 import { constField, constOperands } from './arm-immediate.js';
-import { fieldValue as v } from './bits.js';
 import { branchOffset, branchTarget, pcOf } from './pc-relative.js';
 import { cond, flag, imm, pcRel, reg, rotImm, row } from './row.js';
 import type { Row } from './row.js';
-import type { Fields } from './types.js';
 
 /** Condition 0b1111 is UNPREDICTABLE on the ARMv4T (ARMv5 reuses it for unconditional forms). */
 export const ARM_NV: Row = row('arm.nv', 'arm', {

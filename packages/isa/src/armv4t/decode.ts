@@ -6,9 +6,9 @@
 import type { Addr, Mode } from './address.js';
 import { IsaInvariantError } from './errors.js';
 import { flowOf } from './flow.js';
-import type { Row } from './row.js';
-import { ROWS, rowOf } from './rows.js';
-import { THUMB_BL } from './thumb-table.js';
+import { ROWS, rowOf } from './tables/registry.js';
+import type { Row } from './tables/row.js';
+import { THUMB_BL } from './tables/thumb.js';
 import type { Fields, Insn } from './types.js';
 
 function matches(row: Row, word: number): boolean {

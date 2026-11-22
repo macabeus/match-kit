@@ -1,12 +1,12 @@
 // parse(text, mode, addr, resolver): reads exactly the grammar format writes back to the rows
 // that accept it and their operand values. Rows are found through an index from concrete mnemonic to
 // (row, form) built at module load, then each candidate form's operand pattern is matched.
-import type { Addr, Mode } from './address.js';
-import type { Row } from './row.js';
-import { ROWS } from './rows.js';
+import type { Addr, Mode } from '../address.js';
+import { ROWS } from '../tables/registry.js';
+import type { Row } from '../tables/row.js';
+import type { Fields, ParsedCandidate, ParsedInsn, SymbolResolver } from '../types.js';
 import { readForm } from './template.js';
 import type { CompiledForm } from './template.js';
-import type { Fields, ParsedCandidate, ParsedInsn, SymbolResolver } from './types.js';
 
 interface Entry {
   readonly row: Row;

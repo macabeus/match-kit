@@ -2,11 +2,11 @@
 // first row whose mask matches wins). The 32-bit bl pair is the last row; decode pairs a prefix with
 // a following suffix, and a lone half falls to its raw row. Everything here is GNU as unified syntax
 // as `arm-none-eabi-as -mcpu=arm7tdmi` accepts it.
-import { popcount, fieldValue as v, wrap32 } from './bits.js';
+import { popcount, fieldValue as v, wrap32 } from '../bits.js';
+import type { Fields, RawReason, RegisterSpec } from '../types.js';
 import { branchOffset, branchTarget, pcOf, thumbPoolBase } from './pc-relative.js';
 import { blOff, cond, flag, imm, pcRel, reg, reglist, row } from './row.js';
 import type { Row, RowOptions } from './row.js';
-import type { Fields, RawReason, RegisterSpec } from './types.js';
 
 function T(name: string, options: RowOptions): Row {
   return row(`thumb.${name}`, 'thumb', options);

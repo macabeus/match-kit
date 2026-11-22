@@ -1,7 +1,7 @@
 // The register effect of a decoded instruction, read from its row's RegisterSpec (types.ts) over the
 // instruction's operands, so a hi register (H:R3) or a register list reads as the row's syntax names it.
 import { IsaInvariantError } from './errors.js';
-import { rowOf } from './rows.js';
+import { rowOf } from './tables/registry.js';
 import type { Fields, Insn, RegisterEffect, RegisterSpec } from './types.js';
 
 const NONE: RegisterEffect = { writes: 0, from: [] };

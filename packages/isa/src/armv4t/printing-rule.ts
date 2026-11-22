@@ -3,9 +3,9 @@
 // and returns what it produced, so callers that need the text and the assembled word do
 // not run format, parse and assemble a second time.
 import { assemble } from './assemble.js';
-import { format } from './format.js';
-import { parse } from './parse.js';
-import { specOf } from './rows.js';
+import { specOf } from './tables/registry.js';
+import { format } from './text/format.js';
+import { parse } from './text/parse.js';
 import type { Assembled, Insn, RawReason, SymbolResolver } from './types.js';
 
 /** What the printing rule decided: the mnemonic and its in-process encoding, or why it prints raw. */

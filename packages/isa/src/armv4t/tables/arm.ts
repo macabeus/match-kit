@@ -2,8 +2,8 @@
 // is the one place that fixes their relative order, which decides the shadowing between them: the
 // never condition first, the coprocessor and undefined spaces before the transfers that share their
 // bits, the multiply, swap and halfword rows before the miscellaneous space, data processing last.
-import { ARM_DP_ROWS } from './arm-dp.js';
-import { ARM_MEMORY_ROWS } from './arm-mem.js';
+import { ARM_DP_ROWS } from './arm-data-processing.js';
+import { ARM_MEMORY_ROWS } from './arm-memory.js';
 import {
   ARM_CONTROL_ROWS,
   ARM_MEDIA_UNDEFINED,

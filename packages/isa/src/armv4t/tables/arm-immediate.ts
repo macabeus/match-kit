@@ -1,8 +1,8 @@
 // ARM data-processing immediates: an 8-bit value rotated right by twice a 4-bit field. GNU as encodes
 // `#value` with the smallest even left rotation that brings the value into 8 bits (tc-arm.c,
 // encode_arm_immediate), so any other encoding of the same value needs the explicit `#imm8, rot` text.
-import { rol32, ror32 } from './bits.js';
-import type { Fields } from './types.js';
+import { rol32, ror32 } from '../bits.js';
+import type { Fields } from '../types.js';
 
 /** The value of a 12-bit rotated-immediate field. */
 export function decodeArmImmediate(field: number): number {

@@ -2,11 +2,11 @@
 // fields, syntax, flow, asPriority, stack, raw) plus the internal codec between its field bits and
 // the operand values its syntax names, and its compiled syntax forms (the printed one first, then
 // parse-only aliases). The tables (thumb-table.ts, arm-*.ts) are lists of rows built here.
-import type { Addr, Mode } from './address.js';
-import { insnUnit } from './address.js';
-import { compileForm } from './template.js';
-import type { CompiledForm } from './template.js';
-import type { Field, FieldKind, Fields, FlowKind, InsnSpec, RawReason, RegisterSpec, SpecId } from './types.js';
+import type { Addr, Mode } from '../address.js';
+import { insnUnit } from '../address.js';
+import { compileForm } from '../text/template.js';
+import type { CompiledForm } from '../text/template.js';
+import type { Field, FieldKind, Fields, FlowKind, InsnSpec, RawReason, RegisterSpec, SpecId } from '../types.js';
 
 /** Field bits to operand values (registers, immediates in bytes, label addresses). */
 export type ToOperands = (f: Fields, addr: Addr) => Fields;

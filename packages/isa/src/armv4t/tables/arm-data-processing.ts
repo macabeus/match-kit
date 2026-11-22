@@ -2,6 +2,8 @@
 // register shifted by an immediate, register shifted by a register). Writes to pc get rows of their
 // own so the flow class is a table fact: `add pc, ...` is add-pc and every other data-processing
 // write to pc is mov-pc. `add`/`sub` from pc with a rotated immediate print as `adr`.
+import { fieldValue as v, wrap32 } from '../bits.js';
+import type { Fields, FlowKind, RawReason } from '../types.js';
 import {
   constField,
   constOperands,
@@ -10,11 +12,9 @@ import {
   isCanonicalArmImmediate,
 } from './arm-immediate.js';
 import { shiftFields, shiftOperands } from './arm-shift.js';
-import { fieldValue as v, wrap32 } from './bits.js';
 import { pcOf } from './pc-relative.js';
 import { cond, flag, imm, reg, rotImm, row, shiftType } from './row.js';
 import type { FromOperands, Row, RowOptions, ToOperands } from './row.js';
-import type { Fields, FlowKind, RawReason } from './types.js';
 
 const OPCODES: readonly string[] = [
   'and',

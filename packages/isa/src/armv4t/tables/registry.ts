@@ -1,10 +1,10 @@
 // The registry over both tables: every row by id, in table order, and `specOf`.
-import type { Mode } from './address.js';
-import { ARM_ROWS } from './arm-table.js';
-import { IsaInvariantError } from './errors.js';
+import type { Mode } from '../address.js';
+import { IsaInvariantError } from '../errors.js';
+import type { InsnSpec, SpecId } from '../types.js';
+import { ARM_ROWS } from './arm.js';
 import type { Row } from './row.js';
-import { THUMB_BL, THUMB_ROWS } from './thumb-table.js';
-import type { InsnSpec, SpecId } from './types.js';
+import { THUMB_BL, THUMB_ROWS } from './thumb.js';
 
 /** Every row of a mode in table order (Thumb: the 16-bit rows, then the bl pair). */
 export const ROWS: Readonly<Record<Mode, readonly Row[]>> = {

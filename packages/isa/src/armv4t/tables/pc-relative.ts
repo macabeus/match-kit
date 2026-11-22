@@ -1,8 +1,8 @@
 // The PC-relative operand codecs shared by the tables: branch offsets, Thumb Align(PC, 4) loads and
 // the ARM pc + 8 base. A target is a wrapped 32-bit address; encoding works on the exact difference
 // between the target and the PC, as GNU as resolves a label defined in the same section.
-import type { Addr } from './address.js';
-import { align4, sext, wrap32 } from './bits.js';
+import type { Addr } from '../address.js';
+import { align4, sext, wrap32 } from '../bits.js';
 
 /** The PC an instruction at `addr` reads: addr + 4 in Thumb, addr + 8 in ARM. */
 export function pcOf(addr: Addr, mode: 'thumb' | 'arm'): number {

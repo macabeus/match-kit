@@ -5,8 +5,8 @@
 import type { Addr } from './address.js';
 import { fieldsOf, rowFor } from './decode.js';
 import { encode, fieldsFit } from './encode.js';
-import type { Row } from './row.js';
-import { rowOf, rowOrder } from './rows.js';
+import { rowOf, rowOrder } from './tables/registry.js';
+import type { Row } from './tables/row.js';
 import type { Assembled, Fields, ParsedInsn } from './types.js';
 
 /** Whether every operand both records name holds the same value. */
