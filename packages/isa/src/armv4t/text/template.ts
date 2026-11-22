@@ -19,6 +19,7 @@ import type { Fields } from '../types.js';
 import {
   CONDITIONS,
   SHIFTS,
+  SHIFT_RRX,
   num,
   parseNum,
   parsePsrFields,
@@ -41,16 +42,14 @@ export interface ReadContext {
 }
 
 type Ops = Record<string, number>;
-type Captures = readonly (string | undefined)[];
+/** The named groups of an operand pattern's match. */
+type Groups = Readonly<Record<string, string | undefined>>;
 
 interface OperandKind {
-  /**
-   * A sticky regular-expression literal matching the operand text at the reading position. Where it
-   * has alternatives, the longer spelling comes first: the reader never backtracks into it.
-   */
+  /** A sticky pattern matching the operand text at the reading position; its captures are named groups. */
   readonly re: RegExp;
   render(ops: Fields, key: string, cx: RenderContext): string | undefined;
-  read(caps: Captures, key: string, cx: ReadContext, out: Ops): boolean;
+  read(groups: Groups, key: string, cx: ReadContext, out: Ops): boolean;
 }
 
 interface MnemonicKind {
@@ -73,7 +72,7 @@ function put(out: Ops, key: string, value: number | undefined): boolean {
 
 /** ', lsl #2', ', rrx' or '' for an immediate shift (shift 4 is rrx). */
 function shiftText(shift: number, amount: number): string {
-  if (shift === 4) {
+  if (shift === SHIFT_RRX) {
     return ', rrx';
   }
   if (shift === 0 && amount === 0) {
@@ -82,33 +81,65 @@ function shiftText(shift: number, amount: number): string {
   return `, ${SHIFTS[shift] ?? 'lsl'} #${num(amount)}`;
 }
 
-function readShift(name: string | undefined, amount: string | undefined, rrx: string | undefined, out: Ops): boolean {
-  if (rrx !== undefined) {
-    return put(out, 'shift', 4) && put(out, 'amount', 0);
+// The operand patterns are built from three fragments, so each spelling is written once: a register (the names
+// regNumber reads), a number (what parseNum reads) and a shift by an immediate. Every capture is a named group,
+// and each pattern is sticky: it matches at the reading position and the reader never backtracks into it, so
+// where a pattern has alternatives the longer spelling comes first.
+const REGISTER = 'r1[0-5]|r[0-9]|sp|lr|pc|ip|fp';
+const NUMBER = '0x[0-9a-fA-F]+|[0-9]+';
+const SHIFT_NAME = 'lsl|lsr|asr|ror';
+
+const pattern = (source: string): RegExp => new RegExp(source, 'y');
+const registerGroup = (name: string): string => `(?<${name}>${REGISTER})`;
+const numberGroup = (name: string): string => `(?<${name}>${NUMBER})`;
+/** ', lsl #n', ', rrx' or nothing; the groups are `<prefix>Shift`, `<prefix>Amount` and `<prefix>Rrx`. */
+const immediateShift = (prefix: string): string =>
+  `(?:, (?<${prefix}Shift>${SHIFT_NAME}) #${numberGroup(`${prefix}Amount`)}|, (?<${prefix}Rrx>rrx))?`;
+
+function readShift(groups: Groups, prefix: string, out: Ops): boolean {
+  const name = groups[`${prefix}Shift`];
+  if (groups[`${prefix}Rrx`] !== undefined) {
+    return put(out, 'shift', SHIFT_RRX) && put(out, 'amount', 0);
   }
   if (name === undefined) {
     return put(out, 'shift', 0) && put(out, 'amount', 0);
   }
-  return (
-    put(out, 'shift', SHIFTS.indexOf(name)) && put(out, 'amount', amount === undefined ? undefined : parseNum(amount))
-  );
+  return put(out, 'shift', SHIFTS.indexOf(name)) && put(out, 'amount', parseNum(groups[`${prefix}Amount`] ?? ''));
 }
 
 function sign(ops: Fields): string {
   return get(ops, 'u') === 1 ? '' : '-';
 }
 
+/** The `u` operand of a sign group: '-' subtracts. */
+const up = (signText: string | undefined): number => (signText === '-' ? 0 : 1);
+const flagOf = (text: string | undefined): number => (text === undefined ? 0 : 1);
+
 function register(): OperandKind {
   return {
-    re: /(r1[0-5]|r[0-9]|sp|lr|pc|ip|fp)/y,
+    re: pattern(registerGroup('reg')),
     render: (ops, key) => regName(get(ops, key)),
-    read: (caps, key, _cx, out) => put(out, key, regNumber(caps[0] ?? '')),
+    read: (g, key, _cx, out) => put(out, key, regNumber(g['reg'] ?? '')),
   };
 }
 
-// The patterns below share three fragments: a register (r1[0-5]|r[0-9]|sp|lr|pc|ip|fp), the names
-// regNumber reads; a number (0x[0-9a-fA-F]+|[0-9]+), what parseNum reads; and a shift
-// (?:, (lsl|lsr|asr|ror) #NUM|, (rrx))?. They are literals, so no pattern is built at run time.
+/**
+ * `[rn], <post>` or `[rn<pre>]!`: the two shapes every ARM addressing mode has. `post` and `pre` are the
+ * patterns of the index after the base, each with its own group names.
+ */
+const addressing = (post: string, pre: string): RegExp =>
+  pattern(`\\[${registerGroup('rn')}(?:\\], ${post}|${pre}\\](?<wb>!)?)`);
+
+/** The operands every addressing mode reads: the base, P (pre-indexed), U (add) and W (writeback). */
+function readAddressing(g: Groups, postIndexed: boolean, signText: string | undefined, out: Ops): boolean {
+  return (
+    put(out, 'rn', regNumber(g['rn'] ?? '')) &&
+    put(out, 'p', postIndexed ? 0 : 1) &&
+    put(out, 'u', up(signText)) &&
+    put(out, 'w', postIndexed ? 0 : flagOf(g['wb']))
+  );
+}
+
 const OPERANDS: Readonly<Record<string, OperandKind>> = {
   rd: register(),
   rn: register(),
@@ -117,48 +148,48 @@ const OPERANDS: Readonly<Record<string, OperandKind>> = {
   rdlo: register(),
   rdhi: register(),
   imm: {
-    re: /#(0x[0-9a-fA-F]+|[0-9]+)/y,
+    re: pattern(`#${numberGroup('value')}`),
     render: (ops) => `#${num(get(ops, 'imm'))}`,
-    read: (caps, _key, _cx, out) => put(out, 'imm', parseNum(caps[0] ?? '')),
+    read: (g, _key, _cx, out) => put(out, 'imm', parseNum(g['value'] ?? '')),
   },
   off: {
-    re: /(?:, #(0x[0-9a-fA-F]+|[0-9]+))?/y,
+    re: pattern(`(?:, #${numberGroup('value')})?`),
     render: (ops) => (get(ops, 'imm') === 0 ? '' : `, #${num(get(ops, 'imm'))}`),
-    read: (caps, _key, _cx, out) => put(out, 'imm', caps[0] === undefined ? 0 : parseNum(caps[0])),
+    read: (g, _key, _cx, out) => put(out, 'imm', g['value'] === undefined ? 0 : parseNum(g['value'])),
   },
   target: {
-    re: /([A-Za-z_.$][A-Za-z0-9_.$]*)/y,
+    re: pattern('(?<label>[A-Za-z_.$][A-Za-z0-9_.$]*)'),
     render: (ops, _key, cx) => cx.label(get(ops, 'target')),
-    read: (caps, _key, cx, out) => put(out, 'target', cx.address(caps[0] ?? '')),
+    read: (g, _key, cx, out) => put(out, 'target', cx.address(g['label'] ?? '')),
   },
   list: {
-    re: /\{([^}]*)\}/y,
+    re: pattern('\\{(?<registers>[^}]*)\\}'),
     render: (ops) => regList(get(ops, 'list')),
-    read: (caps, _key, _cx, out) => put(out, 'list', parseRegList(caps[0] ?? '')),
+    read: (g, _key, _cx, out) => put(out, 'list', parseRegList(g['registers'] ?? '')),
   },
   wb: {
-    re: /(!)?/y,
+    re: pattern('(?<wb>!)?'),
     render: (ops) => (get(ops, 'w') === 1 ? '!' : ''),
-    read: (caps, _key, _cx, out) => put(out, 'w', caps[0] === undefined ? 0 : 1),
+    read: (g, _key, _cx, out) => put(out, 'w', flagOf(g['wb'])),
   },
   caret: {
-    re: /(\^)?/y,
+    re: pattern('(?<caret>\\^)?'),
     render: (ops) => (get(ops, 'user') === 1 ? '^' : ''),
-    read: (caps, _key, _cx, out) => put(out, 'user', caps[0] === undefined ? 0 : 1),
+    read: (g, _key, _cx, out) => put(out, 'user', flagOf(g['caret'])),
   },
   shift: {
-    re: /(?:, (lsl|lsr|asr|ror) #(0x[0-9a-fA-F]+|[0-9]+)|, (rrx))?/y,
+    re: pattern(immediateShift('by')),
     render: (ops) => shiftText(get(ops, 'shift'), get(ops, 'amount')),
-    read: (caps, _key, _cx, out) => readShift(caps[0], caps[1], caps[2], out),
+    read: (g, _key, _cx, out) => readShift(g, 'by', out),
   },
   rshift: {
-    re: /, (lsl|lsr|asr|ror) (r1[0-5]|r[0-9]|sp|lr|pc|ip|fp)/y,
+    re: pattern(`, (?<shift>${SHIFT_NAME}) ${registerGroup('rs')}`),
     render: (ops) => `, ${SHIFTS[get(ops, 'shift')] ?? 'lsl'} ${regName(get(ops, 'rs'))}`,
-    read: (caps, _key, _cx, out) =>
-      put(out, 'shift', SHIFTS.indexOf(caps[0] ?? '')) && put(out, 'rs', regNumber(caps[1] ?? '')),
+    read: (g, _key, _cx, out) =>
+      put(out, 'shift', SHIFTS.indexOf(g['shift'] ?? '')) && put(out, 'rs', regNumber(g['rs'] ?? '')),
   },
   const: {
-    re: /#(0x[0-9a-fA-F]+|[0-9]+)(?:, ([0-9]+))?/y,
+    re: pattern(`#${numberGroup('value')}(?:, (?<rotation>[0-9]+))?`),
     render: (ops) => {
       const imm = get(ops, 'imm');
       if (get(ops, 'explicit') !== 1) {
@@ -167,24 +198,24 @@ const OPERANDS: Readonly<Record<string, OperandKind>> = {
       const rot = get(ops, 'rot');
       return `#${num(rol32(imm, rot))}, ${rot}`;
     },
-    read: (caps, _key, _cx, out) => {
-      const value = parseNum(caps[0] ?? '');
+    read: (g, _key, _cx, out) => {
+      const value = parseNum(g['value'] ?? '');
       if (value === undefined || value > 0xffff_ffff) {
         return false;
       }
-      if (caps[1] === undefined) {
+      if (g['rotation'] === undefined) {
         return put(out, 'imm', value) && put(out, 'explicit', 0);
       }
-      const rot = Number.parseInt(caps[1], 10);
+      const rot = Number.parseInt(g['rotation'], 10);
       if (value > 0xff || rot > 30 || rot % 2 !== 0) {
         return false;
       }
       return put(out, 'imm', ror32(value, rot)) && put(out, 'rot', rot) && put(out, 'explicit', 1);
     },
   },
-  // Post-indexed `[rn], #-n` first, then pre-indexed `[rn, #-n]!` / `[rn]`.
+  // `[rn], #-n`, `[rn, #-n]!` or `[rn]`.
   amode: {
-    re: /(?:\[(r1[0-5]|r[0-9]|sp|lr|pc|ip|fp)\], #(-?)(0x[0-9a-fA-F]+|[0-9]+)|\[(r1[0-5]|r[0-9]|sp|lr|pc|ip|fp)(?:, #(-?)(0x[0-9a-fA-F]+|[0-9]+))?\](!)?)/y,
+    re: addressing(`#(?<postSign>-?)${numberGroup('postOffset')}`, `(?:, #(?<preSign>-?)${numberGroup('preOffset')})?`),
     render: (ops) => {
       const rn = regName(get(ops, 'rn'));
       const imm = get(ops, 'imm');
@@ -197,27 +228,22 @@ const OPERANDS: Readonly<Record<string, OperandKind>> = {
       }
       return `[${rn}, #${sign(ops)}${num(imm)}]${w ? '!' : ''}`;
     },
-    read: (caps, _key, _cx, out) => {
-      if (caps[0] !== undefined) {
-        return (
-          put(out, 'rn', regNumber(caps[0])) &&
-          put(out, 'p', 0) &&
-          put(out, 'u', caps[1] === '-' ? 0 : 1) &&
-          put(out, 'w', 0) &&
-          put(out, 'imm', parseNum(caps[2] ?? ''))
-        );
+    read: (g, _key, _cx, out) => {
+      if (g['postOffset'] !== undefined) {
+        return readAddressing(g, true, g['postSign'], out) && put(out, 'imm', parseNum(g['postOffset']));
       }
+      const offset = g['preOffset'];
       return (
-        put(out, 'rn', regNumber(caps[3] ?? '')) &&
-        put(out, 'p', 1) &&
-        put(out, 'u', caps[4] === '-' ? 0 : 1) &&
-        put(out, 'w', caps[6] === undefined ? 0 : 1) &&
-        put(out, 'imm', caps[5] === undefined ? 0 : parseNum(caps[5]))
+        readAddressing(g, false, g['preSign'], out) && put(out, 'imm', offset === undefined ? 0 : parseNum(offset))
       );
     },
   },
+  // `[rn], -rm, lsl #n` or `[rn, -rm, lsl #n]!`.
   amode_reg: {
-    re: /(?:\[(r1[0-5]|r[0-9]|sp|lr|pc|ip|fp)\], (-?)(r1[0-5]|r[0-9]|sp|lr|pc|ip|fp)(?:, (lsl|lsr|asr|ror) #(0x[0-9a-fA-F]+|[0-9]+)|, (rrx))?|\[(r1[0-5]|r[0-9]|sp|lr|pc|ip|fp), (-?)(r1[0-5]|r[0-9]|sp|lr|pc|ip|fp)(?:, (lsl|lsr|asr|ror) #(0x[0-9a-fA-F]+|[0-9]+)|, (rrx))?\](!)?)/y,
+    re: addressing(
+      `(?<postSign>-?)${registerGroup('postRm')}${immediateShift('post')}`,
+      `, (?<preSign>-?)${registerGroup('preRm')}${immediateShift('pre')}`,
+    ),
     render: (ops) => {
       const rn = regName(get(ops, 'rn'));
       const index = `${sign(ops)}${regName(get(ops, 'rm'))}${shiftText(get(ops, 'shift'), get(ops, 'amount'))}`;
@@ -226,21 +252,19 @@ const OPERANDS: Readonly<Record<string, OperandKind>> = {
       }
       return `[${rn}, ${index}]${get(ops, 'w') === 1 ? '!' : ''}`;
     },
-    read: (caps, _key, _cx, out) => {
-      const post = caps[0] !== undefined;
-      const at = post ? 0 : 6;
+    read: (g, _key, _cx, out) => {
+      const post = g['postRm'] !== undefined;
+      const side = post ? 'post' : 'pre';
       return (
-        put(out, 'rn', regNumber(caps[at] ?? '')) &&
-        put(out, 'p', post ? 0 : 1) &&
-        put(out, 'u', caps[at + 1] === '-' ? 0 : 1) &&
-        put(out, 'rm', regNumber(caps[at + 2] ?? '')) &&
-        readShift(caps[at + 3], caps[at + 4], caps[at + 5], out) &&
-        put(out, 'w', !post && caps[12] !== undefined ? 1 : 0)
+        readAddressing(g, post, g[`${side}Sign`], out) &&
+        put(out, 'rm', regNumber(g[`${side}Rm`] ?? '')) &&
+        readShift(g, side, out)
       );
     },
   },
+  // `[rn], -rm` or `[rn, -rm]!`: the halfword forms take no shift.
   hamode_reg: {
-    re: /(?:\[(r1[0-5]|r[0-9]|sp|lr|pc|ip|fp)\], (-?)(r1[0-5]|r[0-9]|sp|lr|pc|ip|fp)|\[(r1[0-5]|r[0-9]|sp|lr|pc|ip|fp), (-?)(r1[0-5]|r[0-9]|sp|lr|pc|ip|fp)\](!)?)/y,
+    re: addressing(`(?<postSign>-?)${registerGroup('postRm')}`, `, (?<preSign>-?)${registerGroup('preRm')}`),
     render: (ops) => {
       const rn = regName(get(ops, 'rn'));
       const index = `${sign(ops)}${regName(get(ops, 'rm'))}`;
@@ -249,28 +273,22 @@ const OPERANDS: Readonly<Record<string, OperandKind>> = {
       }
       return `[${rn}, ${index}]${get(ops, 'w') === 1 ? '!' : ''}`;
     },
-    read: (caps, _key, _cx, out) => {
-      const post = caps[0] !== undefined;
-      const at = post ? 0 : 3;
-      return (
-        put(out, 'rn', regNumber(caps[at] ?? '')) &&
-        put(out, 'p', post ? 0 : 1) &&
-        put(out, 'u', caps[at + 1] === '-' ? 0 : 1) &&
-        put(out, 'rm', regNumber(caps[at + 2] ?? '')) &&
-        put(out, 'w', !post && caps[6] !== undefined ? 1 : 0)
-      );
+    read: (g, _key, _cx, out) => {
+      const post = g['postRm'] !== undefined;
+      const side = post ? 'post' : 'pre';
+      return readAddressing(g, post, g[`${side}Sign`], out) && put(out, 'rm', regNumber(g[`${side}Rm`] ?? ''));
     },
   },
   psr: {
-    re: /(cpsr|spsr)/y,
+    re: pattern('(?<psr>cpsr|spsr)'),
     render: (ops) => (get(ops, 'r') === 1 ? 'spsr' : 'cpsr'),
-    read: (caps, _key, _cx, out) => put(out, 'r', caps[0] === 'spsr' ? 1 : 0),
+    read: (g, _key, _cx, out) => put(out, 'r', g['psr'] === 'spsr' ? 1 : 0),
   },
   psrf: {
-    re: /(cpsr|spsr)_([fsxc]+)/y,
+    re: pattern('(?<psr>cpsr|spsr)_(?<fields>[fsxc]+)'),
     render: (ops) => `${get(ops, 'r') === 1 ? 'spsr' : 'cpsr'}_${psrFields(get(ops, 'mask'))}`,
-    read: (caps, _key, _cx, out) =>
-      put(out, 'r', caps[0] === 'spsr' ? 1 : 0) && put(out, 'mask', parsePsrFields(caps[1] ?? '')),
+    read: (g, _key, _cx, out) =>
+      put(out, 'r', g['psr'] === 'spsr' ? 1 : 0) && put(out, 'mask', parsePsrFields(g['fields'] ?? '')),
   },
 };
 
@@ -414,7 +432,7 @@ export function readForm(
     }
     part.operand.re.lastIndex = at;
     const m = part.operand.re.exec(operandText);
-    if (m === null || !part.operand.read(m.slice(1), part.key, cx, out)) {
+    if (m === null || !part.operand.read(m.groups ?? {}, part.key, cx, out)) {
       return undefined;
     }
     at += m[0].length;

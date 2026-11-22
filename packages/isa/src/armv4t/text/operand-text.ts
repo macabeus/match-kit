@@ -100,6 +100,9 @@ export function parseRegList(inner: string): number | undefined {
 /** Shift mnemonics by ARM shift type; type 4 stands for rrx. */
 export const SHIFTS: readonly string[] = ['lsl', 'lsr', 'asr', 'ror', 'rrx'];
 
+/** The `shift` operand value that stands for rrx (encoded as ror #0). */
+export const SHIFT_RRX = 4;
+
 /** Status-register field letters in the order GNU as prints them, with their mask bits. */
 const PSR_FIELDS: readonly (readonly [string, number])[] = [
   ['f', 8],
