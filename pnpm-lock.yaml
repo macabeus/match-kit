@@ -226,6 +226,8 @@ importers:
         specifier: ^4.6.5
         version: 4.6.5
 
+  packages/isa: {}
+
   packages/scoring:
     dependencies:
       objdiff-wasm:

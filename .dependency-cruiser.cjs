@@ -26,6 +26,13 @@ module.exports = {
       to: { path: NODE_ONLY },
     },
     {
+      name: 'isa-has-no-dependencies',
+      comment: 'An instruction set is tables and codecs: @match-kit/isa imports nothing but itself.',
+      severity: 'error',
+      from: { path: '^packages/isa/src/' },
+      to: { pathNot: '^packages/isa/src/' },
+    },
+    {
       name: 'no-bun-api',
       comment: 'Packages run on Node, Bun and browsers alike: no Bun-only module.',
       severity: 'error',

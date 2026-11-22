@@ -9,6 +9,7 @@ both need, implemented once so the two tools never score the same pair of object
 | [`@match-kit/scoring`](packages/scoring)         | Score a compiled candidate against a target object with the objdiff engine |
 | [`@match-kit/decomp-yaml`](packages/decomp-yaml) | Read a project's `decomp.yaml` and check a tool's block with its schema    |
 | [`@match-kit/compiler`](packages/compiler)       | Run a project's compile command template and tell its failures apart       |
+| [`@match-kit/isa`](packages/isa)                 | Decode, print, parse and assemble instructions; ARMv4T (ARM and Thumb)     |
 
 ## Rules every package follows
 
