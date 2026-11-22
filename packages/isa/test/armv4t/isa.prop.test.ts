@@ -1,8 +1,7 @@
 // Seeded properties of the tables: decode∘encode is the identity on every row's
 // legal fields; every Thumb halfword and a seeded ARM sample either round-trips or has a raw reason;
 // parse reads back every printed text.
-import assert from 'node:assert/strict';
-import { test } from 'vitest';
+import { assert, test } from 'vitest';
 
 import {
   type Insn,
@@ -97,7 +96,7 @@ test('every Thumb halfword at both alignments round-trips or has a raw reason', 
     }
   }
   // Every Thumb raw instruction is raw for a row reason; none falls back on a failed round trip.
-  assert.equal(counts['no-roundtrip'], 0);
+  assert.strictEqual(counts['no-roundtrip'], 0);
 });
 
 test('bl pairs round-trip', () => {

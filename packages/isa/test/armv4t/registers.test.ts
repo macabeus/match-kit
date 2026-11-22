@@ -1,6 +1,5 @@
 // registerEffect: the registers an instruction writes and the ones its value is followed back to.
-import assert from 'node:assert/strict';
-import { test } from 'vitest';
+import { assert, test } from 'vitest';
 
 import { IsaInvariantError, ROWS, decode, effectOf, registerEffect, thumbWordAt } from '../../src/armv4t.js';
 import { prngSequence } from './prng.js';

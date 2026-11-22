@@ -1,0 +1,596 @@
+08000000 F0000000 arm.nv                     .inst 0xF0000000 @ condition nv  ; invalid
+08000000 F485E6C4 arm.nv                     .inst 0xF485E6C4 @ condition nv  ; invalid
+08000000 F3F227AA arm.nv                     .inst 0xF3F227AA @ condition nv  ; invalid
+08000000 F7ECD909 arm.nv                     .inst 0xF7ECD909 @ condition nv  ; invalid
+08000000 0A000000 arm.b                      beq _08000008  ; branch
+08000000 9A72128F arm.b                      bls _09C84A44  ; branch
+08000000 3A50BADE arm.b                      bcc _0942EB80  ; branch
+08000000 AA6673BB arm.b                      bge _0999CEF4  ; branch
+08000000 0B000000 arm.bl                     bleq _08000008  ; bl
+08000000 0B35E053 arm.bl                     bleq _08D78154  ; bl
+08000000 1BC4834C arm.bl                     blne _07120D38  ; bl
+08000000 DB05015A arm.bl                     blle _08140570  ; bl
+08000000 0F000000 arm.swi                    swieq #0  ; swi
+08000000 9FE1236D arm.swi                    swils #0xe1236d  ; swi
+08000000 6F17DD4B arm.swi                    swivs #0x17dd4b  ; swi
+08000000 0F609194 arm.swi                    swieq #0x609194  ; swi
+08000000 0C000000 arm.coprocessor_transfer   .inst 0x0C000000 @ coprocessor  ; invalid
+08000000 3D11BA9D arm.coprocessor_transfer   .inst 0x3D11BA9D @ coprocessor  ; invalid
+08000000 8C010F3C arm.coprocessor_transfer   .inst 0x8C010F3C @ coprocessor  ; invalid
+08000000 1D3DE02F arm.coprocessor_transfer   .inst 0x1D3DE02F @ coprocessor  ; invalid
+08000000 0E000000 arm.coprocessor            .inst 0x0E000000 @ coprocessor  ; invalid
+08000000 0E3280D3 arm.coprocessor            .inst 0x0E3280D3 @ coprocessor  ; invalid
+08000000 1E317527 arm.coprocessor            .inst 0x1E317527 @ coprocessor  ; invalid
+08000000 0E24304D arm.coprocessor            .inst 0x0E24304D @ coprocessor  ; invalid
+08000000 08108000 arm.ldm_pc                 ldmdaeq r0, {pc}  ; indirect
+08000000 289789BB arm.ldm_pc                 ldmiacs r7, {r0, r1, r3, r4, r5, r7, r8, r11, pc}  ; indirect
+08000000 E9B0AC0B arm.ldm_pc                 .inst 0xE9B0AC0B @ ldmib r0!, {r0, r1, r3, r10, r11, sp, pc} (unpredictable)  ; indirect
+08000000 09F29CF7 arm.ldm_pc                 .inst 0x09F29CF7 @ ldmibeq r2!, {r0, r1, r2, r4, r5, r6, r7, r10, r11, r12, pc}^ (unpredictable)  ; indirect
+08000000 08100000 arm.ldm                    .inst 0x08100000 @ ldmdaeq r0, {} (unpredictable)
+08000000 19F668E9 arm.ldm                    .inst 0x19F668E9 @ ldmibne r6!, {r0, r3, r5, r6, r7, r11, sp, lr}^ (unpredictable)
+08000000 D8B4120F arm.ldm                    ldmiale r4!, {r0, r1, r2, r3, r9, r12}
+08000000 C87A6F5F arm.ldm                    .inst 0xC87A6F5F @ ldmdagt r10!, {r0, r1, r2, r3, r4, r6, r8, r9, r10, r11, sp, lr}^ (unpredictable)
+08000000 08000000 arm.stm                    .inst 0x08000000 @ stmdaeq r0, {} (unpredictable)
+08000000 39A8FA7F arm.stm                    stmibcc r8!, {r0, r1, r2, r3, r4, r5, r6, r9, r11, r12, sp, lr, pc}
+08000000 78066B84 arm.stm                    stmdavc r6, {r2, r7, r8, r9, r11, sp, lr}
+08000000 99A0D5D7 arm.stm                    stmibls r0!, {r0, r1, r2, r4, r6, r7, r8, r10, r12, lr, pc}
+08000000 06000010 arm.media_undefined        .inst 0x06000010 @ undefined  ; invalid
+08000000 6644BC12 arm.media_undefined        .inst 0x6644BC12 @ undefined  ; invalid
+08000000 C7161AD1 arm.media_undefined        .inst 0xC7161AD1 @ undefined  ; invalid
+08000000 47CBC117 arm.media_undefined        .inst 0x47CBC117 @ undefined  ; invalid
+08000000 051F0000 arm.ldr_pc                 .inst 0x051F0000 @ ldreq r0, 0x08000008 (as-alias)  ; pool-load
+08000000 459FA083 arm.ldr_pc                 ldrmi r10, _0800008B  ; pool-load
+08000000 C51FB46C arm.ldr_pc                 ldrgt r11, _07FFFB9C  ; pool-load
+08000000 C59F5E0D arm.ldr_pc                 ldrgt r5, _08000E15  ; pool-load
+08000000 04200000 arm.strt_imm               .inst 0x04200000 @ strteq r0, [r0], #-0 (unpredictable)
+08000000 A4AB6DCE arm.strt_imm               strtge r6, [r11], #0xdce
+08000000 E42BE69F arm.strt_imm               strt lr, [r11], #-0x69f
+08000000 A4A1070B arm.strt_imm               strtge r0, [r1], #0x70b
+08000000 06200000 arm.strt_reg               .inst 0x06200000 @ strteq r0, [r0], -r0 (unpredictable)
+08000000 0624846B arm.strt_reg               strteq r8, [r4], -r11, ror #8
+08000000 06AC6BCF arm.strt_reg               .inst 0x06AC6BCF @ strteq r6, [r12], pc, asr #0x17 (unpredictable)
+08000000 962C3A0D arm.strt_reg               strtls r3, [r12], -sp, lsl #0x14
+08000000 0430F000 arm.ldrt_imm_pc            .inst 0x0430F000 @ ldrteq pc, [r0], #-0 (unpredictable)  ; indirect
+08000000 94B9F0EB arm.ldrt_imm_pc            .inst 0x94B9F0EB @ ldrtls pc, [r9], #0xeb (unpredictable)  ; indirect
+08000000 343CF2A1 arm.ldrt_imm_pc            .inst 0x343CF2A1 @ ldrtcc pc, [r12], #-0x2a1 (unpredictable)  ; indirect
+08000000 2434F10D arm.ldrt_imm_pc            .inst 0x2434F10D @ ldrtcs pc, [r4], #-0x10d (unpredictable)  ; indirect
+08000000 04300000 arm.ldrt_imm               .inst 0x04300000 @ ldrteq r0, [r0], #-0 (unpredictable)
+08000000 84B5B27F arm.ldrt_imm               ldrthi r11, [r5], #0x27f
+08000000 44B339D2 arm.ldrt_imm               .inst 0x44B339D2 @ ldrtmi r3, [r3], #0x9d2 (unpredictable)
+08000000 D4B4AEC6 arm.ldrt_imm               ldrtle r10, [r4], #0xec6
+08000000 0630F000 arm.ldrt_reg_pc            .inst 0x0630F000 @ ldrteq pc, [r0], -r0 (unpredictable)  ; indirect
+08000000 A6B5F468 arm.ldrt_reg_pc            .inst 0xA6B5F468 @ ldrtge pc, [r5], r8, ror #8 (unpredictable)  ; indirect
+08000000 0634F8C4 arm.ldrt_reg_pc            .inst 0x0634F8C4 @ ldrteq pc, [r4], -r4, asr #0x11 (unpredictable)  ; indirect
+08000000 46B9F3A2 arm.ldrt_reg_pc            .inst 0x46B9F3A2 @ ldrtmi pc, [r9], r2, lsr #7 (unpredictable)  ; indirect
+08000000 06300000 arm.ldrt_reg               .inst 0x06300000 @ ldrteq r0, [r0], -r0 (unpredictable)
+08000000 D6398BE4 arm.ldrt_reg               ldrtle r8, [r9], -r4, ror #0x17
+08000000 C6B896AF arm.ldrt_reg               .inst 0xC6B896AF @ ldrtgt r9, [r8], pc, lsr #0xd (unpredictable)
+08000000 76BE9D29 arm.ldrt_reg               ldrtvc r9, [lr], r9, lsr #0x1a
+08000000 04600000 arm.strbt_imm              .inst 0x04600000 @ strbteq r0, [r0], #-0 (unpredictable)
+08000000 4466BB0C arm.strbt_imm              strbtmi r11, [r6], #-0xb0c
+08000000 B4E90747 arm.strbt_imm              strbtlt r0, [r9], #0x747
+08000000 9461396D arm.strbt_imm              strbtls r3, [r1], #-0x96d
+08000000 06600000 arm.strbt_reg              .inst 0x06600000 @ strbteq r0, [r0], -r0 (unpredictable)
+08000000 B6E4680B arm.strbt_reg              strbtlt r6, [r4], r11, lsl #0x10
+08000000 A6675A61 arm.strbt_reg              strbtge r5, [r7], -r1, ror #0x14
+08000000 E660C74C arm.strbt_reg              strbt r12, [r0], -r12, asr #0xe
+08000000 0470F000 arm.ldrbt_imm_pc           .inst 0x0470F000 @ ldrbteq pc, [r0], #-0 (unpredictable)  ; indirect
+08000000 A4FCFE01 arm.ldrbt_imm_pc           .inst 0xA4FCFE01 @ ldrbtge pc, [r12], #0xe01 (unpredictable)  ; indirect
+08000000 64F5FECF arm.ldrbt_imm_pc           .inst 0x64F5FECF @ ldrbtvs pc, [r5], #0xecf (unpredictable)  ; indirect
+08000000 44F9F5E9 arm.ldrbt_imm_pc           .inst 0x44F9F5E9 @ ldrbtmi pc, [r9], #0x5e9 (unpredictable)  ; indirect
+08000000 04700000 arm.ldrbt_imm              .inst 0x04700000 @ ldrbteq r0, [r0], #-0 (unpredictable)
+08000000 04F0AB1B arm.ldrbt_imm              ldrbteq r10, [r0], #0xb1b
+08000000 44FB8D3A arm.ldrbt_imm              ldrbtmi r8, [r11], #0xd3a
+08000000 54F6C634 arm.ldrbt_imm              ldrbtpl r12, [r6], #0x634
+08000000 0670F000 arm.ldrbt_reg_pc           .inst 0x0670F000 @ ldrbteq pc, [r0], -r0 (unpredictable)  ; indirect
+08000000 8670F484 arm.ldrbt_reg_pc           .inst 0x8670F484 @ ldrbthi pc, [r0], -r4, lsl #9 (unpredictable)  ; indirect
+08000000 86F3F34D arm.ldrbt_reg_pc           .inst 0x86F3F34D @ ldrbthi pc, [r3], sp, asr #6 (unpredictable)  ; indirect
+08000000 E6F1FB01 arm.ldrbt_reg_pc           .inst 0xE6F1FB01 @ ldrbt pc, [r1], r1, lsl #0x16 (unpredictable)  ; indirect
+08000000 06700000 arm.ldrbt_reg              .inst 0x06700000 @ ldrbteq r0, [r0], -r0 (unpredictable)
+08000000 86FDAB69 arm.ldrbt_reg              ldrbthi r10, [sp], r9, ror #0x16
+08000000 86F2A0A9 arm.ldrbt_reg              ldrbthi r10, [r2], r9, lsr #1
+08000000 E67A650A arm.ldrbt_reg              .inst 0xE67A650A @ ldrbt r6, [r10], -r10, lsl #0xa (unpredictable)
+08000000 04000000 arm.str_imm                .inst 0x04000000 @ streq r0, [r0], #-0 (unpredictable)
+08000000 45A7290F arm.str_imm                strmi r2, [r7, #0x90f]!
+08000000 B40534CC arm.str_imm                strlt r3, [r5], #-0x4cc
+08000000 C50BCEEA arm.str_imm                strgt r12, [r11, #-0xeea]
+08000000 06000000 arm.str_reg                .inst 0x06000000 @ streq r0, [r0], -r0 (unpredictable)
+08000000 660CE489 arm.str_reg                strvs lr, [r12], -r9, lsl #9
+08000000 A72A000F arm.str_reg                .inst 0xA72A000F @ strge r0, [r10, -pc]! (unpredictable)
+08000000 860923E2 arm.str_reg                strhi r2, [r9], -r2, ror #7
+08000000 0410F000 arm.ldr_imm_pc             ldreq pc, [r0], #-0  ; indirect
+08000000 A491FAE9 arm.ldr_imm_pc             ldrge pc, [r1], #0xae9  ; indirect
+08000000 7419F8EF arm.ldr_imm_pc             ldrvc pc, [r9], #-0x8ef  ; indirect
+08000000 B59CFFE5 arm.ldr_imm_pc             ldrlt pc, [r12, #0xfe5]  ; indirect
+08000000 04100000 arm.ldr_imm                .inst 0x04100000 @ ldreq r0, [r0], #-0 (unpredictable)
+08000000 14174CE9 arm.ldr_imm                ldrne r4, [r7], #-0xce9
+08000000 0532A2A2 arm.ldr_imm                ldreq r10, [r2, #-0x2a2]!
+08000000 B5BF6F31 arm.ldr_imm                .inst 0xB5BF6F31 @ ldrlt r6, [pc, #0xf31]! (unpredictable)
+08000000 0610F000 arm.ldr_reg_pc             .inst 0x0610F000 @ ldreq pc, [r0], -r0 (unpredictable)  ; indirect
+08000000 9735F3AD arm.ldr_reg_pc             ldrls pc, [r5, -sp, lsr #7]!  ; indirect
+08000000 1719F8AC arm.ldr_reg_pc             ldrne pc, [r9, -r12, lsr #0x11]  ; indirect
+08000000 17B8F549 arm.ldr_reg_pc             ldrne pc, [r8, r9, asr #0xa]!  ; indirect
+08000000 06100000 arm.ldr_reg                .inst 0x06100000 @ ldreq r0, [r0], -r0 (unpredictable)
+08000000 373232C8 arm.ldr_reg                ldrcc r3, [r2, -r8, asr #5]!
+08000000 9618A5C4 arm.ldr_reg                ldrls r10, [r8], -r4, asr #0xb
+08000000 C7155623 arm.ldr_reg                ldrgt r5, [r5, -r3, lsr #0xc]
+08000000 04400000 arm.strb_imm               .inst 0x04400000 @ strbeq r0, [r0], #-0 (unpredictable)
+08000000 55E3D9BA arm.strb_imm               strbpl sp, [r3, #0x9ba]!
+08000000 344536D8 arm.strb_imm               strbcc r3, [r5], #-0x6d8
+08000000 4541CE7F arm.strb_imm               strbmi r12, [r1, #-0xe7f]
+08000000 06400000 arm.strb_reg               .inst 0x06400000 @ strbeq r0, [r0], -r0 (unpredictable)
+08000000 A74C3628 arm.strb_reg               strbge r3, [r12, -r8, lsr #0xc]
+08000000 17C0790F arm.strb_reg               .inst 0x17C0790F @ strbne r7, [r0, pc, lsl #0x12] (unpredictable)
+08000000 06C1BDA6 arm.strb_reg               strbeq r11, [r1], r6, lsr #0x1b
+08000000 0450F000 arm.ldrb_imm_pc            .inst 0x0450F000 @ ldrbeq pc, [r0], #-0 (unpredictable)  ; indirect
+08000000 15D9F6BC arm.ldrb_imm_pc            .inst 0x15D9F6BC @ ldrbne pc, [r9, #0x6bc] (unpredictable)  ; indirect
+08000000 D4D5FE7B arm.ldrb_imm_pc            .inst 0xD4D5FE7B @ ldrble pc, [r5], #0xe7b (unpredictable)  ; indirect
+08000000 545EFC16 arm.ldrb_imm_pc            .inst 0x545EFC16 @ ldrbpl pc, [lr], #-0xc16 (unpredictable)  ; indirect
+08000000 04500000 arm.ldrb_imm               .inst 0x04500000 @ ldrbeq r0, [r0], #-0 (unpredictable)
+08000000 3453A5D8 arm.ldrb_imm               ldrbcc r10, [r3], #-0x5d8
+08000000 15F8150C arm.ldrb_imm               ldrbne r1, [r8, #0x50c]!
+08000000 84D85FCD arm.ldrb_imm               ldrbhi r5, [r8], #0xfcd
+08000000 0650F000 arm.ldrb_reg_pc            .inst 0x0650F000 @ ldrbeq pc, [r0], -r0 (unpredictable)  ; indirect
+08000000 E756F5CD arm.ldrb_reg_pc            .inst 0xE756F5CD @ ldrb pc, [r6, -sp, asr #0xb] (unpredictable)  ; indirect
+08000000 0654FC4B arm.ldrb_reg_pc            .inst 0x0654FC4B @ ldrbeq pc, [r4], -r11, asr #0x18 (unpredictable)  ; indirect
+08000000 4779FD0F arm.ldrb_reg_pc            .inst 0x4779FD0F @ ldrbmi pc, [r9, -pc, lsl #0x1a]! (unpredictable)  ; indirect
+08000000 06500000 arm.ldrb_reg               .inst 0x06500000 @ ldrbeq r0, [r0], -r0 (unpredictable)
+08000000 E7DC4F03 arm.ldrb_reg               ldrb r4, [r12, r3, lsl #0x1e]
+08000000 A7FF1BAD arm.ldrb_reg               .inst 0xA7FF1BAD @ ldrbge r1, [pc, sp, lsr #0x17]! (unpredictable)
+08000000 17DB45E9 arm.ldrb_reg               ldrbne r4, [r11, r9, ror #0xb]
+08000000 00000090 arm.mul                    .inst 0x00000090 @ muleq r0, r0, r0 (unpredictable)
+08000000 100F519B arm.mul                    .inst 0x100F519B @ mulne pc, r11, r1 (sbz-set)
+08000000 4003B69E arm.mul                    .inst 0x4003B69E @ mulmi r3, lr, r6 (sbz-set)
+08000000 700F8A9F arm.mul                    .inst 0x700F8A9F @ mulvc pc, pc, r10 (sbz-set)
+08000000 00200090 arm.mla                    .inst 0x00200090 @ mlaeq r0, r0, r0, r0 (unpredictable)
+08000000 E033C394 arm.mla                    mlas r3, r4, r3, r12
+08000000 A02EED93 arm.mla                    mlage lr, r3, sp, lr
+08000000 40368593 arm.mla                    mlasmi r6, r3, r5, r8
+08000000 00400090 arm.mul_undefined          .inst 0x00400090 @ undefined  ; invalid
+08000000 305BC394 arm.mul_undefined          .inst 0x305BC394 @ undefined  ; invalid
+08000000 D04F5395 arm.mul_undefined          .inst 0xD04F5395 @ undefined  ; invalid
+08000000 60542291 arm.mul_undefined          .inst 0x60542291 @ undefined  ; invalid
+08000000 00800090 arm.umull                  .inst 0x00800090 @ umulleq r0, r0, r0, r0 (unpredictable)
+08000000 9092829F arm.umull                  .inst 0x9092829F @ umullsls r8, r2, pc, r2 (unpredictable)
+08000000 C09B4A92 arm.umull                  umullsgt r4, r11, r2, r10
+08000000 E090BC9F arm.umull                  .inst 0xE090BC9F @ umulls r11, r0, pc, r12 (unpredictable)
+08000000 00A00090 arm.umlal                  .inst 0x00A00090 @ umlaleq r0, r0, r0, r0 (unpredictable)
+08000000 A0AB1298 arm.umlal                  umlalge r1, r11, r8, r2
+08000000 E0B63694 arm.umlal                  umlals r3, r6, r4, r6
+08000000 30B6FC95 arm.umlal                  .inst 0x30B6FC95 @ umlalscc pc, r6, r5, r12 (unpredictable)
+08000000 00C00090 arm.smull                  .inst 0x00C00090 @ smulleq r0, r0, r0, r0 (unpredictable)
+08000000 80D9909B arm.smull                  .inst 0x80D9909B @ smullshi r9, r9, r11, r0 (unpredictable)
+08000000 60DD509F arm.smull                  .inst 0x60DD509F @ smullsvs r5, sp, pc, r0 (unpredictable)
+08000000 90D6989C arm.smull                  smullsls r9, r6, r12, r8
+08000000 00E00090 arm.smlal                  .inst 0x00E00090 @ smlaleq r0, r0, r0, r0 (unpredictable)
+08000000 20EE9098 arm.smlal                  smlalcs r9, lr, r8, r0
+08000000 70FE2399 arm.smlal                  smlalsvc r2, lr, r9, r3
+08000000 B0FCB792 arm.smlal                  smlalslt r11, r12, r2, r7
+08000000 01000090 arm.swp                    .inst 0x01000090 @ swpeq r0, r0, [r0] (unpredictable)
+08000000 A100C09C arm.swp                    swpge r12, r12, [r0]
+08000000 41027394 arm.swp                    .inst 0x41027394 @ swpmi r7, r4, [r2] (sbz-set)
+08000000 71043291 arm.swp                    .inst 0x71043291 @ swpvc r3, r1, [r4] (sbz-set)
+08000000 01400090 arm.swpb                   .inst 0x01400090 @ swpbeq r0, r0, [r0] (unpredictable)
+08000000 6149659B arm.swpb                   .inst 0x6149659B @ swpbvs r6, r11, [r9] (sbz-set)
+08000000 114CAA97 arm.swpb                   .inst 0x114CAA97 @ swpbne r10, r7, [r12] (sbz-set)
+08000000 914FD690 arm.swpb                   .inst 0x914FD690 @ swpbls sp, r0, [pc] (sbz-set)
+08000000 313B0197 arm.swp_undefined          .inst 0x313B0197 @ undefined  ; invalid
+08000000 B1E61B98 arm.swp_undefined          .inst 0xB1E61B98 @ undefined  ; invalid
+08000000 81F7A891 arm.swp_undefined          .inst 0x81F7A891 @ undefined  ; invalid
+08000000 61ACBB95 arm.swp_undefined          .inst 0x61ACBB95 @ undefined  ; invalid
+08000000 000000D0 arm.ldrd_strd              .inst 0x000000D0 @ ldrd/strd  ; invalid
+08000000 E0CC96FD arm.ldrd_strd              .inst 0xE0CC96FD @ ldrd/strd  ; invalid
+08000000 7128CAD1 arm.ldrd_strd              .inst 0x7128CAD1 @ ldrd/strd  ; invalid
+08000000 216338DD arm.ldrd_strd              .inst 0x216338DD @ ldrd/strd  ; invalid
+08000000 004000B0 arm.strh_imm               .inst 0x004000B0 @ strheq r0, [r0], #-0 (unpredictable)
+08000000 00678DB5 arm.strh_imm               .inst 0x00678DB5 @ strheq r8, [r7], #-0xd5 (unpredictable)
+08000000 416D2FB6 arm.strh_imm               strhmi r2, [sp, #-0xf6]!
+08000000 5047FDBF arm.strh_imm               .inst 0x5047FDBF @ strhpl pc, [r7], #-0xdf (unpredictable)
+08000000 000000B0 arm.strh_reg               .inst 0x000000B0 @ strheq r0, [r0], -r0 (unpredictable)
+08000000 D0A35AB2 arm.strh_reg               .inst 0xD0A35AB2 @ strhle r5, [r3], r2 (sbz-set)
+08000000 4081E1B6 arm.strh_reg               .inst 0x4081E1B6 @ strhmi lr, [r1], r6 (sbz-set)
+08000000 A10ECDB8 arm.strh_reg               .inst 0xA10ECDB8 @ strhge r12, [lr, -r8] (sbz-set)
+08000000 005000B0 arm.ldrh_imm               .inst 0x005000B0 @ ldrheq r0, [r0], #-0 (unpredictable)
+08000000 6153CCBE arm.ldrh_imm               ldrhvs r12, [r3, #-0xce]
+08000000 80564AB5 arm.ldrh_imm               ldrhhi r4, [r6], #-0xa5
+08000000 A05365B0 arm.ldrh_imm               ldrhge r6, [r3], #-0x50
+08000000 001000B0 arm.ldrh_reg               .inst 0x001000B0 @ ldrheq r0, [r0], -r0 (unpredictable)
+08000000 919B03BD arm.ldrh_reg               .inst 0x919B03BD @ ldrhls r0, [r11, sp] (sbz-set)
+08000000 403770BB arm.ldrh_reg               .inst 0x403770BB @ ldrhmi r7, [r7], -r11 (unpredictable)
+08000000 60BE21B0 arm.ldrh_reg               .inst 0x60BE21B0 @ ldrhvs r2, [lr], r0 (sbz-set)
+08000000 005000D0 arm.ldrsb_imm              .inst 0x005000D0 @ ldrsbeq r0, [r0], #-0 (unpredictable)
+08000000 31521CDE arm.ldrsb_imm              ldrsbcc r1, [r2, #-0xce]
+08000000 E079B9DC arm.ldrsb_imm              .inst 0xE079B9DC @ ldrsb r11, [r9], #-0x9c (unpredictable)
+08000000 B1584ED5 arm.ldrsb_imm              ldrsblt r4, [r8, #-0xe5]
+08000000 001000D0 arm.ldrsb_reg              .inst 0x001000D0 @ ldrsbeq r0, [r0], -r0 (unpredictable)
+08000000 A09471DC arm.ldrsb_reg              .inst 0xA09471DC @ ldrsbge r7, [r4], r12 (sbz-set)
+08000000 B09F9FD5 arm.ldrsb_reg              .inst 0xB09F9FD5 @ ldrsblt r9, [pc], r5 (sbz-set)
+08000000 6194E5D6 arm.ldrsb_reg              .inst 0x6194E5D6 @ ldrsbvs lr, [r4, r6] (sbz-set)
+08000000 005000F0 arm.ldrsh_imm              .inst 0x005000F0 @ ldrsheq r0, [r0], #-0 (unpredictable)
+08000000 D1FD6DF5 arm.ldrsh_imm              ldrshle r6, [sp, #0xd5]!
+08000000 71F3D1F3 arm.ldrsh_imm              ldrshvc sp, [r3, #0x13]!
+08000000 7079A5FC arm.ldrsh_imm              .inst 0x7079A5FC @ ldrshvc r10, [r9], #-0x5c (unpredictable)
+08000000 001000F0 arm.ldrsh_reg              .inst 0x001000F0 @ ldrsheq r0, [r0], -r0 (unpredictable)
+08000000 D11CEEFA arm.ldrsh_reg              .inst 0xD11CEEFA @ ldrshle lr, [r12, -r10] (sbz-set)
+08000000 513C47FC arm.ldrsh_reg              .inst 0x513C47FC @ ldrshpl r4, [r12, -r12]! (sbz-set)
+08000000 E130CEFE arm.ldrsh_reg              .inst 0xE130CEFE @ ldrsh r12, [r0, -lr]! (sbz-set)
+08000000 012FFF10 arm.bx                     bxeq r0  ; indirect
+08000000 E12FFF18 arm.bx                     bx r8  ; indirect
+08000000 B12FFF12 arm.bx                     bxlt r2  ; indirect
+08000000 612FFF1C arm.bx                     bxvs r12  ; indirect
+08000000 01200010 arm.bx_sbo                 .inst 0x01200010 @ bxeq r0  ; invalid
+08000000 71235B19 arm.bx_sbo                 .inst 0x71235B19 @ bxvc r9  ; invalid
+08000000 11220B17 arm.bx_sbo                 .inst 0x11220B17 @ bxne r7  ; invalid
+08000000 812E491C arm.bx_sbo                 .inst 0x812E491C @ bxhi r12  ; invalid
+08000000 010F0000 arm.mrs                    mrseq r0, cpsr
+08000000 E10F8000 arm.mrs                    mrs r8, cpsr
+08000000 510FB000 arm.mrs                    mrspl r11, cpsr
+08000000 C14FC000 arm.mrs                    mrsgt r12, spsr
+08000000 01000000 arm.mrs_sbo                .inst 0x01000000 @ mrseq r0, cpsr  ; invalid
+08000000 71071309 arm.mrs_sbo                .inst 0x71071309 @ mrsvc r1, cpsr  ; invalid
+08000000 214BD00B arm.mrs_sbo                .inst 0x214BD00B @ mrscs sp, spsr  ; invalid
+08000000 31092A0E arm.mrs_sbo                .inst 0x31092A0E @ mrscc r2, cpsr  ; invalid
+08000000 0120F000 arm.msr_reg                .inst 0x0120F000 @ msreq cpsr_, r0 (unpredictable)
+08000000 712AF005 arm.msr_reg                msrvc cpsr_fx, r5
+08000000 012CF002 arm.msr_reg                msreq cpsr_fs, r2
+08000000 8126F009 arm.msr_reg                msrhi cpsr_sx, r9
+08000000 01200000 arm.msr_reg_sbo            .inst 0x01200000 @ msreq cpsr, r0  ; invalid
+08000000 81667F0D arm.msr_reg_sbo            .inst 0x81667F0D @ msrhi spsr, sp  ; invalid
+08000000 412E080D arm.msr_reg_sbo            .inst 0x412E080D @ msrmi cpsr, sp  ; invalid
+08000000 A120F803 arm.msr_reg_sbo            .inst 0xA120F803 @ msrge cpsr, r3  ; invalid
+08000000 0320F000 arm.msr_imm                .inst 0x0320F000 @ msreq cpsr_, #0 (unpredictable)
+08000000 8324F18D arm.msr_imm                msrhi cpsr_s, #0x40000023
+08000000 4329F277 arm.msr_imm                msrmi cpsr_fc, #0x70000007
+08000000 2322FD94 arm.msr_imm                .inst 0x2322FD94 @ msrcs cpsr_x, #0x94, 26 (as-alias)
+08000000 03200000 arm.msr_imm_sbo            .inst 0x03200000 @ msreq cpsr, #imm  ; invalid
+08000000 032E7BDC arm.msr_imm_sbo            .inst 0x032E7BDC @ msreq cpsr, #imm  ; invalid
+08000000 13668D6E arm.msr_imm_sbo            .inst 0x13668D6E @ msrne cpsr, #imm  ; invalid
+08000000 B32E3AF3 arm.msr_imm_sbo            .inst 0xB32E3AF3 @ msrlt cpsr, #imm  ; invalid
+08000000 034C0173 arm.misc_undefined         .inst 0x034C0173 @ undefined  ; invalid
+08000000 B1699A42 arm.misc_undefined         .inst 0xB1699A42 @ undefined  ; invalid
+08000000 E34C8DAC arm.misc_undefined         .inst 0xE34C8DAC @ undefined  ; invalid
+08000000 614AECA5 arm.misc_undefined         .inst 0x614AECA5 @ undefined  ; invalid
+08000000 0200F000 arm.and_imm_pc             andeq pc, r0, #0  ; indirect
+08000000 3214F5CA arm.and_imm_pc             andscc pc, r4, #0x32800000  ; indirect
+08000000 C217FFDC arm.and_imm_pc             andsgt pc, r7, #0xdc, 30  ; indirect
+08000000 8215F42A arm.and_imm_pc             andshi pc, r5, #0x2a000000  ; indirect
+08000000 0000F000 arm.and_ims_pc             andeq pc, r0, r0  ; indirect
+08000000 B007F842 arm.and_ims_pc             andlt pc, r7, r2, asr #0x10  ; indirect
+08000000 E01EF264 arm.and_ims_pc             ands pc, lr, r4, ror #4  ; indirect
+08000000 3008F38D arm.and_ims_pc             andcc pc, r8, sp, lsl #7  ; indirect
+08000000 0000F010 arm.and_rs_pc              .inst 0x0000F010 @ andeq pc, r0, r0, lsl r0 (unpredictable)  ; indirect
+08000000 200CF571 arm.and_rs_pc              .inst 0x200CF571 @ andcs pc, r12, r1, ror r5 (unpredictable)  ; indirect
+08000000 0016FA78 arm.and_rs_pc              .inst 0x0016FA78 @ andseq pc, r6, r8, ror r10 (unpredictable)  ; indirect
+08000000 900FF955 arm.and_rs_pc              .inst 0x900FF955 @ andls pc, pc, r5, asr r9 (unpredictable)  ; indirect
+08000000 0220F000 arm.eor_imm_pc             eoreq pc, r0, #0  ; indirect
+08000000 E227F888 arm.eor_imm_pc             eor pc, r7, #0x88, 16  ; indirect
+08000000 3239F403 arm.eor_imm_pc             eorscc pc, r9, #0x3000000  ; indirect
+08000000 A23AF72F arm.eor_imm_pc             eorsge pc, r10, #0xbc0000  ; indirect
+08000000 0020F000 arm.eor_ims_pc             eoreq pc, r0, r0  ; indirect
+08000000 3034F800 arm.eor_ims_pc             eorscc pc, r4, r0, lsl #0x10  ; indirect
+08000000 6034FC0A arm.eor_ims_pc             eorsvs pc, r4, r10, lsl #0x18  ; indirect
+08000000 402DFEE1 arm.eor_ims_pc             eormi pc, sp, r1, ror #0x1d  ; indirect
+08000000 0020F010 arm.eor_rs_pc              .inst 0x0020F010 @ eoreq pc, r0, r0, lsl r0 (unpredictable)  ; indirect
+08000000 B03AFA19 arm.eor_rs_pc              .inst 0xB03AFA19 @ eorslt pc, r10, r9, lsl r10 (unpredictable)  ; indirect
+08000000 5034F77C arm.eor_rs_pc              .inst 0x5034F77C @ eorspl pc, r4, r12, ror r7 (unpredictable)  ; indirect
+08000000 0029FD79 arm.eor_rs_pc              .inst 0x0029FD79 @ eoreq pc, r9, r9, ror sp (unpredictable)  ; indirect
+08000000 0240F000 arm.sub_imm_pc             subeq pc, r0, #0  ; indirect
+08000000 6242F6D3 arm.sub_imm_pc             subvs pc, r2, #0xd300000  ; indirect
+08000000 2243FF4F arm.sub_imm_pc             subcs pc, r3, #0x13c  ; indirect
+08000000 9242FD0A arm.sub_imm_pc             subls pc, r2, #0x280  ; indirect
+08000000 0040F000 arm.sub_ims_pc             subeq pc, r0, r0  ; indirect
+08000000 105EF50B arm.sub_ims_pc             subsne pc, lr, r11, lsl #0xa  ; indirect
+08000000 0049F6A5 arm.sub_ims_pc             subeq pc, r9, r5, lsr #0xd  ; indirect
+08000000 8047F16B arm.sub_ims_pc             subhi pc, r7, r11, ror #2  ; indirect
+08000000 0040F010 arm.sub_rs_pc              .inst 0x0040F010 @ subeq pc, r0, r0, lsl r0 (unpredictable)  ; indirect
+08000000 E05BFE5E arm.sub_rs_pc              .inst 0xE05BFE5E @ subs pc, r11, lr, asr lr (unpredictable)  ; indirect
+08000000 805FF71F arm.sub_rs_pc              .inst 0x805FF71F @ subshi pc, pc, pc, lsl r7 (unpredictable)  ; indirect
+08000000 A053F270 arm.sub_rs_pc              .inst 0xA053F270 @ subsge pc, r3, r0, ror r2 (unpredictable)  ; indirect
+08000000 0260F000 arm.rsb_imm_pc             rsbeq pc, r0, #0  ; indirect
+08000000 726CF10E arm.rsb_imm_pc             rsbvc pc, r12, #0x80000003  ; indirect
+08000000 427BF71B arm.rsb_imm_pc             rsbsmi pc, r11, #0x6c0000  ; indirect
+08000000 326BFBE7 arm.rsb_imm_pc             rsbcc pc, r11, #0x39c00  ; indirect
+08000000 0060F000 arm.rsb_ims_pc             rsbeq pc, r0, r0  ; indirect
+08000000 4070F24C arm.rsb_ims_pc             rsbsmi pc, r0, r12, asr #4  ; indirect
+08000000 1065F520 arm.rsb_ims_pc             rsbne pc, r5, r0, lsr #0xa  ; indirect
+08000000 0079F3A1 arm.rsb_ims_pc             rsbseq pc, r9, r1, lsr #7  ; indirect
+08000000 0060F010 arm.rsb_rs_pc              .inst 0x0060F010 @ rsbeq pc, r0, r0, lsl r0 (unpredictable)  ; indirect
+08000000 907EFB77 arm.rsb_rs_pc              .inst 0x907EFB77 @ rsbsls pc, lr, r7, ror r11 (unpredictable)  ; indirect
+08000000 B06FF857 arm.rsb_rs_pc              .inst 0xB06FF857 @ rsblt pc, pc, r7, asr r8 (unpredictable)  ; indirect
+08000000 D070F91C arm.rsb_rs_pc              .inst 0xD070F91C @ rsbsle pc, r0, r12, lsl r9 (unpredictable)  ; indirect
+08000000 0280F000 arm.add_imm_pc             addeq pc, r0, #0  ; indirect
+08000000 3283F205 arm.add_imm_pc             addcc pc, r3, #0x50000000  ; indirect
+08000000 3298FB24 arm.add_imm_pc             addscc pc, r8, #0x24, 22  ; indirect
+08000000 D297F3DB arm.add_imm_pc             addsle pc, r7, #0x6c000003  ; indirect
+08000000 0080F000 arm.add_ims_pc             addeq pc, r0, r0  ; indirect
+08000000 0085FE8D arm.add_ims_pc             addeq pc, r5, sp, lsl #0x1d  ; indirect
+08000000 908FF0A7 arm.add_ims_pc             addls pc, pc, r7, lsr #1  ; indirect
+08000000 C091F34B arm.add_ims_pc             addsgt pc, r1, r11, asr #6  ; indirect
+08000000 0080F010 arm.add_rs_pc              .inst 0x0080F010 @ addeq pc, r0, r0, lsl r0 (unpredictable)  ; indirect
+08000000 B08BF017 arm.add_rs_pc              .inst 0xB08BF017 @ addlt pc, r11, r7, lsl r0 (unpredictable)  ; indirect
+08000000 3082FA5B arm.add_rs_pc              .inst 0x3082FA5B @ addcc pc, r2, r11, asr r10 (unpredictable)  ; indirect
+08000000 9087F81E arm.add_rs_pc              .inst 0x9087F81E @ addls pc, r7, lr, lsl r8 (unpredictable)  ; indirect
+08000000 02A0F000 arm.adc_imm_pc             adceq pc, r0, #0  ; indirect
+08000000 D2B2F11D arm.adc_imm_pc             adcsle pc, r2, #0x40000007  ; indirect
+08000000 62A2F475 arm.adc_imm_pc             adcvs pc, r2, #0x75000000  ; indirect
+08000000 82B2FA83 arm.adc_imm_pc             adcshi pc, r2, #0x83000  ; indirect
+08000000 00A0F000 arm.adc_ims_pc             adceq pc, r0, r0  ; indirect
+08000000 70A7F622 arm.adc_ims_pc             adcvc pc, r7, r2, lsr #0xc  ; indirect
+08000000 30A4F8C2 arm.adc_ims_pc             adccc pc, r4, r2, asr #0x11  ; indirect
+08000000 70B8FE6C arm.adc_ims_pc             adcsvc pc, r8, r12, ror #0x1c  ; indirect
+08000000 00A0F010 arm.adc_rs_pc              .inst 0x00A0F010 @ adceq pc, r0, r0, lsl r0 (unpredictable)  ; indirect
+08000000 B0A9F936 arm.adc_rs_pc              .inst 0xB0A9F936 @ adclt pc, r9, r6, lsr r9 (unpredictable)  ; indirect
+08000000 20A5FA78 arm.adc_rs_pc              .inst 0x20A5FA78 @ adccs pc, r5, r8, ror r10 (unpredictable)  ; indirect
+08000000 E0A5F45C arm.adc_rs_pc              .inst 0xE0A5F45C @ adc pc, r5, r12, asr r4 (unpredictable)  ; indirect
+08000000 02C0F000 arm.sbc_imm_pc             sbceq pc, r0, #0  ; indirect
+08000000 C2C9FB4B arm.sbc_imm_pc             sbcgt pc, r9, #0x12c00  ; indirect
+08000000 32DCFD0B arm.sbc_imm_pc             sbcscc pc, r12, #0x2c0  ; indirect
+08000000 D2C6F255 arm.sbc_imm_pc             sbcle pc, r6, #0x50000005  ; indirect
+08000000 00C0F000 arm.sbc_ims_pc             sbceq pc, r0, r0  ; indirect
+08000000 90D1F223 arm.sbc_ims_pc             sbcsls pc, r1, r3, lsr #4  ; indirect
+08000000 90CDFDC8 arm.sbc_ims_pc             sbcls pc, sp, r8, asr #0x1b  ; indirect
+08000000 60D4F6E3 arm.sbc_ims_pc             sbcsvs pc, r4, r3, ror #0xd  ; indirect
+08000000 00C0F010 arm.sbc_rs_pc              .inst 0x00C0F010 @ sbceq pc, r0, r0, lsl r0 (unpredictable)  ; indirect
+08000000 E0D9F876 arm.sbc_rs_pc              .inst 0xE0D9F876 @ sbcs pc, r9, r6, ror r8 (unpredictable)  ; indirect
+08000000 D0CAFF3D arm.sbc_rs_pc              .inst 0xD0CAFF3D @ sbcle pc, r10, sp, lsr pc (unpredictable)  ; indirect
+08000000 60CDFA33 arm.sbc_rs_pc              .inst 0x60CDFA33 @ sbcvs pc, sp, r3, lsr r10 (unpredictable)  ; indirect
+08000000 02E0F000 arm.rsc_imm_pc             rsceq pc, r0, #0  ; indirect
+08000000 72FBF466 arm.rsc_imm_pc             rscsvc pc, r11, #0x66000000  ; indirect
+08000000 52FDF4AD arm.rsc_imm_pc             rscspl pc, sp, #0xad000000  ; indirect
+08000000 32ECF8D9 arm.rsc_imm_pc             rsccc pc, r12, #0xd90000  ; indirect
+08000000 00E0F000 arm.rsc_ims_pc             rsceq pc, r0, r0  ; indirect
+08000000 B0E2FCC2 arm.rsc_ims_pc             rsclt pc, r2, r2, asr #0x19  ; indirect
+08000000 C0FAF5CF arm.rsc_ims_pc             rscsgt pc, r10, pc, asr #0xb  ; indirect
+08000000 C0F7FF0E arm.rsc_ims_pc             rscsgt pc, r7, lr, lsl #0x1e  ; indirect
+08000000 00E0F010 arm.rsc_rs_pc              .inst 0x00E0F010 @ rsceq pc, r0, r0, lsl r0 (unpredictable)  ; indirect
+08000000 10E9F754 arm.rsc_rs_pc              .inst 0x10E9F754 @ rscne pc, r9, r4, asr r7 (unpredictable)  ; indirect
+08000000 80F0F934 arm.rsc_rs_pc              .inst 0x80F0F934 @ rscshi pc, r0, r4, lsr r9 (unpredictable)  ; indirect
+08000000 D0EBF51E arm.rsc_rs_pc              .inst 0xD0EBF51E @ rscle pc, r11, lr, lsl r5 (unpredictable)  ; indirect
+08000000 0380F000 arm.orr_imm_pc             orreq pc, r0, #0  ; indirect
+08000000 6387F493 arm.orr_imm_pc             orrvs pc, r7, #0x93000000  ; indirect
+08000000 7386FE29 arm.orr_imm_pc             orrvc pc, r6, #0x290  ; indirect
+08000000 7383F008 arm.orr_imm_pc             orrvc pc, r3, #8  ; indirect
+08000000 0180F000 arm.orr_ims_pc             orreq pc, r0, r0  ; indirect
+08000000 5187FA29 arm.orr_ims_pc             orrpl pc, r7, r9, lsr #0x14  ; indirect
+08000000 518EF489 arm.orr_ims_pc             orrpl pc, lr, r9, lsl #9  ; indirect
+08000000 E19AF386 arm.orr_ims_pc             orrs pc, r10, r6, lsl #7  ; indirect
+08000000 0180F010 arm.orr_rs_pc              .inst 0x0180F010 @ orreq pc, r0, r0, lsl r0 (unpredictable)  ; indirect
+08000000 219AF552 arm.orr_rs_pc              .inst 0x219AF552 @ orrscs pc, r10, r2, asr r5 (unpredictable)  ; indirect
+08000000 D188F373 arm.orr_rs_pc              .inst 0xD188F373 @ orrle pc, r8, r3, ror r3 (unpredictable)  ; indirect
+08000000 A183F811 arm.orr_rs_pc              .inst 0xA183F811 @ orrge pc, r3, r1, lsl r8 (unpredictable)  ; indirect
+08000000 03A0F000 arm.mov_imm_pc             moveq pc, #0  ; indirect
+08000000 93A5F0A9 arm.mov_imm_pc             .inst 0x93A5F0A9 @ movls pc, #0xa9 (sbz-set)  ; indirect
+08000000 E3A4F781 arm.mov_imm_pc             .inst 0xE3A4F781 @ mov pc, #0x2040000 (sbz-set)  ; indirect
+08000000 A3ADF79B arm.mov_imm_pc             .inst 0xA3ADF79B @ movge pc, #0x26c0000 (sbz-set)  ; indirect
+08000000 01A0F000 arm.mov_ims_pc             moveq pc, r0  ; indirect
+08000000 41A9F044 arm.mov_ims_pc             .inst 0x41A9F044 @ movmi pc, r4, asr #0x20 (sbz-set)  ; indirect
+08000000 D1A8F445 arm.mov_ims_pc             .inst 0xD1A8F445 @ movle pc, r5, asr #8 (sbz-set)  ; indirect
+08000000 61BBFA04 arm.mov_ims_pc             .inst 0x61BBFA04 @ movsvs pc, r4, lsl #0x14 (sbz-set)  ; indirect
+08000000 01A0F010 arm.mov_rs_pc              .inst 0x01A0F010 @ moveq pc, r0, lsl r0 (unpredictable)  ; indirect
+08000000 41B9FC79 arm.mov_rs_pc              .inst 0x41B9FC79 @ movsmi pc, r9, ror r12 (sbz-set)  ; indirect
+08000000 31AAFF12 arm.mov_rs_pc              .inst 0x31AAFF12 @ movcc pc, r2, lsl pc (sbz-set)  ; indirect
+08000000 51AEF376 arm.mov_rs_pc              .inst 0x51AEF376 @ movpl pc, r6, ror r3 (sbz-set)  ; indirect
+08000000 03C0F000 arm.bic_imm_pc             biceq pc, r0, #0  ; indirect
+08000000 03CAFD87 arm.bic_imm_pc             biceq pc, r10, #0x21c0  ; indirect
+08000000 73CFF63A arm.bic_imm_pc             bicvc pc, pc, #0x3a00000  ; indirect
+08000000 43D8F4CE arm.bic_imm_pc             bicsmi pc, r8, #0xce000000  ; indirect
+08000000 01C0F000 arm.bic_ims_pc             biceq pc, r0, r0  ; indirect
+08000000 B1D9F4EE arm.bic_ims_pc             bicslt pc, r9, lr, ror #9  ; indirect
+08000000 61C2FCED arm.bic_ims_pc             bicvs pc, r2, sp, ror #0x19  ; indirect
+08000000 11D4F1A3 arm.bic_ims_pc             bicsne pc, r4, r3, lsr #3  ; indirect
+08000000 01C0F010 arm.bic_rs_pc              .inst 0x01C0F010 @ biceq pc, r0, r0, lsl r0 (unpredictable)  ; indirect
+08000000 51DCF832 arm.bic_rs_pc              .inst 0x51DCF832 @ bicspl pc, r12, r2, lsr r8 (unpredictable)  ; indirect
+08000000 A1CAFF37 arm.bic_rs_pc              .inst 0xA1CAFF37 @ bicge pc, r10, r7, lsr pc (unpredictable)  ; indirect
+08000000 11DAF539 arm.bic_rs_pc              .inst 0x11DAF539 @ bicsne pc, r10, r9, lsr r5 (unpredictable)  ; indirect
+08000000 03E0F000 arm.mvn_imm_pc             mvneq pc, #0  ; indirect
+08000000 83E9F2C6 arm.mvn_imm_pc             .inst 0x83E9F2C6 @ mvnhi pc, #0x6000000c (sbz-set)  ; indirect
+08000000 C3FCF8FE arm.mvn_imm_pc             .inst 0xC3FCF8FE @ mvnsgt pc, #0xfe0000 (sbz-set)  ; indirect
+08000000 C3EFF17F arm.mvn_imm_pc             .inst 0xC3EFF17F @ mvngt pc, #0xc000001f (sbz-set)  ; indirect
+08000000 01E0F000 arm.mvn_ims_pc             mvneq pc, r0  ; indirect
+08000000 71F8F3CF arm.mvn_ims_pc             .inst 0x71F8F3CF @ mvnsvc pc, pc, asr #7 (sbz-set)  ; indirect
+08000000 21F0FF6E arm.mvn_ims_pc             mvnscs pc, lr, ror #0x1e  ; indirect
+08000000 D1FFFEC0 arm.mvn_ims_pc             .inst 0xD1FFFEC0 @ mvnsle pc, r0, asr #0x1d (sbz-set)  ; indirect
+08000000 01E0F010 arm.mvn_rs_pc              .inst 0x01E0F010 @ mvneq pc, r0, lsl r0 (unpredictable)  ; indirect
+08000000 01F6F012 arm.mvn_rs_pc              .inst 0x01F6F012 @ mvnseq pc, r2, lsl r0 (sbz-set)  ; indirect
+08000000 A1EBF058 arm.mvn_rs_pc              .inst 0xA1EBF058 @ mvnge pc, r8, asr r0 (sbz-set)  ; indirect
+08000000 71E7F471 arm.mvn_rs_pc              .inst 0x71E7F471 @ mvnvc pc, r1, ror r4 (sbz-set)  ; indirect
+08000000 028F0000 arm.adr_add                adreq r0, _08000008  ; adr
+08000000 D28FD3D3 arm.adr_add                adrle sp, _5400000B  ; adr
+08000000 928F017E arm.adr_add                .inst 0x928F017E @ adrls r0, 0x88000027  ; adr
+08000000 A28FBC89 arm.adr_add                adrge r11, _08008908  ; adr
+08000000 024F0000 arm.adr_sub                .inst 0x024F0000 @ adreq r0, 0x08000008 (as-alias)  ; adr
+08000000 024F08AE arm.adr_sub                adreq r0, _07520008  ; adr
+08000000 024F5A19 arm.adr_sub                adreq r5, _07FE7008  ; adr
+08000000 924F70C0 arm.adr_sub                adrls r7, _07FFFF48  ; adr
+08000000 02000000 arm.and_imm                andeq r0, r0, #0
+08000000 C20E8853 arm.and_imm                andgt r8, lr, #0x530000
+08000000 1218EA71 arm.and_imm                andsne lr, r8, #0x71000
+08000000 B20F5FDA arm.and_imm                andlt r5, pc, #0x368
+08000000 00000000 arm.and_ims                andeq r0, r0, r0
+08000000 C01205A0 arm.and_ims                andsgt r0, r2, r0, lsr #0xb
+08000000 D00EDCA3 arm.and_ims                andle sp, lr, r3, lsr #0x19
+08000000 300D31AE arm.and_ims                andcc r3, sp, lr, lsr #3
+08000000 00000010 arm.and_rs                 andeq r0, r0, r0, lsl r0
+08000000 000FC112 arm.and_rs                 .inst 0x000FC112 @ andeq r12, pc, r2, lsl r1 (unpredictable)
+08000000 001E8A72 arm.and_rs                 andseq r8, lr, r2, ror r10
+08000000 5014B812 arm.and_rs                 andspl r11, r4, r2, lsl r8
+08000000 02200000 arm.eor_imm                eoreq r0, r0, #0
+08000000 22377930 arm.eor_imm                eorscs r7, r7, #0x30, 18
+08000000 E23B11A9 arm.eor_imm                eors r1, r11, #0x4000002a
+08000000 B2205CAE arm.eor_imm                eorlt r5, r0, #0xae00
+08000000 00200000 arm.eor_ims                eoreq r0, r0, r0
+08000000 C02DE9C4 arm.eor_ims                eorgt lr, sp, r4, asr #0x13
+08000000 70371583 arm.eor_ims                eorsvc r1, r7, r3, lsl #0xb
+08000000 5022E881 arm.eor_ims                eorpl lr, r2, r1, lsl #0x11
+08000000 00200010 arm.eor_rs                 eoreq r0, r0, r0, lsl r0
+08000000 7029E459 arm.eor_rs                 eorvc lr, r9, r9, asr r4
+08000000 603C7B59 arm.eor_rs                 eorsvs r7, r12, r9, asr r11
+08000000 A022711A arm.eor_rs                 eorge r7, r2, r10, lsl r1
+08000000 02400000 arm.sub_imm                subeq r0, r0, #0
+08000000 7259B9B2 arm.sub_imm                subsvc r11, r9, #0x2c8000
+08000000 224E3AD0 arm.sub_imm                subcs r3, lr, #0xd0, 20
+08000000 E25D91BA arm.sub_imm                subs r9, sp, #0x8000002e
+08000000 00400000 arm.sub_ims                subeq r0, r0, r0
+08000000 4055C02F arm.sub_ims                subsmi r12, r5, pc, lsr #0x20
+08000000 405B0407 arm.sub_ims                subsmi r0, r11, r7, lsl #8
+08000000 404744EB arm.sub_ims                submi r4, r7, r11, ror #9
+08000000 00400010 arm.sub_rs                 subeq r0, r0, r0, lsl r0
+08000000 30542676 arm.sub_rs                 subscc r2, r4, r6, ror r6
+08000000 D04FC63A arm.sub_rs                 .inst 0xD04FC63A @ suble r12, pc, r10, lsr r6 (unpredictable)
+08000000 30484E37 arm.sub_rs                 subcc r4, r8, r7, lsr lr
+08000000 02600000 arm.rsb_imm                rsbeq r0, r0, #0
+08000000 727A5721 arm.rsb_imm                rsbsvc r5, r10, #0x840000
+08000000 1273987E arm.rsb_imm                rsbsne r9, r3, #0x7e0000
+08000000 D2713A80 arm.rsb_imm                rsbsle r3, r1, #0x80, 20
+08000000 00600000 arm.rsb_ims                rsbeq r0, r0, r0
+08000000 5069C600 arm.rsb_ims                rsbpl r12, r9, r0, lsl #0xc
+08000000 50752845 arm.rsb_ims                rsbspl r2, r5, r5, asr #0x10
+08000000 406127CA arm.rsb_ims                rsbmi r2, r1, r10, asr #0xf
+08000000 00600010 arm.rsb_rs                 rsbeq r0, r0, r0, lsl r0
+08000000 B0724256 arm.rsb_rs                 rsbslt r4, r2, r6, asr r2
+08000000 C067AF7A arm.rsb_rs                 .inst 0xC067AF7A @ rsbgt r10, r7, r10, ror pc (unpredictable)
+08000000 5064BE17 arm.rsb_rs                 rsbpl r11, r4, r7, lsl lr
+08000000 02800000 arm.add_imm                addeq r0, r0, #0
+08000000 329310ED arm.add_imm                addscc r1, r3, #0xed
+08000000 B29D722A arm.add_imm                addslt r7, sp, #0xa0000002
+08000000 029F76A6 arm.add_imm                addseq r7, pc, #0xa600000
+08000000 00800000 arm.add_ims                addeq r0, r0, r0
+08000000 4093C063 arm.add_ims                addsmi r12, r3, r3, rrx
+08000000 B08871EC arm.add_ims                addlt r7, r8, r12, ror #3
+08000000 0082CBE7 arm.add_ims                addeq r12, r2, r7, ror #0x17
+08000000 00800010 arm.add_rs                 addeq r0, r0, r0, lsl r0
+08000000 109E5958 arm.add_rs                 addsne r5, lr, r8, asr r9
+08000000 0083615A arm.add_rs                 addeq r6, r3, r10, asr r1
+08000000 209A8E16 arm.add_rs                 addscs r8, r10, r6, lsl lr
+08000000 02A00000 arm.adc_imm                adceq r0, r0, #0
+08000000 62B63D3A arm.adc_imm                adcsvs r3, r6, #0xe80
+08000000 22B4CF42 arm.adc_imm                adcscs r12, r4, #0x108
+08000000 C2A6051C arm.adc_imm                adcgt r0, r6, #0x1c, 10
+08000000 00A00000 arm.adc_ims                adceq r0, r0, r0
+08000000 90B56C8E arm.adc_ims                adcsls r6, r5, lr, lsl #0x19
+08000000 00B0B9ED arm.adc_ims                adcseq r11, r0, sp, ror #0x13
+08000000 50AF8DAB arm.adc_ims                adcpl r8, pc, r11, lsr #0x1b
+08000000 00A00010 arm.adc_rs                 adceq r0, r0, r0, lsl r0
+08000000 E0AD2C56 arm.adc_rs                 adc r2, sp, r6, asr r12
+08000000 D0BC8A14 arm.adc_rs                 adcsle r8, r12, r4, lsl r10
+08000000 E0A9AA72 arm.adc_rs                 adc r10, r9, r2, ror r10
+08000000 02C00000 arm.sbc_imm                sbceq r0, r0, #0
+08000000 62D79481 arm.sbc_imm                sbcsvs r9, r7, #0x81000000
+08000000 E2D85122 arm.sbc_imm                sbcs r5, r8, #0x80000008
+08000000 C2D0542C arm.sbc_imm                sbcsgt r5, r0, #0x2c, 8
+08000000 00C00000 arm.sbc_ims                sbceq r0, r0, r0
+08000000 C0C3B4E6 arm.sbc_ims                sbcgt r11, r3, r6, ror #9
+08000000 30DA75C9 arm.sbc_ims                sbcscc r7, r10, r9, asr #0xb
+08000000 D0CC8249 arm.sbc_ims                sbcle r8, r12, r9, asr #4
+08000000 00C00010 arm.sbc_rs                 sbceq r0, r0, r0, lsl r0
+08000000 60D55F3B arm.sbc_rs                 .inst 0x60D55F3B @ sbcsvs r5, r5, r11, lsr pc (unpredictable)
+08000000 80CB8F7B arm.sbc_rs                 .inst 0x80CB8F7B @ sbchi r8, r11, r11, ror pc (unpredictable)
+08000000 80C4D430 arm.sbc_rs                 sbchi sp, r4, r0, lsr r4
+08000000 02E00000 arm.rsc_imm                rsceq r0, r0, #0
+08000000 E2F927E1 arm.rsc_imm                rscs r2, r9, #0x3840000
+08000000 22E96823 arm.rsc_imm                rsccs r6, r9, #0x230000
+08000000 52ECA7F5 arm.rsc_imm                rscpl r10, r12, #0x3d40000
+08000000 00E00000 arm.rsc_ims                rsceq r0, r0, r0
+08000000 B0FEA3AC arm.rsc_ims                rscslt r10, lr, r12, lsr #7
+08000000 50E97E49 arm.rsc_ims                rscpl r7, r9, r9, asr #0x1c
+08000000 90EC5AE9 arm.rsc_ims                rscls r5, r12, r9, ror #0x15
+08000000 00E00010 arm.rsc_rs                 rsceq r0, r0, r0, lsl r0
+08000000 10FD2A50 arm.rsc_rs                 rscsne r2, sp, r0, asr r10
+08000000 D0EB9B32 arm.rsc_rs                 rscle r9, r11, r2, lsr r11
+08000000 B0FEE755 arm.rsc_rs                 rscslt lr, lr, r5, asr r7
+08000000 03100000 arm.tst_imm                tsteq r0, #0
+08000000 D31851C6 arm.tst_imm                .inst 0xD31851C6 @ tstle r8, #0x80000031 (sbz-set)
+08000000 331FB5BE arm.tst_imm                .inst 0x331FB5BE @ tstcc pc, #0x2f800000 (sbz-set)
+08000000 331A5812 arm.tst_imm                .inst 0x331A5812 @ tstcc r10, #0x120000 (sbz-set)
+08000000 01100000 arm.tst_ims                tsteq r0, r0
+08000000 811CD82E arm.tst_ims                .inst 0x811CD82E @ tsthi r12, lr, lsr #0x10 (sbz-set)
+08000000 E119EDA3 arm.tst_ims                .inst 0xE119EDA3 @ tst r9, r3, lsr #0x1b (sbz-set)
+08000000 8115F166 arm.tst_ims                .inst 0x8115F166 @ tsthi r5, r6, ror #2 (sbz-set)
+08000000 01100010 arm.tst_rs                 tsteq r0, r0, lsl r0
+08000000 E11EE853 arm.tst_rs                 .inst 0xE11EE853 @ tst lr, r3, asr r8 (sbz-set)
+08000000 6116B511 arm.tst_rs                 .inst 0x6116B511 @ tstvs r6, r1, lsl r5 (sbz-set)
+08000000 A11FE43A arm.tst_rs                 .inst 0xA11FE43A @ tstge pc, r10, lsr r4 (sbz-set)
+08000000 03300000 arm.teq_imm                teqeq r0, #0
+08000000 833BE68F arm.teq_imm                .inst 0x833BE68F @ teqhi r11, #0x8f00000 (sbz-set)
+08000000 93359E4A arm.teq_imm                .inst 0x93359E4A @ teqls r5, #0x4a0 (sbz-set)
+08000000 13351F0C arm.teq_imm                .inst 0x13351F0C @ teqne r5, #0xc, 30 (sbz-set)
+08000000 01300000 arm.teq_ims                teqeq r0, r0
+08000000 C13C1826 arm.teq_ims                .inst 0xC13C1826 @ teqgt r12, r6, lsr #0x10 (sbz-set)
+08000000 81351F63 arm.teq_ims                .inst 0x81351F63 @ teqhi r5, r3, ror #0x1e (sbz-set)
+08000000 31348EEF arm.teq_ims                .inst 0x31348EEF @ teqcc r4, pc, ror #0x1d (sbz-set)
+08000000 01300010 arm.teq_rs                 teqeq r0, r0, lsl r0
+08000000 E13E441B arm.teq_rs                 .inst 0xE13E441B @ teq lr, r11, lsl r4 (sbz-set)
+08000000 D13BDD75 arm.teq_rs                 .inst 0xD13BDD75 @ teqle r11, r5, ror sp (sbz-set)
+08000000 51306C57 arm.teq_rs                 .inst 0x51306C57 @ teqpl r0, r7, asr r12 (sbz-set)
+08000000 03500000 arm.cmp_imm                cmpeq r0, #0
+08000000 035E14CA arm.cmp_imm                .inst 0x035E14CA @ cmpeq lr, #0xca000000 (sbz-set)
+08000000 2351D951 arm.cmp_imm                .inst 0x2351D951 @ cmpcs r1, #0x144000 (sbz-set)
+08000000 4355F18C arm.cmp_imm                .inst 0x4355F18C @ cmpmi r5, #0x8c, 2 (sbz-set)
+08000000 01500000 arm.cmp_ims                cmpeq r0, r0
+08000000 815582A6 arm.cmp_ims                .inst 0x815582A6 @ cmphi r5, r6, lsr #5 (sbz-set)
+08000000 91585CC7 arm.cmp_ims                .inst 0x91585CC7 @ cmpls r8, r7, asr #0x19 (sbz-set)
+08000000 C15EC44F arm.cmp_ims                .inst 0xC15EC44F @ cmpgt lr, pc, asr #8 (sbz-set)
+08000000 01500010 arm.cmp_rs                 cmpeq r0, r0, lsl r0
+08000000 1152257C arm.cmp_rs                 .inst 0x1152257C @ cmpne r2, r12, ror r5 (sbz-set)
+08000000 D15E7313 arm.cmp_rs                 .inst 0xD15E7313 @ cmple lr, r3, lsl r3 (sbz-set)
+08000000 215DF65C arm.cmp_rs                 .inst 0x215DF65C @ cmpcs sp, r12, asr r6 (sbz-set)
+08000000 03700000 arm.cmn_imm                cmneq r0, #0
+08000000 0373AD4E arm.cmn_imm                .inst 0x0373AD4E @ cmneq r3, #0x1380 (sbz-set)
+08000000 4370E6FB arm.cmn_imm                .inst 0x4370E6FB @ cmnmi r0, #0xfb00000 (sbz-set)
+08000000 537AF664 arm.cmn_imm                .inst 0x537AF664 @ cmnpl r10, #0x64, 12 (sbz-set)
+08000000 01700000 arm.cmn_ims                cmneq r0, r0
+08000000 2178AA07 arm.cmn_ims                .inst 0x2178AA07 @ cmncs r8, r7, lsl #0x14 (sbz-set)
+08000000 A1725823 arm.cmn_ims                .inst 0xA1725823 @ cmnge r2, r3, lsr #0x10 (sbz-set)
+08000000 317FA360 arm.cmn_ims                .inst 0x317FA360 @ cmncc pc, r0, ror #6 (sbz-set)
+08000000 01700010 arm.cmn_rs                 cmneq r0, r0, lsl r0
+08000000 817B0851 arm.cmn_rs                 cmnhi r11, r1, asr r8
+08000000 017AA059 arm.cmn_rs                 .inst 0x017AA059 @ cmneq r10, r9, asr r0 (sbz-set)
+08000000 7174A559 arm.cmn_rs                 .inst 0x7174A559 @ cmnvc r4, r9, asr r5 (sbz-set)
+08000000 03800000 arm.orr_imm                orreq r0, r0, #0
+08000000 D383C757 arm.orr_imm                orrle r12, r3, #0x15c0000
+08000000 73877063 arm.orr_imm                orrvc r7, r7, #0x63
+08000000 23800E66 arm.orr_imm                orrcs r0, r0, #0x660
+08000000 01800000 arm.orr_ims                orreq r0, r0, r0
+08000000 819742E0 arm.orr_ims                orrshi r4, r7, r0, ror #5
+08000000 7187A604 arm.orr_ims                orrvc r10, r7, r4, lsl #0xc
+08000000 A18BB667 arm.orr_ims                orrge r11, r11, r7, ror #0xc
+08000000 01800010 arm.orr_rs                 orreq r0, r0, r0, lsl r0
+08000000 31808374 arm.orr_rs                 orrcc r8, r0, r4, ror r3
+08000000 518C4653 arm.orr_rs                 orrpl r4, r12, r3, asr r6
+08000000 019D7A39 arm.orr_rs                 orrseq r7, sp, r9, lsr r10
+08000000 03A00000 arm.mov_imm                moveq r0, #0
+08000000 43AB288C arm.mov_imm                .inst 0x43AB288C @ movmi r2, #0x8c, 16 (sbz-set)
+08000000 C3AD5D31 arm.mov_imm                .inst 0xC3AD5D31 @ movgt r5, #0xc40 (sbz-set)
+08000000 13A2D654 arm.mov_imm                .inst 0x13A2D654 @ movne sp, #0x54, 12 (sbz-set)
+08000000 01A00000 arm.mov_ims                moveq r0, r0
+08000000 41A6BA60 arm.mov_ims                .inst 0x41A6BA60 @ movmi r11, r0, ror #0x14 (sbz-set)
+08000000 D1B419C5 arm.mov_ims                .inst 0xD1B419C5 @ movsle r1, r5, asr #0x13 (sbz-set)
+08000000 D1BC69A2 arm.mov_ims                .inst 0xD1BC69A2 @ movsle r6, r2, lsr #0x13 (sbz-set)
+08000000 01A00010 arm.mov_rs                 moveq r0, r0, lsl r0
+08000000 41AAB917 arm.mov_rs                 .inst 0x41AAB917 @ movmi r11, r7, lsl r9 (sbz-set)
+08000000 41A0D832 arm.mov_rs                 movmi sp, r2, lsr r8
+08000000 41B23870 arm.mov_rs                 .inst 0x41B23870 @ movsmi r3, r0, ror r8 (sbz-set)
+08000000 03C00000 arm.bic_imm                biceq r0, r0, #0
+08000000 E3D9C20F arm.bic_imm                bics r12, r9, #0xf0000000
+08000000 43D14023 arm.bic_imm                bicsmi r4, r1, #0x23
+08000000 93D7EAC9 arm.bic_imm                bicsls lr, r7, #0xc9000
+08000000 01C00000 arm.bic_ims                biceq r0, r0, r0
+08000000 61D1A52E arm.bic_ims                bicsvs r10, r1, lr, lsr #0xa
+08000000 71DF7F05 arm.bic_ims                bicsvc r7, pc, r5, lsl #0x1e
+08000000 11CF346B arm.bic_ims                bicne r3, pc, r11, ror #8
+08000000 01C00010 arm.bic_rs                 biceq r0, r0, r0, lsl r0
+08000000 C1CE2053 arm.bic_rs                 bicgt r2, lr, r3, asr r0
+08000000 21CCD851 arm.bic_rs                 biccs sp, r12, r1, asr r8
+08000000 61C0505B arm.bic_rs                 bicvs r5, r0, r11, asr r0
+08000000 03E00000 arm.mvn_imm                mvneq r0, #0
+08000000 23FBB926 arm.mvn_imm                .inst 0x23FBB926 @ mvnscs r11, #0x98000 (sbz-set)
+08000000 13F55719 arm.mvn_imm                .inst 0x13F55719 @ mvnsne r5, #0x640000 (sbz-set)
+08000000 53F338C2 arm.mvn_imm                .inst 0x53F338C2 @ mvnspl r3, #0xc20000 (sbz-set)
+08000000 01E00000 arm.mvn_ims                mvneq r0, r0
+08000000 E1E79147 arm.mvn_ims                .inst 0xE1E79147 @ mvn r9, r7, asr #2 (sbz-set)
+08000000 21E249A1 arm.mvn_ims                .inst 0x21E249A1 @ mvncs r4, r1, lsr #0x13 (sbz-set)
+08000000 C1FDB86A arm.mvn_ims                .inst 0xC1FDB86A @ mvnsgt r11, r10, ror #0x10 (sbz-set)
+08000000 01E00010 arm.mvn_rs                 mvneq r0, r0, lsl r0
+08000000 E1EA0673 arm.mvn_rs                 .inst 0xE1EA0673 @ mvn r0, r3, ror r6 (sbz-set)
+08000000 E1E0DD50 arm.mvn_rs                 mvn sp, r0, asr sp
+08000000 51FE5D75 arm.mvn_rs                 .inst 0x51FE5D75 @ mvnspl r5, r5, ror sp (sbz-set)

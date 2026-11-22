@@ -1,6 +1,5 @@
 // One test per Thumb row family, on hand-written halfwords: row, text, raw reason, flow, stack.
-import assert from 'node:assert/strict';
-import { test } from 'vitest';
+import { assert, test } from 'vitest';
 
 import { decode } from '../../src/armv4t.js';
 import { checkCase } from './cases.js';
@@ -159,7 +158,7 @@ test('bl pairs a prefix with the following suffix; a lone half is raw', () => {
     { word: 0x0000_f000, spec: 'thumb.bl_prefix', raw: 'bl-half', flow: { kind: 'next' } },
     { word: 0xf800, spec: 'thumb.bl_suffix', raw: 'bl-half', flow: { kind: 'indirect', reg: 14, via: 'bl-suffix' } },
   ]);
-  assert.equal(decode('thumb', 0xf800_f000, 0x0800_0000).size, 4);
-  assert.equal(decode('thumb', 0x2000_f000, 0x0800_0000).size, 2);
-  assert.equal(decode('thumb', 0x2000_f000, 0x0800_0000).word, 0xf000);
+  assert.strictEqual(decode('thumb', 0xf800_f000, 0x0800_0000).size, 4);
+  assert.strictEqual(decode('thumb', 0x2000_f000, 0x0800_0000).size, 2);
+  assert.strictEqual(decode('thumb', 0x2000_f000, 0x0800_0000).word, 0xf000);
 });

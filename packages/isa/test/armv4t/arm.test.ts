@@ -1,6 +1,5 @@
 // One test per ARM row family, on hand-written words: row, text, raw reason, flow, stack.
-import assert from 'node:assert/strict';
-import { test } from 'vitest';
+import { assert, test } from 'vitest';
 
 import { decode } from '../../src/armv4t.js';
 import { checkCase } from './cases.js';
