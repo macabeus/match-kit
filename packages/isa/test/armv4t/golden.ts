@@ -7,9 +7,9 @@ import { prngSequence } from './prng.js';
 import { LABELS } from './resolver.js';
 
 export const GOLDEN = {
-  thumb: '6f4bb91af935ec3ada0fa2f130b41535e7ef026212d07a2e6203d844ba814d29',
-  bl: 'ab6b3e28c3f3a049c726523192f4c82904591a21bbc6149668d65a589659828f',
-  arm: '5409c0cd90be0cbda8d4b0ddc8d610134db2622e458a8ab79b20dbef0d5f7134',
+  thumb: '0a8c3e7bca307eb4c8327ba2448aa0d31bfe8292896926c1dc7bdc7a376211d5',
+  bl: '23666e0e01c44a27c20ae9a191c24b6d15b70cea544adb762b07afdac1a9fd51',
+  arm: 'de2560f6a5eefa70d06292c41f9a089197863f20d579c091621abd219a22f858',
 } as const;
 
 function line(insn: Insn): string {

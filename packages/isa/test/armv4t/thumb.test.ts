@@ -137,7 +137,7 @@ test('branches, swi and the undefined spaces', () => {
     },
     { word: 0xd87f, spec: 'thumb.bcc', text: 'bhi _08000102' },
     { word: 0xde00, spec: 'thumb.b_cond_undefined', raw: 'undefined', flow: { kind: 'invalid' } },
-    { word: 0xdf06, spec: 'thumb.swi', text: 'swi #6', flow: { kind: 'swi', imm: 6 } },
+    { word: 0xdf06, spec: 'thumb.swi', text: 'swi #6', flow: { kind: 'interrupt', imm: 6 } },
     {
       word: 0xe7fe,
       spec: 'thumb.b',
@@ -151,7 +151,7 @@ test('branches, swi and the undefined spaces', () => {
 
 test('bl pairs a prefix with the following suffix; a lone half is raw', () => {
   run([
-    { word: 0xf800_f000, spec: 'thumb.bl', text: 'bl _08000004', flow: { kind: 'bl', target: 0x0800_0004 } },
+    { word: 0xf800_f000, spec: 'thumb.bl', text: 'bl _08000004', flow: { kind: 'call', target: 0x0800_0004 } },
     { word: 0xffff_f3ff, spec: 'thumb.bl', text: 'bl _08400002' },
     { word: 0xf800_f400, spec: 'thumb.bl', text: 'bl _07C00004' },
     // Each half is an instruction of its own: the first sets lr, the second jumps through it.

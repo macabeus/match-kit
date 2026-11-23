@@ -78,7 +78,7 @@ A failure is one of `unknown-mnemonic`, `unknown-label`, `operands` (with the fo
 
 ### What an instruction does
 
-`insn.flow` says where control goes: `next`, `branch`, `bl`, `return`, `indirect`, `pool-load`, `adr`, `swi`,
+`insn.flow` says where control goes: `next`, `branch`, `call`, `return`, `indirect`, `pool-load`, `adr`, `interrupt`,
 `mode-switch` or `invalid`. `registerEffect(insn)` gives what the instruction itself writes: a call writes
 `lr`, and what the callee does to other registers is a calling convention for the caller to add.
 `specOf(insn.specId).stack?.(insn.fields)` is the change to `sp` in bytes.

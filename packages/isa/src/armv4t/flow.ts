@@ -44,7 +44,7 @@ export function flowOf(flowClass: FlowClass, mode: Mode, o: Operands, addr: Addr
     case 'cond-branch':
       return { kind: 'branch', target: operand(o, 'target'), conditional: true };
     case 'bl':
-      return { kind: 'bl', target: operand(o, 'target') };
+      return { kind: 'call', target: operand(o, 'target') };
     case 'bx': {
       const rm = operand(o, 'rm');
       if (rm === LR) {
@@ -71,7 +71,7 @@ export function flowOf(flowClass: FlowClass, mode: Mode, o: Operands, addr: Addr
     case 'adr':
       return { kind: 'adr', target: operand(o, 'target') };
     case 'swi':
-      return { kind: 'swi', imm: operand(o, 'imm') };
+      return { kind: 'interrupt', imm: operand(o, 'imm') };
     case 'bl-suffix':
       return { kind: 'indirect', reg: LR, via: 'bl-suffix' };
     case 'invalid':

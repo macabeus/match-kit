@@ -67,14 +67,14 @@ export type Operands = Readonly<Partial<Record<OperandName, number>>>;
  * | `next`        | `next`                                                                  |
  * | `branch`      | `branch` (ARM: conditional unless the condition is al)                  |
  * | `cond-branch` | `branch`, conditional                                                   |
- * | `bl`          | `bl`                                                                    |
+ * | `bl`          | `call`                                                                  |
  * | `bx`          | `return` (bx lr), `mode-switch` (Thumb bx pc) or `indirect`             |
  * | `load-pc`     | `return` (the base is sp) or `indirect`                                 |
  * | `mov-pc`      | `return` (mov pc, lr) or `indirect`                                     |
  * | `add-pc`      | `indirect`                                                              |
  * | `pool-load`   | `pool-load`                                                             |
  * | `adr`         | `adr`                                                                   |
- * | `swi`         | `swi`                                                                   |
+ * | `swi`         | `interrupt`                                                             |
  * | `bl-prefix`   | `next` (the first half of a bl alone: it only sets lr)                  |
  * | `bl-suffix`   | `indirect` through lr (the second half alone)                           |
  * | `invalid`     | `invalid`                                                               |
@@ -161,7 +161,7 @@ export interface InsnSpec {
 export type Flow =
   | { readonly kind: 'next' }
   | { readonly kind: 'branch'; readonly target: Addr; readonly conditional: boolean }
-  | { readonly kind: 'bl'; readonly target: Addr }
+  | { readonly kind: 'call'; readonly target: Addr }
   | { readonly kind: 'return'; readonly via: 'bx-lr' | 'pop-pc' | 'mov-pc-lr' }
   /**
    * `reg` is the jump register (bx, mov-pc, add-pc), the base pc is loaded through (load-pc), or lr for the
@@ -175,7 +175,7 @@ export type Flow =
   /** A literal-pool load; `rd` 15 (ARM `ldr pc, [pc, #imm]`) transfers control to the loaded word. */
   | { readonly kind: 'pool-load'; readonly pool: Addr; readonly rd: number }
   | { readonly kind: 'adr'; readonly target: Addr }
-  | { readonly kind: 'swi'; readonly imm: number }
+  | { readonly kind: 'interrupt'; readonly imm: number }
   | { readonly kind: 'mode-switch'; readonly target: Addr }
   | { readonly kind: 'invalid' };
 

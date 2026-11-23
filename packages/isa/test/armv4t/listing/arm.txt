@@ -6,14 +6,14 @@
 08000000 9A72128F arm.b                      bls _09C84A44  ; branch
 08000000 3A50BADE arm.b                      bcc _0942EB80  ; branch
 08000000 AA6673BB arm.b                      bge _0999CEF4  ; branch
-08000000 0B000000 arm.bl                     bleq _08000008  ; bl
-08000000 0B35E053 arm.bl                     bleq _08D78154  ; bl
-08000000 1BC4834C arm.bl                     blne _07120D38  ; bl
-08000000 DB05015A arm.bl                     blle _08140570  ; bl
-08000000 0F000000 arm.swi                    swieq #0  ; swi
-08000000 9FE1236D arm.swi                    swils #0xe1236d  ; swi
-08000000 6F17DD4B arm.swi                    swivs #0x17dd4b  ; swi
-08000000 0F609194 arm.swi                    swieq #0x609194  ; swi
+08000000 0B000000 arm.bl                     bleq _08000008  ; call
+08000000 0B35E053 arm.bl                     bleq _08D78154  ; call
+08000000 1BC4834C arm.bl                     blne _07120D38  ; call
+08000000 DB05015A arm.bl                     blle _08140570  ; call
+08000000 0F000000 arm.swi                    swieq #0  ; interrupt
+08000000 9FE1236D arm.swi                    swils #0xe1236d  ; interrupt
+08000000 6F17DD4B arm.swi                    swivs #0x17dd4b  ; interrupt
+08000000 0F609194 arm.swi                    swieq #0x609194  ; interrupt
 08000000 0C000000 arm.coprocessor_transfer   .inst 0x0C000000 @ coprocessor  ; invalid
 08000000 3D11BA9D arm.coprocessor_transfer   .inst 0x3D11BA9D @ coprocessor  ; invalid
 08000000 8C010F3C arm.coprocessor_transfer   .inst 0x8C010F3C @ coprocessor  ; invalid

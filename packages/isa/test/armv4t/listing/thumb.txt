@@ -254,10 +254,10 @@
 08000000 DE45     thumb.b_cond_undefined     .inst.n 0xDE45 @ undefined  ; invalid
 08000000 DE9E     thumb.b_cond_undefined     .inst.n 0xDE9E @ undefined  ; invalid
 08000000 DED2     thumb.b_cond_undefined     .inst.n 0xDED2 @ undefined  ; invalid
-08000000 DF00     thumb.swi                  swi #0  ; swi
-08000000 DFD8     thumb.swi                  swi #0xd8  ; swi
-08000000 DFB1     thumb.swi                  swi #0xb1  ; swi
-08000000 DF78     thumb.swi                  swi #0x78  ; swi
+08000000 DF00     thumb.swi                  swi #0  ; interrupt
+08000000 DFD8     thumb.swi                  swi #0xd8  ; interrupt
+08000000 DFB1     thumb.swi                  swi #0xb1  ; interrupt
+08000000 DF78     thumb.swi                  swi #0x78  ; interrupt
 08000000 D000     thumb.bcc                  beq _08000004  ; branch
 08000002 D000     thumb.bcc                  beq _08000006  ; branch
 08000000 D767     thumb.bcc                  bvc _080000D2  ; branch
@@ -286,11 +286,11 @@
 08000000 BAB1     thumb.undefined            .inst.n 0xBAB1 @ undefined  ; invalid
 08000000 B235     thumb.undefined            .inst.n 0xB235 @ undefined  ; invalid
 08000000 BB33     thumb.undefined            .inst.n 0xBB33 @ undefined  ; invalid
-08000000 F800F000 thumb.bl                   bl _08000004  ; bl
-08000002 F800F000 thumb.bl                   bl _08000006  ; bl
-08000000 F854F166 thumb.bl                   bl _081660AC  ; bl
-08000002 F854F166 thumb.bl                   bl _081660AE  ; bl
-08000000 FE6FF29A thumb.bl                   bl _0829ACE2  ; bl
-08000002 FE6FF29A thumb.bl                   bl _0829ACE4  ; bl
-08000000 F9AFF504 thumb.bl                   bl _07D04362  ; bl
-08000002 F9AFF504 thumb.bl                   bl _07D04364  ; bl
+08000000 F800F000 thumb.bl                   bl _08000004  ; call
+08000002 F800F000 thumb.bl                   bl _08000006  ; call
+08000000 F854F166 thumb.bl                   bl _081660AC  ; call
+08000002 F854F166 thumb.bl                   bl _081660AE  ; call
+08000000 FE6FF29A thumb.bl                   bl _0829ACE2  ; call
+08000002 FE6FF29A thumb.bl                   bl _0829ACE4  ; call
+08000000 F9AFF504 thumb.bl                   bl _07D04362  ; call
+08000002 F9AFF504 thumb.bl                   bl _07D04364  ; call

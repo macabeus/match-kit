@@ -36,7 +36,7 @@ test('thumbWordAt pairs a halfword with the next one, and reads zero where there
     return at >= 0 && at + 2 <= bytes.length ? (bytes[at] ?? 0) | ((bytes[at + 1] ?? 0) << 8) : undefined;
   };
   assert.strictEqual(thumbWordAt(read16, 0x0800_0100), 0xf802_f001);
-  assert.strictEqual(decode('thumb', thumbWordAt(read16, 0x0800_0100), 0x0800_0100).flow.kind, 'bl');
+  assert.strictEqual(decode('thumb', thumbWordAt(read16, 0x0800_0100), 0x0800_0100).flow.kind, 'call');
   assert.strictEqual(thumbWordAt(read16, 0x0800_01fe), 0x46c0, 'the last halfword has nothing above it');
   assert.strictEqual(thumbWordAt(read16, 0x0900_0000), 0, 'nothing there');
 });
@@ -57,6 +57,6 @@ test('the Thumb prefilters admit every halfword whose decode names an address al
       check(!isThumbBlPrefix(hw) && !isThumbBlSuffix(hw), () => hw.toString(16));
     }
   }
-  assert.strictEqual(decode('thumb', (0xf800 << 16) | 0xf000, 0x0800_0000).flow.kind, 'bl');
+  assert.strictEqual(decode('thumb', (0xf800 << 16) | 0xf000, 0x0800_0000).flow.kind, 'call');
   assert.ok(isThumbBlPrefix(0xf123) && isThumbBlSuffix(0xf923) && !isThumbBlPrefix(0xf923));
 });
