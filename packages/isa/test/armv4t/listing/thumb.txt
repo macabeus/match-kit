@@ -1,0 +1,296 @@
+08000000 0000     thumb.movs_reg             movs r0, r0
+08000000 0027     thumb.movs_reg             movs r7, r4
+08000000 0014     thumb.movs_reg             movs r4, r2
+08000000 003F     thumb.movs_reg             movs r7, r7
+08000000 06B4     thumb.lsl_imm              lsls r4, r6, #0x1a
+08000000 03EA     thumb.lsl_imm              lsls r2, r5, #0xf
+08000000 04CA     thumb.lsl_imm              lsls r2, r1, #0x13
+08000000 026C     thumb.lsl_imm              lsls r4, r5, #9
+08000000 0800     thumb.lsr_imm              lsrs r0, r0, #0x20
+08000000 0B7A     thumb.lsr_imm              lsrs r2, r7, #0xd
+08000000 091E     thumb.lsr_imm              lsrs r6, r3, #4
+08000000 08B4     thumb.lsr_imm              lsrs r4, r6, #2
+08000000 1000     thumb.asr_imm              asrs r0, r0, #0x20
+08000000 13C0     thumb.asr_imm              asrs r0, r0, #0xf
+08000000 117B     thumb.asr_imm              asrs r3, r7, #5
+08000000 13F1     thumb.asr_imm              asrs r1, r6, #0xf
+08000000 1800     thumb.add_reg              adds r0, r0, r0
+08000000 1853     thumb.add_reg              adds r3, r2, r1
+08000000 1952     thumb.add_reg              adds r2, r2, r5
+08000000 18F0     thumb.add_reg              adds r0, r6, r3
+08000000 1A00     thumb.sub_reg              subs r0, r0, r0
+08000000 1A73     thumb.sub_reg              subs r3, r6, r1
+08000000 1B80     thumb.sub_reg              subs r0, r0, r6
+08000000 1AD6     thumb.sub_reg              subs r6, r2, r3
+08000000 1C00     thumb.add_imm3             .inst.n 0x1C00 @ adds r0, r0, #0 (as-alias)
+08000000 1D75     thumb.add_imm3             adds r5, r6, #5
+08000000 1C5D     thumb.add_imm3             adds r5, r3, #1
+08000000 1D2C     thumb.add_imm3             adds r4, r5, #4
+08000000 1E00     thumb.sub_imm3             .inst.n 0x1E00 @ subs r0, r0, #0 (as-alias)
+08000000 1E9E     thumb.sub_imm3             subs r6, r3, #2
+08000000 1F94     thumb.sub_imm3             subs r4, r2, #6
+08000000 1F6E     thumb.sub_imm3             subs r6, r5, #5
+08000000 2000     thumb.mov_imm              movs r0, #0
+08000000 221F     thumb.mov_imm              movs r2, #0x1f
+08000000 2439     thumb.mov_imm              movs r4, #0x39
+08000000 23DF     thumb.mov_imm              movs r3, #0xdf
+08000000 2800     thumb.cmp_imm              cmp r0, #0
+08000000 286A     thumb.cmp_imm              cmp r0, #0x6a
+08000000 2FA0     thumb.cmp_imm              cmp r7, #0xa0
+08000000 29A3     thumb.cmp_imm              cmp r1, #0xa3
+08000000 3000     thumb.add_imm8             adds r0, #0
+08000000 32DF     thumb.add_imm8             adds r2, #0xdf
+08000000 338F     thumb.add_imm8             adds r3, #0x8f
+08000000 33A1     thumb.add_imm8             adds r3, #0xa1
+08000000 3800     thumb.sub_imm8             subs r0, #0
+08000000 3F27     thumb.sub_imm8             subs r7, #0x27
+08000000 3FB2     thumb.sub_imm8             subs r7, #0xb2
+08000000 3C8D     thumb.sub_imm8             subs r4, #0x8d
+08000000 4000     thumb.and                  ands r0, r0
+08000000 4009     thumb.and                  ands r1, r1
+08000000 401F     thumb.and                  ands r7, r3
+08000000 4015     thumb.and                  ands r5, r2
+08000000 4040     thumb.eor                  eors r0, r0
+08000000 4075     thumb.eor                  eors r5, r6
+08000000 4067     thumb.eor                  eors r7, r4
+08000000 405E     thumb.eor                  eors r6, r3
+08000000 4080     thumb.lsl_reg              lsls r0, r0
+08000000 40B9     thumb.lsl_reg              lsls r1, r7
+08000000 409F     thumb.lsl_reg              lsls r7, r3
+08000000 40B8     thumb.lsl_reg              lsls r0, r7
+08000000 40C0     thumb.lsr_reg              lsrs r0, r0
+08000000 40F5     thumb.lsr_reg              lsrs r5, r6
+08000000 40C7     thumb.lsr_reg              lsrs r7, r0
+08000000 40FE     thumb.lsr_reg              lsrs r6, r7
+08000000 4100     thumb.asr_reg              asrs r0, r0
+08000000 4133     thumb.asr_reg              asrs r3, r6
+08000000 4135     thumb.asr_reg              asrs r5, r6
+08000000 413D     thumb.asr_reg              asrs r5, r7
+08000000 4140     thumb.adc                  adcs r0, r0
+08000000 4169     thumb.adc                  adcs r1, r5
+08000000 414F     thumb.adc                  adcs r7, r1
+08000000 4147     thumb.adc                  adcs r7, r0
+08000000 4180     thumb.sbc                  sbcs r0, r0
+08000000 4181     thumb.sbc                  sbcs r1, r0
+08000000 41B2     thumb.sbc                  sbcs r2, r6
+08000000 41BA     thumb.sbc                  sbcs r2, r7
+08000000 41C0     thumb.ror_reg              rors r0, r0
+08000000 41E1     thumb.ror_reg              rors r1, r4
+08000000 41E4     thumb.ror_reg              rors r4, r4
+08000000 41DE     thumb.ror_reg              rors r6, r3
+08000000 4200     thumb.tst                  tst r0, r0
+08000000 422B     thumb.tst                  tst r3, r5
+08000000 4217     thumb.tst                  tst r7, r2
+08000000 423D     thumb.tst                  tst r5, r7
+08000000 4240     thumb.neg                  negs r0, r0
+08000000 427A     thumb.neg                  negs r2, r7
+08000000 426C     thumb.neg                  negs r4, r5
+08000000 4271     thumb.neg                  negs r1, r6
+08000000 4280     thumb.cmp_reg              cmp r0, r0
+08000000 42B9     thumb.cmp_reg              cmp r1, r7
+08000000 4281     thumb.cmp_reg              cmp r1, r0
+08000000 4297     thumb.cmp_reg              cmp r7, r2
+08000000 42C0     thumb.cmn                  cmn r0, r0
+08000000 42D3     thumb.cmn                  cmn r3, r2
+08000000 42FF     thumb.cmn                  cmn r7, r7
+08000000 42E5     thumb.cmn                  cmn r5, r4
+08000000 4300     thumb.orr                  orrs r0, r0
+08000000 4326     thumb.orr                  orrs r6, r4
+08000000 432A     thumb.orr                  orrs r2, r5
+08000000 4320     thumb.orr                  orrs r0, r4
+08000000 4340     thumb.mul                  muls r0, r0
+08000000 435D     thumb.mul                  muls r5, r3
+08000000 4355     thumb.mul                  muls r5, r2
+08000000 436D     thumb.mul                  muls r5, r5
+08000000 4380     thumb.bic                  bics r0, r0
+08000000 43A3     thumb.bic                  bics r3, r4
+08000000 438B     thumb.bic                  bics r3, r1
+08000000 4388     thumb.bic                  bics r0, r1
+08000000 43C0     thumb.mvn                  mvns r0, r0
+08000000 43C8     thumb.mvn                  mvns r0, r1
+08000000 43EF     thumb.mvn                  mvns r7, r5
+08000000 43F1     thumb.mvn                  mvns r1, r6
+08000000 4487     thumb.add_pc               add pc, r0  ; indirect
+08000000 449F     thumb.add_pc               add pc, r3  ; indirect
+08000000 44FF     thumb.add_pc               add pc, pc  ; indirect
+08000000 4497     thumb.add_pc               add pc, r2  ; indirect
+08000000 4400     thumb.add_hi               .inst.n 0x4400 @ add r0, r0 (unpredictable)
+08000000 44A5     thumb.add_hi               add sp, r4
+08000000 44D2     thumb.add_hi               add r10, r10
+08000000 44E9     thumb.add_hi               add r9, sp
+08000000 4500     thumb.cmp_hi               .inst.n 0x4500 @ cmp r0, r0 (unpredictable)
+08000000 4557     thumb.cmp_hi               cmp r7, r10
+08000000 45D7     thumb.cmp_hi               .inst.n 0x45D7 @ cmp pc, r10 (unpredictable)
+08000000 453D     thumb.cmp_hi               .inst.n 0x453D @ cmp r5, r7 (unpredictable)
+08000000 4687     thumb.mov_pc               mov pc, r0  ; indirect
+08000000 46B7     thumb.mov_pc               mov pc, r6  ; indirect
+08000000 46A7     thumb.mov_pc               mov pc, r4  ; indirect
+08000000 46D7     thumb.mov_pc               mov pc, r10  ; indirect
+08000000 4600     thumb.mov_hi               .inst.n 0x4600 @ mov r0, r0 (unpredictable)
+08000000 46FE     thumb.mov_hi               mov lr, pc
+08000000 4654     thumb.mov_hi               mov r4, r10
+08000000 46DB     thumb.mov_hi               mov r11, r11
+08000000 4700     thumb.bx                   bx r0  ; indirect
+08000000 4723     thumb.bx                   .inst.n 0x4723 @ bx r4 (sbz-set)  ; indirect
+08000000 4770     thumb.bx                   bx lr  ; return
+08000000 475B     thumb.bx                   .inst.n 0x475B @ bx r11 (sbz-set)  ; indirect
+08000000 4780     thumb.blx_reg              .inst.n 0x4780 @ blx r0  ; invalid
+08000000 479B     thumb.blx_reg              .inst.n 0x479B @ blx r3  ; invalid
+08000000 47EC     thumb.blx_reg              .inst.n 0x47EC @ blx sp  ; invalid
+08000000 4799     thumb.blx_reg              .inst.n 0x4799 @ blx r3  ; invalid
+08000000 4800     thumb.ldr_literal          ldr r0, _08000004  ; pool-load
+08000002 4800     thumb.ldr_literal          ldr r0, _08000004  ; pool-load
+08000000 4895     thumb.ldr_literal          ldr r0, _08000258  ; pool-load
+08000002 4895     thumb.ldr_literal          ldr r0, _08000258  ; pool-load
+08000000 49CF     thumb.ldr_literal          ldr r1, _08000340  ; pool-load
+08000002 49CF     thumb.ldr_literal          ldr r1, _08000340  ; pool-load
+08000000 4DB0     thumb.ldr_literal          ldr r5, _080002C4  ; pool-load
+08000002 4DB0     thumb.ldr_literal          ldr r5, _080002C4  ; pool-load
+08000000 5000     thumb.str_reg              str r0, [r0, r0]
+08000000 50EC     thumb.str_reg              str r4, [r5, r3]
+08000000 5025     thumb.str_reg              str r5, [r4, r0]
+08000000 5094     thumb.str_reg              str r4, [r2, r2]
+08000000 5200     thumb.strh_reg             strh r0, [r0, r0]
+08000000 5311     thumb.strh_reg             strh r1, [r2, r4]
+08000000 5304     thumb.strh_reg             strh r4, [r0, r4]
+08000000 521A     thumb.strh_reg             strh r2, [r3, r0]
+08000000 5400     thumb.strb_reg             strb r0, [r0, r0]
+08000000 543F     thumb.strb_reg             strb r7, [r7, r0]
+08000000 552F     thumb.strb_reg             strb r7, [r5, r4]
+08000000 55A4     thumb.strb_reg             strb r4, [r4, r6]
+08000000 5600     thumb.ldrsb_reg            ldrsb r0, [r0, r0]
+08000000 56EE     thumb.ldrsb_reg            ldrsb r6, [r5, r3]
+08000000 56CE     thumb.ldrsb_reg            ldrsb r6, [r1, r3]
+08000000 5730     thumb.ldrsb_reg            ldrsb r0, [r6, r4]
+08000000 5800     thumb.ldr_reg              ldr r0, [r0, r0]
+08000000 5977     thumb.ldr_reg              ldr r7, [r6, r5]
+08000000 58B3     thumb.ldr_reg              ldr r3, [r6, r2]
+08000000 597A     thumb.ldr_reg              ldr r2, [r7, r5]
+08000000 5A00     thumb.ldrh_reg             ldrh r0, [r0, r0]
+08000000 5BE1     thumb.ldrh_reg             ldrh r1, [r4, r7]
+08000000 5A7C     thumb.ldrh_reg             ldrh r4, [r7, r1]
+08000000 5A74     thumb.ldrh_reg             ldrh r4, [r6, r1]
+08000000 5C00     thumb.ldrb_reg             ldrb r0, [r0, r0]
+08000000 5D6F     thumb.ldrb_reg             ldrb r7, [r5, r5]
+08000000 5D8F     thumb.ldrb_reg             ldrb r7, [r1, r6]
+08000000 5CB5     thumb.ldrb_reg             ldrb r5, [r6, r2]
+08000000 5E00     thumb.ldrsh_reg            ldrsh r0, [r0, r0]
+08000000 5E76     thumb.ldrsh_reg            ldrsh r6, [r6, r1]
+08000000 5EF7     thumb.ldrsh_reg            ldrsh r7, [r6, r3]
+08000000 5E3C     thumb.ldrsh_reg            ldrsh r4, [r7, r0]
+08000000 6000     thumb.str_imm              str r0, [r0]
+08000000 605E     thumb.str_imm              str r6, [r3, #4]
+08000000 63B4     thumb.str_imm              str r4, [r6, #0x38]
+08000000 63C3     thumb.str_imm              str r3, [r0, #0x3c]
+08000000 6800     thumb.ldr_imm              ldr r0, [r0]
+08000000 6D4E     thumb.ldr_imm              ldr r6, [r1, #0x54]
+08000000 6949     thumb.ldr_imm              ldr r1, [r1, #0x14]
+08000000 6E00     thumb.ldr_imm              ldr r0, [r0, #0x60]
+08000000 7000     thumb.strb_imm             strb r0, [r0]
+08000000 7529     thumb.strb_imm             strb r1, [r5, #0x14]
+08000000 759A     thumb.strb_imm             strb r2, [r3, #0x16]
+08000000 76F1     thumb.strb_imm             strb r1, [r6, #0x1b]
+08000000 7800     thumb.ldrb_imm             ldrb r0, [r0]
+08000000 7A8D     thumb.ldrb_imm             ldrb r5, [r1, #0xa]
+08000000 7D8F     thumb.ldrb_imm             ldrb r7, [r1, #0x16]
+08000000 7FC5     thumb.ldrb_imm             ldrb r5, [r0, #0x1f]
+08000000 8000     thumb.strh_imm             strh r0, [r0]
+08000000 86CE     thumb.strh_imm             strh r6, [r1, #0x36]
+08000000 8188     thumb.strh_imm             strh r0, [r1, #0xc]
+08000000 8331     thumb.strh_imm             strh r1, [r6, #0x18]
+08000000 8800     thumb.ldrh_imm             ldrh r0, [r0]
+08000000 8B4F     thumb.ldrh_imm             ldrh r7, [r1, #0x1a]
+08000000 8A11     thumb.ldrh_imm             ldrh r1, [r2, #0x10]
+08000000 8AEF     thumb.ldrh_imm             ldrh r7, [r5, #0x16]
+08000000 9000     thumb.str_sp               str r0, [sp]
+08000000 9263     thumb.str_sp               str r2, [sp, #0x18c]
+08000000 928D     thumb.str_sp               str r2, [sp, #0x234]
+08000000 922C     thumb.str_sp               str r2, [sp, #0xb0]
+08000000 9800     thumb.ldr_sp               ldr r0, [sp]
+08000000 9E8C     thumb.ldr_sp               ldr r6, [sp, #0x230]
+08000000 9916     thumb.ldr_sp               ldr r1, [sp, #0x58]
+08000000 9E18     thumb.ldr_sp               ldr r6, [sp, #0x60]
+08000000 A000     thumb.adr                  adr r0, _08000004  ; adr
+08000002 A000     thumb.adr                  adr r0, _08000004  ; adr
+08000000 A60D     thumb.adr                  adr r6, _08000038  ; adr
+08000002 A60D     thumb.adr                  adr r6, _08000038  ; adr
+08000000 A0DD     thumb.adr                  adr r0, _08000378  ; adr
+08000002 A0DD     thumb.adr                  adr r0, _08000378  ; adr
+08000000 A0FE     thumb.adr                  adr r0, _080003FC  ; adr
+08000002 A0FE     thumb.adr                  adr r0, _080003FC  ; adr
+08000000 A800     thumb.add_sp_rd            add r0, sp, #0
+08000000 A959     thumb.add_sp_rd            add r1, sp, #0x164
+08000000 AA34     thumb.add_sp_rd            add r2, sp, #0xd0
+08000000 ABF9     thumb.add_sp_rd            add r3, sp, #0x3e4
+08000000 B000     thumb.add_sp               add sp, #0
+08000000 B03D     thumb.add_sp               add sp, #0xf4
+08000000 B048     thumb.add_sp               add sp, #0x120
+08000000 B025     thumb.add_sp               add sp, #0x94
+08000000 B080     thumb.sub_sp               sub sp, #0
+08000000 B0A7     thumb.sub_sp               sub sp, #0x9c
+08000000 B0AA     thumb.sub_sp               sub sp, #0xa8
+08000000 B0A2     thumb.sub_sp               sub sp, #0x88
+08000000 B400     thumb.push                 .inst.n 0xB400 @ push {} (unpredictable)
+08000000 B4F2     thumb.push                 push {r1, r4, r5, r6, r7}
+08000000 B575     thumb.push                 push {r0, r2, r4, r5, r6, lr}
+08000000 B567     thumb.push                 push {r0, r1, r2, r5, r6, lr}
+08000000 BD00     thumb.pop_pc               pop {pc}  ; return
+08000000 BDDA     thumb.pop_pc               pop {r1, r3, r4, r6, r7, pc}  ; return
+08000000 BD96     thumb.pop_pc               pop {r1, r2, r4, r7, pc}  ; return
+08000000 BDE3     thumb.pop_pc               pop {r0, r1, r5, r6, r7, pc}  ; return
+08000000 BC00     thumb.pop                  .inst.n 0xBC00 @ pop {} (unpredictable)
+08000000 BC22     thumb.pop                  pop {r1, r5}
+08000000 BCB8     thumb.pop                  pop {r3, r4, r5, r7}
+08000000 BC88     thumb.pop                  pop {r3, r7}
+08000000 C000     thumb.stmia                .inst.n 0xC000 @ stmia r0!, {} (unpredictable)
+08000000 C4A3     thumb.stmia                stmia r4!, {r0, r1, r5, r7}
+08000000 C70A     thumb.stmia                stmia r7!, {r1, r3}
+08000000 C372     thumb.stmia                stmia r3!, {r1, r4, r5, r6}
+08000000 C800     thumb.ldmia                .inst.n 0xC800 @ ldmia r0!, {} (unpredictable)
+08000000 CA87     thumb.ldmia                ldmia r2, {r0, r1, r2, r7}
+08000000 CE8C     thumb.ldmia                ldmia r6!, {r2, r3, r7}
+08000000 CFAD     thumb.ldmia                ldmia r7, {r0, r2, r3, r5, r7}
+08000000 DE00     thumb.b_cond_undefined     .inst.n 0xDE00 @ undefined  ; invalid
+08000000 DE45     thumb.b_cond_undefined     .inst.n 0xDE45 @ undefined  ; invalid
+08000000 DE9E     thumb.b_cond_undefined     .inst.n 0xDE9E @ undefined  ; invalid
+08000000 DED2     thumb.b_cond_undefined     .inst.n 0xDED2 @ undefined  ; invalid
+08000000 DF00     thumb.swi                  swi #0  ; interrupt
+08000000 DFD8     thumb.swi                  swi #0xd8  ; interrupt
+08000000 DFB1     thumb.swi                  swi #0xb1  ; interrupt
+08000000 DF78     thumb.swi                  swi #0x78  ; interrupt
+08000000 D000     thumb.bcc                  beq _08000004  ; branch
+08000002 D000     thumb.bcc                  beq _08000006  ; branch
+08000000 D767     thumb.bcc                  bvc _080000D2  ; branch
+08000002 D767     thumb.bcc                  bvc _080000D4  ; branch
+08000000 D819     thumb.bcc                  bhi _08000036  ; branch
+08000002 D819     thumb.bcc                  bhi _08000038  ; branch
+08000000 D221     thumb.bcc                  bcs _08000046  ; branch
+08000002 D221     thumb.bcc                  bcs _08000048  ; branch
+08000000 E000     thumb.b                    b _08000004  ; branch
+08000002 E000     thumb.b                    b _08000006  ; branch
+08000000 E452     thumb.b                    b _07FFF8A8  ; branch
+08000002 E452     thumb.b                    b _07FFF8AA  ; branch
+08000000 E0AF     thumb.b                    b _08000162  ; branch
+08000002 E0AF     thumb.b                    b _08000164  ; branch
+08000000 E07F     thumb.b                    b _08000102  ; branch
+08000002 E07F     thumb.b                    b _08000104  ; branch
+08000000 F000     thumb.bl_prefix            .inst.n 0xF000 @ bl prefix
+08000000 F1F1     thumb.bl_prefix            .inst.n 0xF1F1 @ bl prefix
+08000000 F4D6     thumb.bl_prefix            .inst.n 0xF4D6 @ bl prefix
+08000000 F16F     thumb.bl_prefix            .inst.n 0xF16F @ bl prefix
+08000000 F800     thumb.bl_suffix            .inst.n 0xF800 @ bl suffix  ; indirect
+08000000 F835     thumb.bl_suffix            .inst.n 0xF835 @ bl suffix  ; indirect
+08000000 FF10     thumb.bl_suffix            .inst.n 0xFF10 @ bl suffix  ; indirect
+08000000 FE22     thumb.bl_suffix            .inst.n 0xFE22 @ bl suffix  ; indirect
+08000000 E857     thumb.undefined            .inst.n 0xE857 @ undefined  ; invalid
+08000000 BAB1     thumb.undefined            .inst.n 0xBAB1 @ undefined  ; invalid
+08000000 B235     thumb.undefined            .inst.n 0xB235 @ undefined  ; invalid
+08000000 BB33     thumb.undefined            .inst.n 0xBB33 @ undefined  ; invalid
+08000000 F800F000 thumb.bl                   bl _08000004  ; call
+08000002 F800F000 thumb.bl                   bl _08000006  ; call
+08000000 F854F166 thumb.bl                   bl _081660AC  ; call
+08000002 F854F166 thumb.bl                   bl _081660AE  ; call
+08000000 FE6FF29A thumb.bl                   bl _0829ACE2  ; call
+08000002 FE6FF29A thumb.bl                   bl _0829ACE4  ; call
+08000000 F9AFF504 thumb.bl                   bl _07D04362  ; call
+08000002 F9AFF504 thumb.bl                   bl _07D04364  ; call
