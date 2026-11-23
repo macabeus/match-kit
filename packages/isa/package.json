@@ -1,6 +1,6 @@
 {
   "name": "@match-kit/isa",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Instruction sets for decompilation tools: decode, print as GNU as text that assembles back to the same bytes, parse and encode. ARMv4T (ARM and Thumb) so far",
   "license": "MIT",
   "type": "module",
