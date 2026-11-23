@@ -32,8 +32,13 @@ describe('assembleText', () => {
 
   it('lists the forms a mnemonic takes when the operands fit none', () => {
     const result = assembleText('push r4', 'thumb', A, LABELS);
-    expect(result).toEqual({ ok: false, failure: { kind: 'operands', mnemonic: 'push', syntaxes: ['push {list}'] } });
-    expect(result.ok ? '' : describeAssembleFailure(result.failure)).toBe("'push' takes other operands: push {list}");
+    expect(result).toEqual({
+      ok: false,
+      failure: { kind: 'operands', mnemonic: 'push', syntaxes: ['push {reglist}'] },
+    });
+    expect(result.ok ? '' : describeAssembleFailure(result.failure)).toBe(
+      "'push' takes other operands: push {reglist}",
+    );
     // A mode has its own mnemonics: ARM has no push.
     expect(assembleText('push {r4}', 'arm', A, LABELS)).toMatchObject({ failure: { kind: 'unknown-mnemonic' } });
   });
@@ -52,13 +57,13 @@ describe('operandsOf', () => {
   it('gives what the text says as numbers: registers, immediates in bytes, addresses', () => {
     expect(operandsOf(decode('thumb', 0x6848, A))).toEqual({ rd: 0, rn: 1, imm: 4 });
     expect(operandsOf(decode('thumb', 0x4802, A))).toEqual({ rd: 0, target: 0x0800_000c });
-    expect(operandsOf(decode('thumb', 0xb5f0, A))).toEqual({ list: 0x40f0 });
+    expect(operandsOf(decode('thumb', 0xb5f0, A))).toEqual({ reglist: 0x40f0 });
     expect(operandsOf(decode('arm', 0xe1a0_0081, A))).toEqual({ cond: 14, s: 0, rd: 0, rm: 1, shift: 0, amount: 1 });
   });
 
   it('reads a hi register as the text names it, not as its split bits', () => {
     const insn = decode('thumb', 0x46c0, A);
-    expect(insn.fields).toEqual({ hd: 1, hm: 1, rm3: 0, rd3: 0 });
+    expect(insn.fields).toEqual({ h1: 1, h2: 1, rm3: 0, rd3: 0 });
     expect(operandsOf(insn)).toEqual({ rd: 8, rm: 8 });
   });
 });

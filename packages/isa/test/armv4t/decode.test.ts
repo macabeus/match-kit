@@ -8,8 +8,8 @@ import {
   isThumbBlPrefix,
   isThumbBlSuffix,
   thumbMayBranchShort,
-  thumbMayName,
   thumbMayReachPcRelative,
+  thumbMayReference,
   thumbWordAt,
 } from '../../src/armv4t.js';
 import { check } from './check.js';
@@ -45,7 +45,7 @@ test('the Thumb prefilters admit every halfword whose decode names an address al
   for (let hw = 0; hw < 0x10000; hw++) {
     const kind = decode('thumb', hw, 0x0800_0000).flow.kind;
     if (kind === 'branch' || kind === 'pool-load' || kind === 'adr') {
-      check(thumbMayName(hw), () => hw.toString(16));
+      check(thumbMayReference(hw), () => hw.toString(16));
     }
     if (kind === 'branch') {
       check(thumbMayBranchShort(hw), () => hw.toString(16));
@@ -53,7 +53,7 @@ test('the Thumb prefilters admit every halfword whose decode names an address al
     if (kind === 'pool-load' || kind === 'adr') {
       check(thumbMayReachPcRelative(hw), () => hw.toString(16));
     }
-    if (thumbMayName(hw)) {
+    if (thumbMayReference(hw)) {
       check(!isThumbBlPrefix(hw) && !isThumbBlSuffix(hw), () => hw.toString(16));
     }
   }

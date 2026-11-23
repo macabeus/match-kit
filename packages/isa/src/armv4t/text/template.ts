@@ -6,7 +6,7 @@
 // Placeholders and the operand names they read or write:
 //   mnemonic: {c} cond (14 prints nothing), {s} s, {am} p and u (ia ib da db)
 //   operands: {rd} {rn} {rm} {rs} {rdlo} {rdhi} registers; {imm} '#n'; {off} ', #n' or nothing when 0;
-//   {target} a label; {list} a register list; {wb} '!' when w; {caret} '^' when user;
+//   {target} a label; {reglist} a register list; {wb} '!' when w; {caret} '^' when user;
 //   {shift} ', lsl #n' / ', rrx' or nothing (shift, amount); {rshift} ', lsl rs' (shift, rs);
 //   {const} '#v' or '#imm8, rot' (imm, rot, explicit); {amode} '[rn, #-n]!' forms (rn p u w imm);
 //   {amode_reg} '[rn, -rm, lsl #n]!' forms (rn p u w rm shift amount); {hamode_reg} '[rn, -rm]!'
@@ -165,10 +165,10 @@ const OPERANDS: Readonly<Record<string, OperandKind>> = {
     render: (ops, cx) => cx.label(operand(ops, 'target')),
     read: (g, cx, out) => put(out, 'target', cx.address(g['label'] ?? '')),
   },
-  list: {
+  reglist: {
     re: pattern('\\{(?<registers>[^}]*)\\}'),
-    render: (ops) => regList(operand(ops, 'list')),
-    read: (g, _cx, out) => put(out, 'list', parseRegList(g['registers'] ?? '')),
+    render: (ops) => regList(operand(ops, 'reglist')),
+    read: (g, _cx, out) => put(out, 'reglist', parseRegList(g['registers'] ?? '')),
   },
   wb: {
     re: pattern('(?<wb>!)?'),

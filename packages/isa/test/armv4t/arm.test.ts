@@ -13,16 +13,16 @@ const run = (cases: readonly RowCase[]): void => {
 
 test('data processing: shifted registers', () => {
   run([
-    { word: 0xe1a0_0001, spec: 'arm.mov_ims', text: 'mov r0, r1' },
-    { word: 0xe1b0_0101, spec: 'arm.mov_ims', text: 'movs r0, r1, lsl #2' },
-    { word: 0xe1a0_0021, spec: 'arm.mov_ims', text: 'mov r0, r1, lsr #0x20' },
-    { word: 0xe1a0_0061, spec: 'arm.mov_ims', text: 'mov r0, r1, rrx' },
-    { word: 0xe1a0_0211, spec: 'arm.mov_rs', text: 'mov r0, r1, lsl r2' },
-    { word: 0x0011_0002, spec: 'arm.and_ims', text: 'andseq r0, r1, r2' },
-    { word: 0xe150_0211, spec: 'arm.cmp_rs', text: 'cmp r0, r1, lsl r2' },
-    { word: 0xe1a0_f211, spec: 'arm.mov_rs_pc', raw: 'unpredictable' },
+    { word: 0xe1a0_0001, spec: 'arm.mov_reg', text: 'mov r0, r1' },
+    { word: 0xe1b0_0101, spec: 'arm.mov_reg', text: 'movs r0, r1, lsl #2' },
+    { word: 0xe1a0_0021, spec: 'arm.mov_reg', text: 'mov r0, r1, lsr #0x20' },
+    { word: 0xe1a0_0061, spec: 'arm.mov_reg', text: 'mov r0, r1, rrx' },
+    { word: 0xe1a0_0211, spec: 'arm.mov_rr', text: 'mov r0, r1, lsl r2' },
+    { word: 0x0011_0002, spec: 'arm.and_reg', text: 'andseq r0, r1, r2' },
+    { word: 0xe150_0211, spec: 'arm.cmp_rr', text: 'cmp r0, r1, lsl r2' },
+    { word: 0xe1a0_f211, spec: 'arm.mov_rr_pc', raw: 'unpredictable' },
     // mov ignores rn, which should be zero.
-    { word: 0xe1a1_0001, spec: 'arm.mov_ims', raw: 'sbz-set' },
+    { word: 0xe1a1_0001, spec: 'arm.mov_reg', raw: 'sbz-set' },
   ]);
 });
 
@@ -52,17 +52,17 @@ test('adr: add or sub from pc, as GNU as picks for the label', () => {
 
 test('writes to pc are table rows with their own flow class', () => {
   run([
-    { word: 0xe1a0_f00e, spec: 'arm.mov_ims_pc', text: 'mov pc, lr', flow: { kind: 'return', via: 'mov-pc-lr' } },
-    { word: 0xe1b0_f00e, spec: 'arm.mov_ims_pc', text: 'movs pc, lr', flow: { kind: 'return', via: 'mov-pc-lr' } },
+    { word: 0xe1a0_f00e, spec: 'arm.mov_reg_pc', text: 'mov pc, lr', flow: { kind: 'return', via: 'mov-pc-lr' } },
+    { word: 0xe1b0_f00e, spec: 'arm.mov_reg_pc', text: 'movs pc, lr', flow: { kind: 'return', via: 'mov-pc-lr' } },
     {
       word: 0xe1a0_f001,
-      spec: 'arm.mov_ims_pc',
+      spec: 'arm.mov_reg_pc',
       text: 'mov pc, r1',
       flow: { kind: 'indirect', reg: 1, via: 'mov-pc' },
     },
     {
       word: 0xe08f_f100,
-      spec: 'arm.add_ims_pc',
+      spec: 'arm.add_reg_pc',
       text: 'add pc, pc, r0, lsl #2',
       flow: { kind: 'indirect', reg: 0, via: 'add-pc' },
     },
@@ -105,12 +105,12 @@ test('word and byte transfers, the pool load and the T forms', () => {
   run([
     {
       word: 0xe59f_0004,
-      spec: 'arm.ldr_pc',
+      spec: 'arm.ldr_literal',
       text: 'ldr r0, _0800000C',
       flow: { kind: 'pool-load', pool: 0x0800_000c, rd: 0 },
     },
-    { word: 0xe51f_0004, spec: 'arm.ldr_pc', text: 'ldr r0, _08000004' },
-    { word: 0xe51f_0000, spec: 'arm.ldr_pc', raw: 'as-alias' },
+    { word: 0xe51f_0004, spec: 'arm.ldr_literal', text: 'ldr r0, _08000004' },
+    { word: 0xe51f_0000, spec: 'arm.ldr_literal', raw: 'as-alias' },
     { word: 0xe591_0004, spec: 'arm.ldr_imm', text: 'ldr r0, [r1, #4]' },
     { word: 0xe591_0000, spec: 'arm.ldr_imm', text: 'ldr r0, [r1]' },
     { word: 0xe511_0000, spec: 'arm.ldr_imm', text: 'ldr r0, [r1, #-0]' },
@@ -144,7 +144,7 @@ test('word and byte transfers, the pool load and the T forms', () => {
     },
     {
       word: 0xe59f_f000,
-      spec: 'arm.ldr_pc',
+      spec: 'arm.ldr_literal',
       text: 'ldr pc, _08000008',
       flow: { kind: 'pool-load', pool: 0x0800_0008, rd: 15 },
     },

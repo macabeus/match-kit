@@ -34,8 +34,8 @@ export function effectOf(spec: RegisterSpec, operands: Operands, specId: string)
   for (const name of spec.writes ?? []) {
     writes |= 1 << valueOf(name);
   }
-  if (spec.list !== undefined) {
-    writes |= valueOf(spec.list);
+  if (spec.reglist !== undefined) {
+    writes |= valueOf(spec.reglist);
   }
   return { writes, from: (spec.from ?? []).map(valueOf) };
 }

@@ -78,12 +78,12 @@ test('pc-relative load and adr use Align(addr + 4, 4)', () => {
   run([
     {
       word: 0x4801,
-      spec: 'thumb.ldr_pc',
+      spec: 'thumb.ldr_literal',
       text: 'ldr r0, _08000008',
       flow: { kind: 'pool-load', pool: 0x0800_0008, rd: 0 },
     },
-    { word: 0x4801, addr: 0x0800_0002, spec: 'thumb.ldr_pc', text: 'ldr r0, _08000008' },
-    { word: 0x4fff, addr: 0x0800_0002, spec: 'thumb.ldr_pc', text: 'ldr r7, _08000400' },
+    { word: 0x4801, addr: 0x0800_0002, spec: 'thumb.ldr_literal', text: 'ldr r0, _08000008' },
+    { word: 0x4fff, addr: 0x0800_0002, spec: 'thumb.ldr_literal', text: 'ldr r7, _08000400' },
     { word: 0xa001, spec: 'thumb.adr', text: 'adr r0, _08000008', flow: { kind: 'adr', target: 0x0800_0008 } },
     { word: 0xa001, addr: 0x0800_0006, spec: 'thumb.adr', text: 'adr r0, _0800000C' },
   ]);

@@ -32,17 +32,17 @@ export { decode, isConditional, operandsOf, thumbWordAt } from './armv4t/decode.
 export { encode } from './armv4t/encode.js';
 
 // Instructions to text, and back.
-export { format, formatDecoding, formatRaw } from './armv4t/text/format.js';
+export { format, formatLoose, formatRaw } from './armv4t/text/format.js';
 export { parse } from './armv4t/text/parse.js';
 export { assemble, assembleText, describeAssembleFailure } from './armv4t/assemble.js';
 export type { AssembleFailure, AssembleResult } from './armv4t/assemble.js';
-export { printing, rawReason, roundTrips } from './armv4t/printing-rule.js';
+export { printingOf, rawReason, roundTrips } from './armv4t/printing-rule.js';
 export type { Printing } from './armv4t/printing-rule.js';
 export { CONDITIONS } from './armv4t/text/operand-text.js';
 
 // What an instruction does.
 export { effectOf, registerEffect } from './armv4t/registers.js';
-export { pcOf, thumbPoolBase } from './armv4t/tables/pc-relative.js';
+export { pcOf, thumbAlignedPc } from './armv4t/tables/pc-relative.js';
 export { popcount } from './armv4t/bits.js';
 
 // The tables, for a caller that reads rows instead of decoding: a scanner's prefilters, a table check.
@@ -54,6 +54,6 @@ export {
   isThumbBlSuffix,
   rowFor,
   thumbMayBranchShort,
-  thumbMayName,
+  thumbMayReference,
   thumbMayReachPcRelative,
 } from './armv4t/decode.js';

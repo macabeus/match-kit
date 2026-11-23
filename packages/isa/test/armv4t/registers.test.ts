@@ -170,6 +170,6 @@ test('an operand the row lacks throws IsaInvariantError instead of reading as r0
     from: [2],
   });
   assert.throws(() => effectOf({ writes: ['rd'] }, { rn: 1 }, 'thumb.test'), IsaInvariantError);
-  assert.throws(() => effectOf({ list: 'list' }, { rd: 3 }, 'thumb.test'), /names 'list'/);
+  assert.throws(() => effectOf({ reglist: 'reglist' }, { rd: 3 }, 'thumb.test'), /names 'reglist'/);
   assert.throws(() => effectOf({ from: ['rn'] }, { rd: 0 }, 'thumb.test'), IsaInvariantError);
 });

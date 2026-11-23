@@ -20,15 +20,15 @@ function branchRow(link: boolean): Row {
   return row(link ? 'arm.bl' : 'arm.b', 'arm', {
     mask: 0x0f00_0000,
     match: link ? 0x0b00_0000 : 0x0a00_0000,
-    fields: [cond(), pcRel('off', 0, 24, 4)],
+    fields: [cond(), pcRel('imm24', 0, 24, 4)],
     syntax: `${link ? 'bl' : 'b'}{c} {target}`,
     flow: link ? 'bl' : 'branch',
     // What the callee does to other registers is a calling convention's, not the instruction's.
     ...(link ? { registers: { fixed: 1 << LR } } : {}),
-    toOperands: (f, a) => ({ cond: bits(f, 'cond'), target: branchTarget(pcOf(a, 'arm'), bits(f, 'off'), 24, 4) }),
+    toOperands: (f, a) => ({ cond: bits(f, 'cond'), target: branchTarget(pcOf(a, 'arm'), bits(f, 'imm24'), 24, 4) }),
     fromOperands: (o, a) => {
-      const off = branchOffset(pcOf(a, 'arm'), operand(o, 'target'), 24, 4);
-      return off === undefined ? undefined : { cond: operand(o, 'cond'), off };
+      const imm24 = branchOffset(pcOf(a, 'arm'), operand(o, 'target'), 24, 4);
+      return imm24 === undefined ? undefined : { cond: operand(o, 'cond'), imm24 };
     },
   });
 }

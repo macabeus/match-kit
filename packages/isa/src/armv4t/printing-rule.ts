@@ -33,7 +33,7 @@ function attempt(
 }
 
 /** The printing rule: the row's encoding reason first, then the round trip ('no-roundtrip' when it fails). */
-export function printing(insn: Insn, resolver: SymbolResolver): Printing {
+export function printingOf(insn: Insn, resolver: SymbolResolver): Printing {
   const reason = specOf(insn.specId).raw?.(insn.fields) ?? null;
   if (reason !== null) {
     return { kind: 'raw', reason };
@@ -49,6 +49,6 @@ export function roundTrips(insn: Insn, resolver: SymbolResolver): boolean {
 
 /** Why the instruction prints raw: the row's encoding reason first, then 'no-roundtrip'; null when it prints. */
 export function rawReason(insn: Insn, resolver: SymbolResolver): RawReason | null {
-  const result = printing(insn, resolver);
+  const result = printingOf(insn, resolver);
   return result.kind === 'raw' ? result.reason : null;
 }

@@ -6,7 +6,7 @@ import { popcount, wrap32 } from '../bits.js';
 import { COND_AL, LR, PC } from '../names.js';
 import type { Fields, OperandName, RawReason, RegisterSpec } from '../types.js';
 import { bits, operand } from './access.js';
-import { branchOffset, branchTarget, pcOf, thumbPoolBase } from './pc-relative.js';
+import { branchOffset, branchTarget, pcOf, thumbAlignedPc } from './pc-relative.js';
 import { type Row, type RowOptions, blOff, cond, flag, imm, pcRel, reg, reglist, row } from './row.js';
 
 function thumb(name: string, options: RowOptions): Row {
@@ -179,7 +179,7 @@ const aluRows: Row[] = ALU.map(({ name, mnemonic, first, second }, opcode) =>
 // ---------------------------------------------------------------------------------------------------
 // Hi-register operations and bx (format 5). The 4-bit registers are H:R3.
 
-const HI_FIELDS = [flag('hd', 7), flag('hm', 6), reg('rm3', 3), reg('rd3', 0)];
+const HI_FIELDS = [flag('h1', 7), flag('h2', 6), reg('rm3', 3), reg('rd3', 0)];
 
 const HI_OPCODE = { add: 0, cmp: 1, mov: 2 } as const;
 type HiOperation = keyof typeof HI_OPCODE;
@@ -198,10 +198,10 @@ interface HiRow {
  * for this architecture; cmp with pc as either operand is UNPREDICTABLE too (as: "r15 not allowed here").
  */
 function hiRejected(operation: HiOperation, f: Fields): boolean {
-  if (bits(f, 'hd') === 0 && bits(f, 'hm') === 0) {
+  if (bits(f, 'h1') === 0 && bits(f, 'h2') === 0) {
     return true;
   }
-  return operation === 'cmp' && (hiRegister(f, 'hd', 'rd3') === PC || hiRegister(f, 'hm', 'rm3') === PC);
+  return operation === 'cmp' && (hiRegister(f, 'h1', 'rd3') === PC || hiRegister(f, 'h2', 'rm3') === PC);
 }
 
 function hiRow({ name, operation, first, asPriority = 0, registers }: HiRow): Row {
@@ -212,11 +212,11 @@ function hiRow({ name, operation, first, asPriority = 0, registers }: HiRow): Ro
     fields: HI_FIELDS,
     syntax: `${operation} {${first}}, {rm}`,
     asPriority,
-    toOperands: (f) => ({ [first]: hiRegister(f, 'hd', 'rd3'), rm: hiRegister(f, 'hm', 'rm3') }),
+    toOperands: (f) => ({ [first]: hiRegister(f, 'h1', 'rd3'), rm: hiRegister(f, 'h2', 'rm3') }),
     fromOperands: (o) => {
       const d = operand(o, first);
       const m = operand(o, 'rm');
-      return { hd: d >> 3, rd3: d & 7, hm: m >> 3, rm3: m & 7 };
+      return { h1: d >> 3, rd3: d & 7, h2: m >> 3, rm3: m & 7 };
     },
     rejected: { reason: 'unpredictable', when: (f) => hiRejected(operation, f) },
   });
@@ -227,16 +227,16 @@ function pcWriteRow(operation: 'add' | 'mov'): Row {
   return thumb(`${operation}_pc`, {
     mask: 0xff87,
     match: 0x4487 | (HI_OPCODE[operation] << 8),
-    fields: [flag('hm', 6), reg('rm3', 3)],
+    fields: [flag('h2', 6), reg('rm3', 3)],
     syntax: `${operation} {rd}, {rm}`,
     flow: `${operation}-pc`,
     registers: WRITES_RD,
-    toOperands: (f) => ({ rd: PC, rm: hiRegister(f, 'hm', 'rm3') }),
-    fromOperands: (o) => (o.rd === PC ? { hm: operand(o, 'rm') >> 3, rm3: operand(o, 'rm') & 7 } : undefined),
+    toOperands: (f) => ({ rd: PC, rm: hiRegister(f, 'h2', 'rm3') }),
+    fromOperands: (o) => (o.rd === PC ? { h2: operand(o, 'rm') >> 3, rm3: operand(o, 'rm') & 7 } : undefined),
   });
 }
 
-const BX_FIELDS = [flag('hm', 6), reg('rm3', 3), imm('sbz', 0, 3)];
+const BX_FIELDS = [flag('h2', 6), reg('rm3', 3), imm('sbz', 0, 3)];
 
 const hi: Row[] = [
   pcWriteRow('add'),
@@ -250,8 +250,8 @@ const hi: Row[] = [
     fields: BX_FIELDS,
     syntax: 'bx {rm}',
     flow: 'bx',
-    toOperands: (f) => ({ rm: hiRegister(f, 'hm', 'rm3') }),
-    fromOperands: (o) => ({ hm: operand(o, 'rm') >> 3, rm3: operand(o, 'rm') & 7, sbz: 0 }),
+    toOperands: (f) => ({ rm: hiRegister(f, 'h2', 'rm3') }),
+    fromOperands: (o) => ({ h2: operand(o, 'rm') >> 3, rm3: operand(o, 'rm') & 7, sbz: 0 }),
     raw: (f) => (bits(f, 'sbz') !== 0 ? 'sbz-set' : null),
   }),
   // H1 = 1 is blx in ARMv5T; on the ARMv4T it is UNPREDICTABLE.
@@ -261,7 +261,7 @@ const hi: Row[] = [
     fields: BX_FIELDS,
     syntax: 'blx {rm}',
     rawOnly: 'unpredictable',
-    toOperands: (f) => ({ rm: hiRegister(f, 'hm', 'rm3') }),
+    toOperands: (f) => ({ rm: hiRegister(f, 'h2', 'rm3') }),
   }),
 ];
 
@@ -269,15 +269,15 @@ const hi: Row[] = [
 // Loads and stores.
 
 const pcLoads: Row[] = [
-  thumb('ldr_pc', {
+  thumb('ldr_literal', {
     mask: 0xf800,
     match: 0x4800,
     fields: [reg('rd', 8), pcRel('imm', 0, 8, 4)],
     syntax: 'ldr {rd}, {target}',
     flow: 'pool-load',
     registers: WRITES_RD,
-    toOperands: (f, a) => ({ rd: bits(f, 'rd'), target: wrap32(thumbPoolBase(a) + bits(f, 'imm') * 4) }),
-    fromOperands: (o, a) => ({ rd: operand(o, 'rd'), imm: (operand(o, 'target') - thumbPoolBase(a)) / 4 }),
+    toOperands: (f, a) => ({ rd: bits(f, 'rd'), target: wrap32(thumbAlignedPc(a) + bits(f, 'imm') * 4) }),
+    fromOperands: (o, a) => ({ rd: operand(o, 'rd'), imm: (operand(o, 'target') - thumbAlignedPc(a)) / 4 }),
   }),
 ];
 
@@ -341,8 +341,8 @@ const spRelative: Row[] = [
     syntax: 'adr {rd}, {target}',
     flow: 'adr',
     registers: WRITES_RD,
-    toOperands: (f, a) => ({ rd: bits(f, 'rd'), target: wrap32(thumbPoolBase(a) + bits(f, 'imm') * 4) }),
-    fromOperands: (o, a) => ({ rd: operand(o, 'rd'), imm: (operand(o, 'target') - thumbPoolBase(a)) / 4 }),
+    toOperands: (f, a) => ({ rd: bits(f, 'rd'), target: wrap32(thumbAlignedPc(a) + bits(f, 'imm') * 4) }),
+    fromOperands: (o, a) => ({ rd: operand(o, 'rd'), imm: (operand(o, 'target') - thumbAlignedPc(a)) / 4 }),
   }),
   thumb('add_sp_rd', {
     mask: 0xf800,
@@ -370,53 +370,53 @@ const spRelative: Row[] = [
 // ---------------------------------------------------------------------------------------------------
 // push, pop and the multiple transfers.
 
-const isEmptyList = (f: Fields): boolean => bits(f, 'rlist') === 0;
+const isEmptyList = (f: Fields): boolean => bits(f, 'reglist') === 0;
 const emptyList = (f: Fields): RawReason | null => (isEmptyList(f) ? 'unpredictable' : null);
 
 const stack: Row[] = [
   thumb('push', {
     mask: 0xfe00,
     match: 0xb400,
-    fields: [flag('lr', 8), reglist('rlist', 0, 8)],
-    syntax: 'push {list}',
-    toOperands: (f) => ({ list: bits(f, 'rlist') | (bits(f, 'lr') << LR) }),
-    fromOperands: (o) => ({ rlist: operand(o, 'list') & 0xff, lr: (operand(o, 'list') >> LR) & 1 }),
-    stack: (f) => -4 * (popcount(bits(f, 'rlist')) + bits(f, 'lr')),
-    rejected: { reason: 'unpredictable', when: (f) => bits(f, 'rlist') === 0 && bits(f, 'lr') === 0 },
+    fields: [flag('lr', 8), reglist('reglist', 0, 8)],
+    syntax: 'push {reglist}',
+    toOperands: (f) => ({ reglist: bits(f, 'reglist') | (bits(f, 'lr') << LR) }),
+    fromOperands: (o) => ({ reglist: operand(o, 'reglist') & 0xff, lr: (operand(o, 'reglist') >> LR) & 1 }),
+    stack: (f) => -4 * (popcount(bits(f, 'reglist')) + bits(f, 'lr')),
+    rejected: { reason: 'unpredictable', when: (f) => bits(f, 'reglist') === 0 && bits(f, 'lr') === 0 },
   }),
   thumb('pop_pc', {
     mask: 0xff00,
     match: 0xbd00,
-    fields: [reglist('rlist', 0, 8)],
-    syntax: 'pop {list}',
+    fields: [reglist('reglist', 0, 8)],
+    syntax: 'pop {reglist}',
     flow: 'load-pc',
-    registers: { list: 'list' },
-    toOperands: (f) => ({ list: bits(f, 'rlist') | (1 << PC) }),
-    fromOperands: (o) => ({ rlist: operand(o, 'list') & 0xff }),
-    stack: (f) => 4 * (popcount(bits(f, 'rlist')) + 1),
+    registers: { reglist: 'reglist' },
+    toOperands: (f) => ({ reglist: bits(f, 'reglist') | (1 << PC) }),
+    fromOperands: (o) => ({ reglist: operand(o, 'reglist') & 0xff }),
+    stack: (f) => 4 * (popcount(bits(f, 'reglist')) + 1),
   }),
   thumb('pop', {
     mask: 0xff00,
     match: 0xbc00,
-    fields: [reglist('rlist', 0, 8)],
-    syntax: 'pop {list}',
-    toOperands: (f) => ({ list: bits(f, 'rlist') }),
-    fromOperands: (o) => ({ rlist: operand(o, 'list') }),
-    stack: (f) => 4 * popcount(bits(f, 'rlist')),
-    registers: { list: 'list' },
+    fields: [reglist('reglist', 0, 8)],
+    syntax: 'pop {reglist}',
+    toOperands: (f) => ({ reglist: bits(f, 'reglist') }),
+    fromOperands: (o) => ({ reglist: operand(o, 'reglist') }),
+    stack: (f) => 4 * popcount(bits(f, 'reglist')),
+    registers: { reglist: 'reglist' },
     rejected: { reason: 'unpredictable', when: isEmptyList },
   }),
   thumb('stmia', {
     mask: 0xf800,
     match: 0xc000,
-    fields: [reg('rn', 8), reglist('rlist', 0, 8)],
-    syntax: 'stmia {rn}!, {list}',
+    fields: [reg('rn', 8), reglist('reglist', 0, 8)],
+    syntax: 'stmia {rn}!, {reglist}',
     registers: { writes: ['rn'] },
-    toOperands: (f) => ({ rn: bits(f, 'rn'), list: bits(f, 'rlist') }),
-    fromOperands: (o) => ({ rn: operand(o, 'rn'), rlist: operand(o, 'list') }),
+    toOperands: (f) => ({ rn: bits(f, 'rn'), reglist: bits(f, 'reglist') }),
+    fromOperands: (o) => ({ rn: operand(o, 'rn'), reglist: operand(o, 'reglist') }),
     // The base in the list stores an UNKNOWN value unless it is the lowest register.
     raw: (f) => {
-      const list = bits(f, 'rlist');
+      const list = bits(f, 'reglist');
       const base = 1 << bits(f, 'rn');
       if (list === 0) {
         return 'unpredictable';
@@ -427,19 +427,21 @@ const stack: Row[] = [
   thumb('ldmia', {
     mask: 0xf800,
     match: 0xc800,
-    fields: [reg('rn', 8), reglist('rlist', 0, 8)],
+    fields: [reg('rn', 8), reglist('reglist', 0, 8)],
     // Writeback happens only when the base is not loaded, and the text says which.
-    syntax: 'ldmia {rn}{wb}, {list}',
-    registers: { writes: ['rn'], list: 'list' },
+    syntax: 'ldmia {rn}{wb}, {reglist}',
+    registers: { writes: ['rn'], reglist: 'reglist' },
     toOperands: (f) => ({
       rn: bits(f, 'rn'),
-      list: bits(f, 'rlist'),
-      w: (bits(f, 'rlist') >> bits(f, 'rn')) & 1 ? 0 : 1,
+      reglist: bits(f, 'reglist'),
+      w: (bits(f, 'reglist') >> bits(f, 'rn')) & 1 ? 0 : 1,
     }),
     // as assembles `ldmia rn, {rn}` as `ldr rn, [rn]`, so that encoding has no text.
     fromOperands: (o) =>
-      operand(o, 'list') === 1 << operand(o, 'rn') ? undefined : { rn: operand(o, 'rn'), rlist: operand(o, 'list') },
-    raw: (f) => (bits(f, 'rlist') === 1 << bits(f, 'rn') ? 'as-alias' : emptyList(f)),
+      operand(o, 'reglist') === 1 << operand(o, 'rn')
+        ? undefined
+        : { rn: operand(o, 'rn'), reglist: operand(o, 'reglist') },
+    raw: (f) => (bits(f, 'reglist') === 1 << bits(f, 'rn') ? 'as-alias' : emptyList(f)),
   }),
 ];
 

@@ -138,14 +138,14 @@
 08000000 479B     thumb.blx_reg              .inst.n 0x479B @ blx r3  ; invalid
 08000000 47EC     thumb.blx_reg              .inst.n 0x47EC @ blx sp  ; invalid
 08000000 4799     thumb.blx_reg              .inst.n 0x4799 @ blx r3  ; invalid
-08000000 4800     thumb.ldr_pc               ldr r0, _08000004  ; pool-load
-08000002 4800     thumb.ldr_pc               ldr r0, _08000004  ; pool-load
-08000000 4895     thumb.ldr_pc               ldr r0, _08000258  ; pool-load
-08000002 4895     thumb.ldr_pc               ldr r0, _08000258  ; pool-load
-08000000 49CF     thumb.ldr_pc               ldr r1, _08000340  ; pool-load
-08000002 49CF     thumb.ldr_pc               ldr r1, _08000340  ; pool-load
-08000000 4DB0     thumb.ldr_pc               ldr r5, _080002C4  ; pool-load
-08000002 4DB0     thumb.ldr_pc               ldr r5, _080002C4  ; pool-load
+08000000 4800     thumb.ldr_literal          ldr r0, _08000004  ; pool-load
+08000002 4800     thumb.ldr_literal          ldr r0, _08000004  ; pool-load
+08000000 4895     thumb.ldr_literal          ldr r0, _08000258  ; pool-load
+08000002 4895     thumb.ldr_literal          ldr r0, _08000258  ; pool-load
+08000000 49CF     thumb.ldr_literal          ldr r1, _08000340  ; pool-load
+08000002 49CF     thumb.ldr_literal          ldr r1, _08000340  ; pool-load
+08000000 4DB0     thumb.ldr_literal          ldr r5, _080002C4  ; pool-load
+08000002 4DB0     thumb.ldr_literal          ldr r5, _080002C4  ; pool-load
 08000000 5000     thumb.str_reg              str r0, [r0, r0]
 08000000 50EC     thumb.str_reg              str r4, [r5, r3]
 08000000 5025     thumb.str_reg              str r5, [r4, r0]

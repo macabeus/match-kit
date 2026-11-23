@@ -29,6 +29,6 @@ export function branchOffset(pc: number, target: number, width: number, scale: n
 }
 
 /** The base of Thumb `ldr rd, [pc, #imm]` and `add rd, pc, #imm`: Align(addr + 4, 4). */
-export function thumbPoolBase(addr: Addr): number {
+export function thumbAlignedPc(addr: Addr): number {
   return align4(addr + 4);
 }

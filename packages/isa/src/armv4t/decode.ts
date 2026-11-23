@@ -111,7 +111,7 @@ export function thumbMayReachPcRelative(hw: number): boolean {
 }
 
 /** Whether a Thumb halfword alone may name an address (a short branch, a PC-relative load, an adr); a bl is its prefix and suffix. */
-export function thumbMayName(hw: number): boolean {
+export function thumbMayReference(hw: number): boolean {
   return thumbMayBranchShort(hw) || thumbMayReachPcRelative(hw);
 }
 

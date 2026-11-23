@@ -4,7 +4,7 @@
 // data except the optional row functions (`stack`, `raw`).
 import type { Addr, Mode } from './address.js';
 
-/** A row id: `<mode>.<name>`, e.g. 'thumb.ldr_pc', 'arm.add_imm'. */
+/** A row id: `<mode>.<name>`, e.g. 'thumb.ldr_literal', 'arm.add_imm'. */
 export type SpecId = `${'thumb' | 'arm'}.${string}`;
 
 export type FieldKind = 'reg' | 'imm' | 'simm' | 'cond' | 'reglist' | 'shift' | 'rot-imm' | 'pc-rel' | 'bl-off';
@@ -34,7 +34,7 @@ export const OPERAND_NAMES = [
   // an immediate in bytes or bits as written, an address, a register mask
   'imm',
   'target',
-  'list',
+  'reglist',
   // the mnemonic's suffixes: condition, set flags
   'cond',
   's',
@@ -119,7 +119,7 @@ export const RAW_REASONS: readonly RawReason[] = [
 
 /**
  * What an instruction writes to the core registers, as row data over its operand names: `writes` names
- * operands holding a register it writes, `list` an operand holding a register mask it writes, `fixed` a
+ * operands holding a register it writes, `reglist` an operand holding a register mask it writes, `fixed` a
  * mask of registers it always writes (a call's clobbers), and `from` the operands the written value is a
  * copy, a sum or the load address of; a written value computed any other way (a constant, other
  * arithmetic, a byte or halfword load) has no `from`. sp updates are the row's `stack`, and a branch's pc
@@ -127,7 +127,7 @@ export const RAW_REASONS: readonly RawReason[] = [
  */
 export interface RegisterSpec {
   readonly writes?: readonly OperandName[];
-  readonly list?: OperandName;
+  readonly reglist?: OperandName;
   readonly fixed?: number;
   readonly from?: readonly OperandName[];
 }

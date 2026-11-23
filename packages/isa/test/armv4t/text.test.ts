@@ -7,7 +7,7 @@ import {
   assemble,
   decode,
   format,
-  formatDecoding,
+  formatLoose,
   formatRaw,
   parse,
   rawReason,
@@ -49,19 +49,19 @@ test('formatRaw spells the bytes and the decoding, never a label', () => {
   assert.strictEqual(formatRaw(decode('arm', 0xee00_0000, 0x0800_0000)), '.inst 0xEE000000 @ coprocessor');
 });
 
-test('formatDecoding prints an instruction that has a raw reason, and nothing for a row without text', () => {
+test('formatLoose prints an instruction that has a raw reason, and nothing for a row without text', () => {
   const alias = decode('thumb', 0x1c40, 0x0800_0000);
   assert.strictEqual(format(alias, LABELS), undefined);
-  assert.strictEqual(formatDecoding(alias, LABELS), 'adds r0, r0, #1');
-  assert.strictEqual(formatDecoding(decode('thumb', 0x0808, 0x0800_0000), LABELS), 'lsrs r0, r1, #0x20');
-  assert.strictEqual(formatDecoding(decode('arm', 0xe4b1_0004, 0x0800_0000), LABELS), 'ldrt r0, [r1], #4');
+  assert.strictEqual(formatLoose(alias, LABELS), 'adds r0, r0, #1');
+  assert.strictEqual(formatLoose(decode('thumb', 0x0808, 0x0800_0000), LABELS), 'lsrs r0, r1, #0x20');
+  assert.strictEqual(formatLoose(decode('arm', 0xe4b1_0004, 0x0800_0000), LABELS), 'ldrt r0, [r1], #4');
   assert.strictEqual(
-    formatDecoding(decode('thumb', 0xe7fe, 0x0800_0000), { labelFor: (a) => `0x${a.toString(16)}` }),
+    formatLoose(decode('thumb', 0xe7fe, 0x0800_0000), { labelFor: (a) => `0x${a.toString(16)}` }),
     'b 0x8000000',
   );
-  assert.strictEqual(formatDecoding(decode('thumb', 0xe7fe, 0x0800_0000), NO_LABELS), undefined);
-  assert.strictEqual(formatDecoding(decode('thumb', 0xde00, 0x0800_0000), LABELS), undefined);
-  assert.strictEqual(formatDecoding(decode('thumb', 0xf000, 0x0800_0000), LABELS), undefined);
+  assert.strictEqual(formatLoose(decode('thumb', 0xe7fe, 0x0800_0000), NO_LABELS), undefined);
+  assert.strictEqual(formatLoose(decode('thumb', 0xde00, 0x0800_0000), LABELS), undefined);
+  assert.strictEqual(formatLoose(decode('thumb', 0xf000, 0x0800_0000), LABELS), undefined);
 });
 
 test('parse reads the printed grammar, with spacing, case and comments normalised', () => {
@@ -69,7 +69,7 @@ test('parse reads the printed grammar, with spacing, case and comments normalise
   assert.ok(parsed !== undefined);
   assert.strictEqual(parsed.mnemonic, 'push');
   assert.strictEqual(parsed.text, 'PUSH {r4, lr}');
-  assert.deepEqual(parsed.candidates, [{ specId: 'thumb.push', operands: { list: 0x4010 } }]);
+  assert.deepEqual(parsed.candidates, [{ specId: 'thumb.push', operands: { reglist: 0x4010 } }]);
   assert.strictEqual(parse('frobnicate r0', 'thumb', 0x0800_0000, LABELS), undefined);
   assert.strictEqual(parse('b nowhere', 'thumb', 0x0800_0000, LABELS), undefined);
   assert.strictEqual(parse('ldr r0, [r1', 'arm', 0x0800_0000, LABELS), undefined);
@@ -149,5 +149,5 @@ test('ARM pool loads use pc + 8 in both directions', () => {
 test('assemble names the row the word decodes to', () => {
   const parsed = parse('mov pc, lr', 'arm', 0x0800_0000, LABELS);
   assert.ok(parsed !== undefined);
-  assert.deepEqual(assemble(parsed, 0x0800_0000), { specId: 'arm.mov_ims_pc', size: 4, word: 0xe1a0_f00e });
+  assert.deepEqual(assemble(parsed, 0x0800_0000), { specId: 'arm.mov_reg_pc', size: 4, word: 0xe1a0_f00e });
 });

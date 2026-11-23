@@ -56,14 +56,14 @@ const isTest = (operation: Operation): boolean => ['tst', 'teq', 'cmp', 'cmn'].i
 const isMove = (operation: Operation): boolean => operation === 'mov' || operation === 'mvn';
 
 /**
- * The form of the second operand, as row ids spell it: `imm` a rotated immediate, `ims` a register shifted by
- * an immediate amount, `rs` a register shifted by a register.
+ * The form of the second operand, as row ids spell it: `imm` a rotated immediate, `reg` a register, shifted by
+ * an immediate amount or not at all, `rr` a register shifted by a register (Arm's i, r and rr).
  */
-type Form = 'imm' | 'ims' | 'rs';
-const FORMS: readonly Form[] = ['imm', 'ims', 'rs'];
+type Form = 'imm' | 'reg' | 'rr';
+const FORMS: readonly Form[] = ['imm', 'reg', 'rr'];
 
-const FORM_MASK: Readonly<Record<Form, number>> = { imm: 0x0fe0_0000, ims: 0x0fe0_0010, rs: 0x0fe0_0090 };
-const FORM_MATCH: Readonly<Record<Form, number>> = { imm: 0x0200_0000, ims: 0, rs: 0x10 };
+const FORM_MASK: Readonly<Record<Form, number>> = { imm: 0x0fe0_0000, reg: 0x0fe0_0010, rr: 0x0fe0_0090 };
+const FORM_MATCH: Readonly<Record<Form, number>> = { imm: 0x0200_0000, reg: 0, rr: 0x10 };
 
 interface SecondOperand {
   readonly text: string;
@@ -82,16 +82,16 @@ const SECOND_OPERAND: Readonly<Record<Form, SecondOperand>> = {
       return field === undefined ? undefined : { imm12: field };
     },
   },
-  ims: {
+  reg: {
     text: '{rm}{shift}',
-    fields: [imm('samt', 7, 5), shiftType('stype', 5), reg('rm', 0, 4)],
-    toOperands: (f) => ({ rm: bits(f, 'rm'), ...shiftOperands(bits(f, 'stype'), bits(f, 'samt')) }),
+    fields: [imm('imm5', 7, 5), shiftType('stype', 5), reg('rm', 0, 4)],
+    toOperands: (f) => ({ rm: bits(f, 'rm'), ...shiftOperands(bits(f, 'stype'), bits(f, 'imm5')) }),
     fromOperands: (o) => {
       const shift = shiftFields(operand(o, 'shift'), operand(o, 'amount'));
       return shift === undefined ? undefined : { rm: operand(o, 'rm'), ...shift };
     },
   },
-  rs: {
+  rr: {
     text: '{rm}{rshift}',
     fields: [reg('rs', 8, 4), shiftType('stype', 5), reg('rm', 0, 4)],
     toOperands: (f) => ({ rm: bits(f, 'rm'), rs: bits(f, 'rs'), shift: bits(f, 'stype') }),
@@ -112,13 +112,13 @@ function registersOf(operation: Operation, form: Form): RowOptions['registers'] 
   if (isTest(operation)) {
     return undefined;
   }
-  if (operation === 'mov' && form === 'ims') {
+  if (operation === 'mov' && form === 'reg') {
     return (o): RegisterSpec => (isPlainRegister(o) ? { writes: ['rd'], from: ['rm'] } : { writes: ['rd'] });
   }
   if (operation === 'add' && form === 'imm') {
     return { writes: ['rd'], from: ['rn'] };
   }
-  if (operation === 'add' && form === 'ims') {
+  if (operation === 'add' && form === 'reg') {
     return (o): RegisterSpec => (isPlainRegister(o) ? { writes: ['rd'], from: ['rn', 'rm'] } : { writes: ['rd'] });
   }
   return { writes: ['rd'] };
@@ -173,7 +173,7 @@ function dataProcessingRow({ operation, form, writesPc }: DataProcessingRow): Ro
     if (move && bits(f, 'rn') !== 0) {
       return 'sbz-set';
     }
-    if (form === 'rs') {
+    if (form === 'rr') {
       const registers = [
         bits(f, 'rm'),
         bits(f, 'rs'),

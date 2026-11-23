@@ -39,7 +39,7 @@ export function format(insn: Insn, resolver: SymbolResolver): string | undefined
  * `adds r0, r0, #1` whose bytes `as` would encode another way). Undefined for a row with no instruction text (an
  * undefined encoding, a lone bl half) and when an address operand has no label.
  */
-export function formatDecoding(insn: Insn, resolver: Pick<SymbolResolver, 'labelFor'>): string | undefined {
+export function formatLoose(insn: Insn, resolver: Pick<SymbolResolver, 'labelFor'>): string | undefined {
   const row = rowOf(insn.specId);
   if (!row.printable) {
     return undefined;

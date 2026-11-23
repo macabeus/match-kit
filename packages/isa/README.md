@@ -39,11 +39,11 @@ if (parsed !== undefined) assemble(parsed, 0x0800_0000); // { specId: 'thumb.add
 | `operandsOf(insn)`                         | What the text says, as numbers: `{ rd: 0, rn: 1, imm: 4 }` for Thumb `ldr r0, [r1, #4]`                     |
 | `format(insn, resolver)`                   | GNU as unified syntax, or `undefined` when the instruction has no text `as` assembles back (see below)      |
 | `formatRaw(insn)`                          | The bytes as `.inst`, with the decoding in a comment. Always prints                                         |
-| `formatDecoding(insn, resolver)`           | What the instruction is, for a debugger's listing, whether or not `as` gives its bytes back                 |
+| `formatLoose(insn, resolver)`              | What the instruction is, for a debugger's listing, whether or not `as` gives its bytes back                 |
 | `parse(text, mode, addr, resolver)`        | Reads the text `format` writes: every table row that accepts it, or `undefined`                             |
 | `assemble(parsed, addr)`                   | The encoding GNU as picks, or `undefined` for text it rejects                                               |
 | `assembleText(text, mode, addr, resolver)` | `parse` and `assemble` in one call, with the reason when the text has no encoding                           |
-| `rawReason(insn, resolver)`, `printing`    | Why an instruction has no text; `printing` gives the text or the reason in one call                         |
+| `rawReason(insn, resolver)`, `printingOf`  | Why an instruction has no text; `printingOf` gives the text or the reason in one call                       |
 | `registerEffect(insn)`                     | The registers the instruction writes, and the ones the written value comes from                             |
 
 Every address operand is named through `labelFor`: the printer never invents a name.
@@ -86,7 +86,7 @@ A failure is one of `unknown-mnemonic`, `unknown-label`, `operands` (with the fo
 ### The tables
 
 One table per instruction set drives everything above. `ROWS`, `rowOf`, `rowFor`, `specOf` and
-`specsOf` expose its rows, and `isThumbBlPrefix`, `isThumbBlSuffix` and `thumbMayName` are quick tests
+`specsOf` expose its rows, and `isThumbBlPrefix`, `isThumbBlSuffix` and `thumbMayReference` are quick tests
 on a Thumb halfword. An unknown row id throws `IsaInvariantError`.
 
 ## How it is checked

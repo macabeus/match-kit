@@ -72,7 +72,7 @@ function transferRow(t: Transfer, regOffset: boolean, pcDest: boolean): Row {
   const mask = (t.user ? 0x0f70_0000 : 0x0e50_0000) | (regOffset ? 0x10 : 0) | (pcDest ? 0xf000 : 0);
   const match = (regOffset ? 0x0600_0000 : 0x0400_0000) | lb | (t.user ? 0x0020_0000 : 0) | (pcDest ? 0xf000 : 0);
   const indexFields = t.user ? [] : [flag('p', 24), flag('w', 21)];
-  const offsetFields = regOffset ? [imm('samt', 7, 5), shiftType('stype', 5), reg('rm', 0, 4)] : [imm('imm', 0, 12)];
+  const offsetFields = regOffset ? [imm('imm5', 7, 5), shiftType('stype', 5), reg('rm', 0, 4)] : [imm('imm', 0, 12)];
   const fields = [cond(), ...indexFields, flag('u', 23), reg('rn', 16, 4), reg('rd', 12, 4), ...offsetFields];
   return row(`arm.${t.name}_${regOffset ? 'reg' : 'imm'}${pcDest ? '_pc' : ''}`, 'arm', {
     mask,
@@ -89,7 +89,7 @@ function transferRow(t: Transfer, regOffset: boolean, pcDest: boolean): Row {
       p: t.user ? 0 : bits(f, 'p'),
       w: t.user ? 0 : bits(f, 'w'),
       ...(regOffset
-        ? { rm: bits(f, 'rm'), ...shiftOperands(bits(f, 'stype'), bits(f, 'samt')) }
+        ? { rm: bits(f, 'rm'), ...shiftOperands(bits(f, 'stype'), bits(f, 'imm5')) }
         : { imm: bits(f, 'imm') }),
     }),
     fromOperands: (o) => {
@@ -124,7 +124,7 @@ function transferRow(t: Transfer, regOffset: boolean, pcDest: boolean): Row {
 }
 
 /** `ldr rd, label`: the pc-relative word load (P = 1, W = 0, Rn = pc). */
-const LDR_POOL: Row = row('arm.ldr_pc', 'arm', {
+const LDR_POOL: Row = row('arm.ldr_literal', 'arm', {
   mask: 0x0f7f_0000,
   match: 0x051f_0000,
   fields: [cond(), flag('u', 23), reg('rd', 12, 4), imm('imm', 0, 12)],
@@ -172,7 +172,7 @@ const HALF: readonly (readonly [string, number, number, number])[] = [
 ];
 
 function halfRow(name: string, l: number, s: number, h: number, regOffset: boolean): Row {
-  const offsetFields = regOffset ? [imm('sbz', 8, 4), reg('rm', 0, 4)] : [imm('immh', 8, 4), imm('imml', 0, 4)];
+  const offsetFields = regOffset ? [imm('sbz', 8, 4), reg('rm', 0, 4)] : [imm('imm4h', 8, 4), imm('imm4l', 0, 4)];
   return row(`arm.${name}_${regOffset ? 'reg' : 'imm'}`, 'arm', {
     mask: 0x0e50_00f0,
     match: (regOffset ? 0 : 1 << 22) | (l << 20) | 0x90 | (s << 6) | (h << 5),
@@ -188,7 +188,7 @@ function halfRow(name: string, l: number, s: number, h: number, regOffset: boole
       p: bits(f, 'p'),
       u: bits(f, 'u'),
       w: bits(f, 'w'),
-      ...(regOffset ? { rm: bits(f, 'rm') } : { imm: (bits(f, 'immh') << 4) | bits(f, 'imml') }),
+      ...(regOffset ? { rm: bits(f, 'rm') } : { imm: (bits(f, 'imm4h') << 4) | bits(f, 'imm4l') }),
     }),
     fromOperands: (o) => {
       const base = {
@@ -203,7 +203,7 @@ function halfRow(name: string, l: number, s: number, h: number, regOffset: boole
         return { ...base, sbz: 0, rm: operand(o, 'rm') };
       }
       const value = operand(o, 'imm');
-      return value > 0xff ? undefined : { ...base, immh: value >> 4, imml: value & 15 };
+      return value > 0xff ? undefined : { ...base, imm4h: value >> 4, imm4l: value & 15 };
     },
     raw: (f) => {
       if (regOffset && bits(f, 'sbz') !== 0) {
@@ -253,13 +253,13 @@ function blockRow(name: 'ldm' | 'stm', loadsPc: boolean): Row {
       flag('user', 22),
       flag('w', 21),
       reg('rn', 16, 4),
-      reglist('list', 0, 16),
+      reglist('reglist', 0, 16),
     ],
-    syntax: `${name}{am}{c} {rn}{wb}, {list}{caret}`,
+    syntax: `${name}{am}{c} {rn}{wb}, {reglist}{caret}`,
     flow: loadsPc ? 'load-pc' : 'next',
-    registers: (o) => ({ ...(load ? { list: 'list' as const } : {}), writes: o.w === 1 ? ['rn'] : [] }),
+    registers: (o) => ({ ...(load ? { reglist: 'reglist' as const } : {}), writes: o.w === 1 ? ['rn'] : [] }),
     raw: (f) => {
-      const list = bits(f, 'list');
+      const list = bits(f, 'reglist');
       const rn = bits(f, 'rn');
       const base = 1 << rn;
       const w = bits(f, 'w') === 1;
@@ -276,7 +276,7 @@ function blockRow(name: 'ldm' | 'stm', loadsPc: boolean): Row {
       return null;
     },
     stack: (f) =>
-      bits(f, 'rn') === SP && bits(f, 'w') === 1 ? (bits(f, 'u') === 1 ? 4 : -4) * popcount(bits(f, 'list')) : 0,
+      bits(f, 'rn') === SP && bits(f, 'w') === 1 ? (bits(f, 'u') === 1 ? 4 : -4) * popcount(bits(f, 'reglist')) : 0,
   });
 }
 
